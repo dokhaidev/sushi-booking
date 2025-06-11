@@ -1,9 +1,32 @@
+/* Remove the old imports and use this instead */
 @import "tailwindcss";
 
-:root {
-  --primary-color: #594545;
-  --secondary-color: #fff ;
-  --title-color: #594545;
-  --desc-color: #9E7676;
-  --button-color: #FFF9F0;
+/* Custom styles */
+body {
+  scroll-behavior: smooth;
+}
+
+/* Animation for menu items */
+.menu-item {
+  transition: transform 0.3s ease;
+}
+
+.menu-item:hover {
+  transform: translateY(-5px);
+}
+
+/* Hero section animation */
+.hero-content {
+  animation: fadeInUp 1s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

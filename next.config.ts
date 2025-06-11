@@ -1,9 +1,7 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     domains: [
-      "i.pinimg.com",
       "images.unsplash.com",
       "example.com",
       "i.pinimg.com",
@@ -39,6 +37,15 @@ const nextConfig: NextConfig = {
       "xuongmocso1.com",
       "fnb.qdc.vn",
     ],
-}}
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://127.0.0.1:8000/api/:path*", // Laravel backend
+      },
+    ];
+  },
+};
 
-export default nextConfig;
+module.exports = nextConfig;
