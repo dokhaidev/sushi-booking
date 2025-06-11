@@ -28,7 +28,23 @@ const nextConfig = {
       "www.sushikoi.com.vn",
       "www.sushimura.com.vn",
       "saigonreview.vn",
+      "plus.unsplash.com",
+      "wallpapers.com",
+      "media.istockphoto.com",
+      "t3.ftcdn.net",
+      "phongcachmoc.vn",
+      "cdn.pastaxi-manager.onepas.vn",
+      "xuongmocso1.com",
+      "fnb.qdc.vn",
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://127.0.0.1:8000/api/:path*", // Laravel backend
+      },
+    ];
   },
 };
 
