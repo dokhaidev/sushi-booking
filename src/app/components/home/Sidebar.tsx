@@ -72,13 +72,13 @@ const Sidebar = () => {
       return (
         <div key={item.key} className={`pl-${level * 4}`}>
           <div
-            className={`flex items-center justify-between px-2 py-2 text-lg text-black rounded hover:bg-gray-300 cursor-pointer`}
+            className={`flex items-center justify-between px-2 py-2 text-base text-black rounded hover:bg-gray-300 cursor-pointer`}
             onClick={() => (hasChildren ? toggleMenu(item.key) : null)}
           >
             <div className="flex items-center gap-2">
               {item.icon}
               {item.href ? (
-                <Link href={item.href}>
+                <Link href={`/quan-tri${item.href}`}>
                   {item.label}
                 </Link>
               ) : (

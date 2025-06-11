@@ -1,6 +1,6 @@
-import Header from "../../components/home/Header";
-import Sidebar from "../../components/home/Sidebar";
-import "../../globals.css";
+import Header from "../../../components/home/Header";
+import Sidebar from "../../../components/home/Sidebar";
+import "../../../globals.css";
 
 export default function RootLayout({
   children,
