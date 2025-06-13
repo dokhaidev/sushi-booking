@@ -2,57 +2,91 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function CallToAction() {
   return (
     <section
       id="order"
-      className="py-[60px] sm:px-16 lg:px-18 bg-[#FFF9F0] relative overflow-hidden"
+      className="relative py-20 px-4 sm:px-12 md:px-20 bg-gradient-to-b from-[#FFF5E0] to-[#FFF9F0] overflow-hidden"
     >
-      {/* Background circle decor */}
-      <div className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-[#FFEEDB] rounded-full z-0 opacity-30"></div>
-      <div className="absolute bottom-[-120px] right-[-80px] w-[240px] h-[240px] bg-[#FCE8D5] rounded-full z-0 opacity-20"></div>
+      {/* Background blur decor */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-[#FFEEDB] rounded-full opacity-30 blur-2xl"></div>
+        <div className="absolute bottom-[-120px] right-[-80px] w-[240px] h-[240px] bg-[#FCE8D5] rounded-full opacity-20 blur-2xl"></div>
+      </div>
 
-      <div className="container mx-auto text-center relative z-10">
-        <motion.h2
-          initial={{ opacity: 0, y: -30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-4xl font-extrabold text-[#333333] mb-6 leading-snug"
-        >
-          Hãy dành những khoảnh khắc đặc biệt
-          <br />
-          tại <span className="text-[#A68345]">Sushi Takumi</span>
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="text-[#666666] mb-10 max-w-xl mx-auto text-lg"
-        >
-          Chúng tôi nhận đặt bàn và đặt món mang về. Trải nghiệm hương vị Nhật
-          Bản ngay tại nhà hoặc trong không gian ấm cúng của chúng tôi.
-        </motion.p>
-        ;
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="flex flex-col sm:flex-row justify-center gap-4"
-        >
-          <button className="bg-[#6B5E3C] text-white px-8 py-4 rounded-lg text-base font-semibold transition-all duration-300 shadow-md hover:shadow-lg">
-            Đặt món ngay
-          </button>
-
-          <Link
-            href="/dat-ban"
-            className="border border-[#6B5E3C] text-[#6B5E3C] hover:bg-[#6B5E3C] hover:text-white px-8 py-4 rounded-lg text-base font-semibold transition-all duration-300 shadow hover:shadow-md"
+      <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between relative z-10 gap-10">
+        {/* Text content */}
+        <div className="text-center lg:text-left max-w-xl">
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
           >
-            Đặt bàn tại đây
-          </Link>
+            <span className="inline-block bg-[#A68345] text-white text-xs font-semibold uppercase px-3 py-1 rounded-full mb-4">
+              🍣 Best Seller
+            </span>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#333] leading-tight mb-4">
+              Hãy dành những khoảnh khắc đặc biệt <br />
+              tại <span className="text-[#A68345]">Sushi Takumi</span>
+            </h2>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-[#555] text-lg mb-8"
+          >
+            Trải nghiệm hương vị Nhật Bản chính hiệu – từ bàn ăn tại nhà đến
+            không gian tinh tế tại nhà hàng. Đặt bàn hoặc gọi món ngay!
+          </motion.p>
+
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+          >
+            <Link
+              href="/dat-mon"
+              className="bg-gradient-to-r from-[#A68345] to-[#6B5E3C] text-white px-8 py-4 rounded-xl text-base font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
+            >
+              🍣 Đặt món ngay
+            </Link>
+            <Link
+              href="/dat-ban"
+              className="border border-[#6B5E3C] text-[#6B5E3C] px-8 py-4 rounded-xl text-base font-semibold transition-all duration-300 hover:bg-[#6B5E3C] hover:text-white shadow hover:shadow-md hover:scale-105"
+            >
+              📅 Đặt bàn tại đây
+            </Link>
+          </motion.div>
+
+          <p className="text-sm text-[#888] mt-4">
+            *Chúng tôi phục vụ từ 10h đến 22h hàng ngày
+          </p>
+        </div>
+
+        {/* Sushi Image Illustration */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+          className="w-full max-w-sm"
+        >
+          <Image
+            src="https://pastaxi-manager.onepas.vn/content/uploads/articles/2amthuc/nhahang/604/sushi-nhat-ban-9.jpg"
+            alt="Sushi ngon tuyệt"
+            width={500}
+            height={500}
+            className="rounded-3xl shadow-xl"
+          />
         </motion.div>
       </div>
     </section>

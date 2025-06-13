@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { AuthContext } from "../context/authContext";
+import { useAuth } from "../context/authContext";
 import type {
   Table,
   TimeSlot,
@@ -15,7 +15,7 @@ import type {
 
 export function useBooking() {
   const router = useRouter();
-  const { user, loading } = useContext(AuthContext);
+  const { user, isLoading: authLoading } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -294,18 +294,18 @@ export function useBooking() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        customer_id: user.id,
+        customer_id: Number(user.id),
         customer_name: user.name || "",
-        customer_phone: user.phone || "",
+        customer_phone: user.phone ? String(user.phone) : "",
       }));
     }
   }, [user]);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push("/dang-nhap");
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     const total = foods.reduce(
@@ -364,7 +364,7 @@ export function useBooking() {
     setNotification,
     today,
     user,
-    loading,
+    authLoading,
 
     // Functions
     showNotification,

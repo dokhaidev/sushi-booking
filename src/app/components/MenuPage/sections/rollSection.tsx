@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { MenuItem } from "../../../types/menu";
 import axios from "axios";
+import { ChefHat } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function RollsSection() {
   const [rolls, setRolls] = useState<MenuItem[]>([]);
@@ -27,14 +29,30 @@ export default function RollsSection() {
   }, []);
 
   return (
-    <section id="rolls" className="py-[60px] sm:px-16 lg:px-24 bg-[#B1B6A3]">
+    <section
+      id="rolls"
+      className="py-[60px] sm:px-16 lg:px-24 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0]"
+    >
       <div className="container mx-auto">
-        <h2 className="text-3xl font-bold text-[#333333] mb-2 text-center">
-          Rolls
-        </h2>
-        <p className="text-[#666666] text-center mb-12">
-          Các loại roll truyền thống và hiện đại
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <div className="flex items-center justify-center gap-3 md:gap-5 mb-2">
+            <div className="h-px w-12 md:w-24 bg-[#555]" />
+            <h2 className="text-xl md:text-3xl font-bold uppercase tracking-wider text-[#444] flex items-center gap-2">
+              <ChefHat className="text-[#A68345]" size={24} />
+              Rolls
+            </h2>
+            <div className="h-px w-12 md:w-24 bg-[#555]" />
+          </div>
+          <p className="text-[#666] text-sm md:text-base mt-2">
+            Các loại roll truyền thống và hiện đại
+          </p>
+        </motion.div>
 
         {loading ? (
           <p className="text-center text-[#666]">Đang tải dữ liệu...</p>
