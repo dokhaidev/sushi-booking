@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/button";
 import Calendar from "../../../components/ui/Calendar";
 import { Plus, FileText, BarChart2 } from "lucide-react";
+import Link from "next/link";
 
 export default function TongQuan() {
   return (
-    <div className="grid grid-cols-12 gap-4 bg-[#fff8f0]">
+    <div className="grid grid-cols-12 gap-4">
       {/* Header */}
       <TitleDesc 
         title="Tổng quan" 
@@ -35,7 +36,11 @@ export default function TongQuan() {
         {/* Orders and Bookings */}
       <div className="col-span-8 grid grid-cols-1 gap-4">
         <Card>
-          <CardHeader header="Đơn hàng gần đây" />
+          <CardHeader header="Đơn hàng gần đây" className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Link href={`/quan-tri/quan-ly/dat-ban`} className="font-medium text-sm">Xem tất cả</Link>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
@@ -98,7 +103,11 @@ export default function TongQuan() {
         </Card>
 
         <Card>
-          <CardHeader header="Đặt bàn gần đây" />
+          <CardHeader header="Đặt bàn gần đây" className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Link href={`/quan-tri/quan-ly/dat-ban`} className="font-medium text-sm">Xem tất cả</Link>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
@@ -173,7 +182,6 @@ export default function TongQuan() {
             <ul>
                 <li><strong>Hệ thống:</strong> Có 2 đơn chưa được xử lý.</li>
                 <li><strong>Đặt bàn mới:</strong> Có khách hàng vừa đặt bàn lúc 9:35.</li>
-                <li><strong>Nhắc sinh nhật:</strong> Nguyễn Văn A sẽ được nhắc nhở vào 10/6.</li>
                 <li><strong>Cập nhật hệ thống:</strong> Hệ thống sẽ bảo trì lúc 23:00 tối nay.</li>
           </ul>
           </CardContent>

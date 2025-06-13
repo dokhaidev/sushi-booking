@@ -38,6 +38,16 @@ const nextConfig: NextConfig = {
       "cdn.pastaxi-manager.onepas.vn",
       "xuongmocso1.com",
       "fnb.qdc.vn",
+      "cdn.pastaxi-manager.onepas.vn",
+      "xuongmocso1.com",
+      "fnb.qdc.vn",
+      "pastaxi-manager.onepas.vn",
+      "image.phunuonline.com.vn",
+      "media.suckhoecong.vn",
+      "xkld.thanhgiang.com.vn",
+      "i0.wp.com",
+      "kokugyu.com.vn",
+      "product.hstatic.net",
     ],
 }}
 

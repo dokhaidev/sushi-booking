@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 // import TitleDesc from "../../../..components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
 import TitleDesc from "../../../../components/ui/titleDesc";
+import SearchInput from "../../../../components/ui/SearchInput";
 
 type TableOrderItem = {
   id: string;
@@ -34,7 +35,7 @@ const fakeDataTable: TableOrderItem[] = [
 
 export default function NhanVienBan() {
   const [orders, setOrders] = useState<TableOrderItem[]>([]);
-
+  const [searchText, setSearchText] = useState("");
   useEffect(() => {
     setOrders(fakeDataTable); // Replace with API call
   }, []);
@@ -59,11 +60,15 @@ export default function NhanVienBan() {
 
       <div className="col-span-12">
         <Card>
-          <CardHeader header="Danh sách món ăn từ bếp" />
+          <CardHeader header="Danh sách món ăn từ bếp" className="flex justify-between items-center">
+            <div className="flex gap-2 w-full max-w-md">
+              <SearchInput value={searchText} onChange={setSearchText} />
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-[#e0f7ff] text-[#004d66] font-medium">
+                <thead className="bg-[#fff8f1] text-[#5c4033] font-medium text-sm">
                   <tr>
                     <th className="px-4 py-2">Mã đơn</th>
                     <th className="px-4 py-2">Tên món</th>
@@ -74,8 +79,8 @@ export default function NhanVienBan() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((item) => (
-                    <tr key={item.id} className="border-b">
+                  {orders.map((item, index) => (
+                    <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
                       <td className="px-4 py-2">{item.maDon}</td>
                       <td className="px-4 py-2">{item.tenMon}</td>
                       <td className="px-4 py-2">{item.soLuong}</td>

@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from '../../../../components/ui/Card';
+import SearchInput from '../../../../components/ui/SearchInput';
+
 type OrderItem = {
   id: string;
   maDon: string;
@@ -32,6 +34,7 @@ const fakeData: OrderItem[] = [
 
 export default function NhanVienBep() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     setOrders(fakeData); // Replace with API call
@@ -65,12 +68,15 @@ export default function NhanVienBep() {
         />
         <div className="col-span-12">
             <Card>
-                <CardHeader header="Danh sách món ăn">
+                <CardHeader header="Danh sách món ăn" className="flex justify-between items-center">
+                  <div className="flex gap-2 w-full max-w-md">
+                    <SearchInput value={searchText} onChange={setSearchText} />
+                  </div>
                 </CardHeader>
                 <CardContent>
                     <div className="overflow-auto">
                         <table className="min-w-full text-sm text-left">
-                            <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
+                            <thead className="bg-[#fff8f1] text-[#5c4033] font-medium text-sm">
                             <tr>
                                 <th className="px-4 py-2">Mã đơn</th>
                                 <th className="px-4 py-2">Tên món</th>

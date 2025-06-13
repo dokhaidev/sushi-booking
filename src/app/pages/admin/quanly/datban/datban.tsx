@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
 import Pagination from "../../../../components/ui/Panigation";
+import SearchInput from "../../../../components/ui/SearchInput";
 
 export default function QuanLyDonDatBan() {
     const orders = [
@@ -50,6 +51,7 @@ export default function QuanLyDonDatBan() {
         },
     ];
 
+    const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
@@ -131,7 +133,11 @@ export default function QuanLyDonDatBan() {
         {/* Bảng đơn đặt bàn */}
         <div className="col-span-12">
             <Card>
-            <CardHeader header="Đơn đặt bàn gần đây" />
+            <CardHeader header="Đơn đặt bàn gần đây" className="flex justify-between items-center">
+                <div className="flex gap-2 w-full max-w-md">
+                    <SearchInput value={searchText} onChange={setSearchText} />
+                </div>
+            </CardHeader>
             <CardContent>
                 <div className="overflow-auto">
                 <table className="min-w-full text-sm text-left">

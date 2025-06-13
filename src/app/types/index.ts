@@ -3,3 +3,4 @@ export * from './food';
 export * from './combo';
 export * from './customer';
 export * from './foodgroup';
+export * from './voucher';

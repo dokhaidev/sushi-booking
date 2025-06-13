@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
+import SearchInput from "../../../../components/ui/SearchInput";
 
 type InvoiceItem = {
   id: string;
@@ -30,6 +31,7 @@ const fakeInvoices: InvoiceItem[] = [
 
 export default function NhanVienThuNgan() {
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     setInvoices(fakeInvoices); // Replace with API call in real usage
@@ -46,7 +48,7 @@ export default function NhanVienThuNgan() {
   };
 
   return (
-    <div className="grid grid-cols-12 gap-4 bg-[#f9f9ff]">
+    <div className="grid grid-cols-12 gap-4">
       {/* Title */}
       <TitleDesc
         title="Thu ngân"
@@ -56,11 +58,15 @@ export default function NhanVienThuNgan() {
 
       <div className="col-span-12">
         <Card>
-          <CardHeader header="Danh sách hóa đơn" />
+          <CardHeader header="Danh sách hóa đơn" className="flex justify-between items-center">
+            <div className="flex gap-2 w-full max-w-md">
+              <SearchInput value={searchText} onChange={setSearchText} />
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-[#eef2ff] text-[#1e3a8a] font-medium">
+                <thead className="bg-[#fff8f1] text-[#5c4033] font-medium text-sm">
                   <tr>
                     <th className="px-4 py-2">Mã đơn</th>
                     <th className="px-4 py-2">Bàn</th>
@@ -70,8 +76,8 @@ export default function NhanVienThuNgan() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((item) => (
-                    <tr key={item.id} className="border-b">
+                  {invoices.map((item , index) => (
+                    <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
                       <td className="px-4 py-2">{item.maDon}</td>
                       <td className="px-4 py-2">{item.ban}</td>
                       <td className="px-4 py-2">{item.tongTien.toLocaleString()}₫</td>
