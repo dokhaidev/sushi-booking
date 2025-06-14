@@ -22,7 +22,6 @@ export default function AppetizersSection() {
         const data = Array.isArray(response.data)
           ? response.data
           : response.data?.data || [];
-
         const mappedData: MenuItem[] = data.map((item: any) => ({
           id: typeof item.id === "string" ? parseInt(item.id) : item.id,
           name: item.name,
@@ -30,7 +29,6 @@ export default function AppetizersSection() {
           price: typeof item.price === "string" ? item.price : `${item.price}¥`,
           description: item.description,
         }));
-
         setAppetizers(mappedData);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu khai vị:", err);

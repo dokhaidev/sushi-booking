@@ -1,8 +1,13 @@
 "use client";
 
-import { useContext, useCallback } from "react";
-
-import { createContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+  type ReactNode,
+  useContext,
+  useCallback,
+} from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +16,6 @@ interface User {
   id: string | number;
   name: string;
   email: string;
-  // Thêm các field khác mà API trả về
   [key: string]: any;
 }
 
@@ -26,15 +30,14 @@ interface AuthContextType {
   refreshAuth: () => Promise<void>;
 }
 
-// Định nghĩa props cho AuthProvider
+// Props cho AuthProvider
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Create the AuthContext với type
+// Create context
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// AuthProvider component
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +45,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
 
   const clearAuthData = useCallback(() => {
-    localStorage.removeItem("auth");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth");
+    }
     setUser(null);
     setIsAuthenticated(false);
   }, []);
@@ -52,18 +57,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         setIsLoading(true);
 
-        const query = new URLSearchParams(window.location.search);
-        const urlToken = query.get("token");
+        let token = null;
 
-        if (urlToken) {
-          localStorage.setItem("auth", urlToken);
-          // Remove token from URL without page reload
-          const url = new URL(window.location.href);
-          url.searchParams.delete("token");
-          router.replace(url.pathname + url.search);
+        if (typeof window !== "undefined") {
+          const query = new URLSearchParams(window.location.search);
+          const urlToken = query.get("token");
+
+          if (urlToken) {
+            localStorage.setItem("auth", urlToken);
+
+            // Xóa token khỏi URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete("token");
+            window.history.replaceState({}, "", url.pathname + url.search);
+
+            token = urlToken;
+          } else {
+            token = localStorage.getItem("auth");
+          }
         }
-
-        const token = urlToken || localStorage.getItem("auth");
 
         if (token) {
           const response = await axios.get("http://127.0.0.1:8000/api/user", {
@@ -74,7 +86,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        // Clear invalid token
         clearAuthData();
       } finally {
         setIsLoading(false);
@@ -87,7 +98,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = useCallback(
     async (token: string): Promise<void> => {
       try {
-        localStorage.setItem("auth", token);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("auth", token);
+        }
 
         const response = await axios.get("http://127.0.0.1:8000/api/user", {
           headers: { Authorization: `Bearer ${token}` },
@@ -98,46 +111,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         router.push("/");
       } catch (error) {
         console.error("Login failed:", error);
-        localStorage.removeItem("auth");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth");
+        }
         setUser(null);
         setIsAuthenticated(false);
-        throw error; // Re-throw để component có thể handle error
+        throw error;
       }
     },
     [router]
   );
 
   const logout = useCallback(async (): Promise<void> => {
-    const token = localStorage.getItem("auth");
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("auth") : null;
     if (!token) return;
 
     try {
-      // Call logout API
       await axios.get("http://127.0.0.1:8000/api/logout", {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (error) {
       console.error("Logout API failed:", error);
-      // Continue with local logout even if API fails
     } finally {
-      // Always clear local state
       clearAuthData();
       router.push("/");
     }
   }, [clearAuthData, router]);
 
   const updateUser = useCallback((userData: Partial<User>) => {
-    setUser((prevUser) => {
-      if (prevUser) {
-        return { ...prevUser, ...userData };
-      }
-      return prevUser;
-    });
+    setUser((prevUser) => (prevUser ? { ...prevUser, ...userData } : prevUser));
   }, []);
 
   const refreshAuth = useCallback(async () => {
     try {
-      const token = localStorage.getItem("auth");
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("auth") : null;
       if (token) {
         const response = await axios.get("http://127.0.0.1:8000/api/user", {
           headers: { Authorization: `Bearer ${token}` },
@@ -145,8 +154,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(response.data);
         setIsAuthenticated(true);
       } else {
-        setUser(null);
-        setIsAuthenticated(false);
+        clearAuthData();
       }
     } catch (error) {
       console.error("Error refreshing auth:", error);
@@ -169,7 +177,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-// Custom hook để sử dụng AuthContext với type safety
+// Hook dùng để lấy auth
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

@@ -1,7 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
     domains: [
+      "i.pinimg.com",
       "images.unsplash.com",
       "example.com",
       "i.pinimg.com",
@@ -36,6 +38,9 @@ const nextConfig = {
       "cdn.pastaxi-manager.onepas.vn",
       "xuongmocso1.com",
       "fnb.qdc.vn",
+      "cdn.pastaxi-manager.onepas.vn",
+      "xuongmocso1.com",
+      "fnb.qdc.vn",
       "pastaxi-manager.onepas.vn",
       "image.phunuonline.com.vn",
       "media.suckhoecong.vn",
@@ -44,15 +49,6 @@ const nextConfig = {
       "kokugyu.com.vn",
       "product.hstatic.net",
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*", // Laravel backend
-      },
-    ];
-  },
-};
+}}
 
 module.exports = nextConfig;

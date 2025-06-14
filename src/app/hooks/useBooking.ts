@@ -1,9 +1,16 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/authContext";
+=======
+import { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "../context/authContext";
+>>>>>>> 0ff8d5d468f2672545be86299bcf0ce6b2c15ccd
 import type {
   Table,
   TimeSlot,
@@ -15,7 +22,11 @@ import type {
 
 export function useBooking() {
   const router = useRouter();
+<<<<<<< HEAD
   const { user, isLoading: authLoading } = useAuth();
+=======
+  const { user, loading } = useContext(AuthContext);
+>>>>>>> 0ff8d5d468f2672545be86299bcf0ce6b2c15ccd
 
   const [selectedDate, setSelectedDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -294,18 +305,31 @@ export function useBooking() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
+<<<<<<< HEAD
         customer_id: Number(user.id),
         customer_name: user.name || "",
         customer_phone: user.phone ? String(user.phone) : "",
+=======
+        customer_id: user.id,
+        customer_name: user.name || "",
+        customer_phone: user.phone || "",
+>>>>>>> 0ff8d5d468f2672545be86299bcf0ce6b2c15ccd
       }));
     }
   }, [user]);
 
   useEffect(() => {
+<<<<<<< HEAD
     if (!authLoading && !user) {
       router.push("/dang-nhap");
     }
   }, [user, authLoading, router]);
+=======
+    if (!loading && !user) {
+      router.push("/dang-nhap");
+    }
+  }, [user, loading, router]);
+>>>>>>> 0ff8d5d468f2672545be86299bcf0ce6b2c15ccd
 
   useEffect(() => {
     const total = foods.reduce(
@@ -364,7 +388,11 @@ export function useBooking() {
     setNotification,
     today,
     user,
+<<<<<<< HEAD
     authLoading,
+=======
+    loading,
+>>>>>>> 0ff8d5d468f2672545be86299bcf0ce6b2c15ccd
 
     // Functions
     showNotification,

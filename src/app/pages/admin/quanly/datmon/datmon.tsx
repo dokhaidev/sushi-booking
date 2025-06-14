@@ -3,11 +3,11 @@ import React, { useState } from "react";
 import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
 import { Button } from "../../../../components/ui/button";
-import { PiMicrosoftExcelLogoFill } from "react-icons/pi";
-import { BiPrinter } from "react-icons/bi";
+import SearchInput from "../../../../components/ui/SearchInput";
 import Pagination from "../../../../components/ui/Panigation";
 
 export default function QuanLyDatMon() {
+  const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -100,20 +100,15 @@ export default function QuanLyDatMon() {
       {/* Danh sách đặt món */}
     <div className="col-span-12">
         <Card>
-            <CardHeader header="Danh sách đặt bàn">
-                <div className="flex gap-2 float-right">
-                    <Button className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded text-sm">
-                    <PiMicrosoftExcelLogoFill /> Xuất Excel
-                    </Button>
-                    <Button className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded text-sm">
-                    <BiPrinter /> In
-                    </Button>
-                </div>
+            <CardHeader header="Danh sách đặt món" className="flex justify-between items-center">
+              <div className="flex gap-2 w-full max-w-md">
+                <SearchInput value={searchText} onChange={setSearchText} />
+              </div>
             </CardHeader>
             <CardContent>
                 <div className="overflow-auto">
                 <table className="min-w-full text-sm text-left">
-                    <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
+                    <thead className="bg-[#fff8f1] text-[#5c4033] font-medium text-sm">
                     <tr>
                         <th className="px-4 py-2">MÃ ĐƠN</th>
                         <th className="px-4 py-2">KHÁCH HÀNG</th>
@@ -125,24 +120,24 @@ export default function QuanLyDatMon() {
                     </tr>
                     </thead>
                     <tbody>
-                    {paginatedData.map((row, index) => (
-                        <tr key={index} className="border-b">
-                        <td className="px-4 py-2">{row.maDon}</td>
-                        <td className="px-4 py-2">{row.khachHang}</td>
-                        <td className="px-4 py-2">{row.ngayGio}</td>
-                        <td className="px-4 py-2">{row.monAn}</td>
-                        <td className="px-4 py-2">{row.soLuong}</td>
-                        <td className="px-4 py-2">
+                    {paginatedData.map((item, index) => (
+                        <tr key={item.maDon} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
+                          <td className="px-4 py-2">{item.maDon}</td>
+                          <td className="px-4 py-2">{item.khachHang}</td>
+                          <td className="px-4 py-2">{item.ngayGio}</td>
+                          <td className="px-4 py-2">{item.monAn}</td>
+                          <td className="px-4 py-2">{item.soLuong}</td>
+                          <td className="px-4 py-2">
                             <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
-                                row.trangThai === "Hoàn thành"
+                                item.trangThai === "Hoàn thành"
                                 ? "bg-green-100 text-green-700"
-                                : row.trangThai === "Đang xử lý"
+                                : item.trangThai === "Đang xử lý"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : "bg-red-100 text-red-700"
                             }`}
                             >
-                            {row.trangThai}
+                            {item.trangThai}
                             </span>
                         </td>
                         <td className="px-4 py-2">
