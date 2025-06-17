@@ -204,7 +204,7 @@ export default function OrderSummary({
           className={`w-full py-3 rounded-lg text-white mt-6 ${
             !selectedTable || isLoading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+              : "bg-[#AF763E]"
           } transition-all shadow-md`}
         >
           {isLoading ? (

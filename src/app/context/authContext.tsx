@@ -11,7 +11,6 @@ import {
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
-// Định nghĩa interface cho User
 interface User {
   id: string | number;
   name: string;
@@ -19,28 +18,27 @@ interface User {
   [key: string]: any;
 }
 
-// Định nghĩa interface cho AuthContext
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isInitialized: boolean;
   isAuthenticated: boolean;
-  login: (token: string) => Promise<void>;
+  login: (token: string, returnUrl?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   refreshAuth: () => Promise<void>;
 }
 
-// Props cho AuthProvider
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Create context
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
@@ -52,25 +50,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsAuthenticated(false);
   }, []);
 
+  const validateToken = useCallback(async (token: string) => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/user", {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
   useEffect(() => {
     const checkAuthState = async () => {
       try {
         setIsLoading(true);
 
         let token = null;
-
         if (typeof window !== "undefined") {
+          // Xử lý token từ URL nếu có
           const query = new URLSearchParams(window.location.search);
           const urlToken = query.get("token");
 
           if (urlToken) {
             localStorage.setItem("auth", urlToken);
-
             // Xóa token khỏi URL
             const url = new URL(window.location.href);
             url.searchParams.delete("token");
-            window.history.replaceState({}, "", url.pathname + url.search);
-
+            window.history.replaceState({}, "", url.toString());
             token = urlToken;
           } else {
             token = localStorage.getItem("auth");
@@ -78,10 +86,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         if (token) {
-          const response = await axios.get("http://127.0.0.1:8000/api/user", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setUser(response.data);
+          const userData = await validateToken(token);
+          setUser(userData);
           setIsAuthenticated(true);
         }
       } catch (error) {
@@ -89,37 +95,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         clearAuthData();
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
 
     checkAuthState();
-  }, [router, clearAuthData]);
+  }, [router, clearAuthData, validateToken]);
 
   const login = useCallback(
-    async (token: string): Promise<void> => {
+    async (token: string, returnUrl?: string): Promise<void> => {
       try {
+        setIsLoading(true);
+
         if (typeof window !== "undefined") {
           localStorage.setItem("auth", token);
         }
 
-        const response = await axios.get("http://127.0.0.1:8000/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setUser(response.data);
+        const userData = await validateToken(token);
+        setUser(userData);
         setIsAuthenticated(true);
-        router.push("/");
+
+        // Redirect sau khi login thành công
+        router.replace(returnUrl || "/");
       } catch (error) {
         console.error("Login failed:", error);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth");
-        }
-        setUser(null);
-        setIsAuthenticated(false);
+        clearAuthData();
         throw error;
+      } finally {
+        setIsLoading(false);
       }
     },
-    [router]
+    [router, clearAuthData, validateToken]
   );
 
   const logout = useCallback(async (): Promise<void> => {
@@ -135,7 +141,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error("Logout API failed:", error);
     } finally {
       clearAuthData();
-      router.push("/");
+      router.replace("/dang-nhap");
     }
   }, [clearAuthData, router]);
 
@@ -148,10 +154,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const token =
         typeof window !== "undefined" ? localStorage.getItem("auth") : null;
       if (token) {
-        const response = await axios.get("http://127.0.0.1:8000/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
+        const userData = await validateToken(token);
+        setUser(userData);
         setIsAuthenticated(true);
       } else {
         clearAuthData();
@@ -160,11 +164,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error("Error refreshing auth:", error);
       clearAuthData();
     }
-  }, [clearAuthData]);
+  }, [clearAuthData, validateToken]);
 
   const contextValue: AuthContextType = {
     user,
     isLoading,
+    isInitialized,
     isAuthenticated,
     login,
     logout,
@@ -177,7 +182,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-// Hook dùng để lấy auth
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

@@ -39,17 +39,31 @@ export default function FoodSelectionModal({
   isLoading,
 }: FoodSelectionModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Safe category extraction
+  const getSafeCategory = (category: any): string => {
+    if (!category) return "other";
+    if (typeof category === "string") return category;
+    if (typeof category === "object" && category.name) return category.name;
+    if (typeof category === "object" && category.id)
+      return `cat-${category.id}`;
+    return "other";
+  };
+
+  // Generate unique categories
   const foodCategories = [
     "all",
-    ...Array.from(new Set(foods.map((food) => food.category || "other"))),
+    ...Array.from(new Set(foods.map((food) => getSafeCategory(food.category)))),
   ];
 
-  // Filter foods by category and search term
+  // Filter foods
   const filteredFoods = foods
-    .filter(
-      (food) =>
-        activeFoodCategory === "all" || food.category === activeFoodCategory
-    )
+    .filter((food) => {
+      const foodCategory = getSafeCategory(food.category);
+      return (
+        activeFoodCategory === "all" || foodCategory === activeFoodCategory
+      );
+    })
     .filter((food) =>
       food.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -68,6 +82,11 @@ export default function FoodSelectionModal({
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
+  };
+
+  // Key generator with prefix
+  const generateKey = (prefix: string, ...args: (string | number)[]) => {
+    return `${prefix}-${args.join("-")}`;
   };
 
   return (
@@ -126,19 +145,22 @@ export default function FoodSelectionModal({
 
                   {/* Category Tabs */}
                   <div className="flex overflow-x-auto space-x-2 pb-1 scrollbar-hide">
-                    {foodCategories.map((category) => (
-                      <button
-                        key={category}
-                        onClick={() => setActiveFoodCategory(category)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                          activeFoodCategory === category
-                            ? "bg-[#AF763E] text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
-                      >
-                        {category === "all" ? "Tất cả" : category}
-                      </button>
-                    ))}
+                    {foodCategories.map((category) => {
+                      const categoryName = getSafeCategory(category);
+                      return (
+                        <button
+                          key={generateKey("category", categoryName)}
+                          onClick={() => setActiveFoodCategory(categoryName)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                            activeFoodCategory === categoryName
+                              ? "bg-[#AF763E] text-white shadow-md"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {categoryName === "all" ? "Tất cả" : categoryName}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -167,7 +189,7 @@ export default function FoodSelectionModal({
                     >
                       {filteredFoods.map((food) => (
                         <motion.div
-                          key={food.id}
+                          key={generateKey("food", food.id)}
                           variants={itemVariants}
                           whileHover={{
                             scale: 1.01,
@@ -178,9 +200,13 @@ export default function FoodSelectionModal({
                           <div className="w-28 h-28 bg-gray-100 relative">
                             {food.image ? (
                               <img
-                                src={food.image || "/placeholder.svg"}
+                                src={food.image}
                                 alt={food.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "/placeholder.svg";
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -189,7 +215,7 @@ export default function FoodSelectionModal({
                             )}
                             {food.category && (
                               <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                                {food.category}
+                                {getSafeCategory(food.category)}
                               </div>
                             )}
                           </div>
@@ -262,7 +288,11 @@ export default function FoodSelectionModal({
                     <div className="space-y-3">
                       {selectedFoods.map((food) => (
                         <motion.div
-                          key={food.food_id}
+                          key={generateKey(
+                            "selected",
+                            food.food_id,
+                            food.price
+                          )}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
@@ -271,9 +301,13 @@ export default function FoodSelectionModal({
                           <div className="flex items-center">
                             {food.image ? (
                               <img
-                                src={food.image || "/placeholder.svg"}
+                                src={food.image}
                                 alt={food.name}
                                 className="w-12 h-12 object-cover rounded-lg mr-3"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    "/placeholder.svg";
+                                }}
                               />
                             ) : (
                               <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center mr-3">
@@ -294,10 +328,15 @@ export default function FoodSelectionModal({
                               onClick={() =>
                                 onQuantityChange(
                                   food.food_id,
-                                  food.quantity - 1
+                                  Math.max(1, food.quantity - 1)
                                 )
                               }
-                              className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                              disabled={food.quantity <= 1}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                                food.quantity <= 1
+                                  ? "bg-gray-100 text-gray-400"
+                                  : "bg-gray-200 hover:bg-gray-300"
+                              }`}
                             >
                               <FiMinus size={14} />
                             </button>

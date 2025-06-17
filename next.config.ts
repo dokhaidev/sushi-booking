@@ -1,3 +1,5 @@
+// next.config.js hoặc next.config.ts (nếu đang dùng TypeScript)
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -6,7 +8,6 @@ const nextConfig: NextConfig = {
       "i.pinimg.com",
       "images.unsplash.com",
       "example.com",
-      "i.pinimg.com",
       "file.hstatic.net",
       "sushiworld.com.vn",
       "cdn.tgdd.vn",
@@ -38,9 +39,6 @@ const nextConfig: NextConfig = {
       "cdn.pastaxi-manager.onepas.vn",
       "xuongmocso1.com",
       "fnb.qdc.vn",
-      "cdn.pastaxi-manager.onepas.vn",
-      "xuongmocso1.com",
-      "fnb.qdc.vn",
       "pastaxi-manager.onepas.vn",
       "image.phunuonline.com.vn",
       "media.suckhoecong.vn",
@@ -49,6 +47,7 @@ const nextConfig: NextConfig = {
       "kokugyu.com.vn",
       "product.hstatic.net",
     ],
-}}
+  },
+};
 
 module.exports = nextConfig;

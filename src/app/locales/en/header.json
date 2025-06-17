@@ -1,0 +1,31 @@
+{
+  "brand_name": "SUSHI TAKUMI",
+  "links": {
+    "home": "Home",
+    "home_short": "Home",
+    "menu": "Menu",
+    "menu_short": "Menu",
+    "about": "About Us",
+    "about_short": "About",
+    "contact": "Contact",
+    "contact_short": "Contact",
+    "book": "Reservation",
+    "book_short": "Book"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register"
+  },
+  "user_menu": {
+    "profile": "Profile",
+    "orders": "Order History",
+    "settings": "Account Settings",
+    "logout": "Logout"
+  },
+  "aria_labels": {
+    "home": "Go to home page",
+    "logo": "Sushi Takumi Logo",
+    "menu": "Toggle menu",
+    "user_menu": "Toggle user menu"
+  }
+}

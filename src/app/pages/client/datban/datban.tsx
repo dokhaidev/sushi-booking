@@ -1,6 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import NotificationPopup from "../../../components/layout/NotificationPopup";
 import DateTimeSelector from "../../../components/ReservationPage/DateTimeSelector";
 import CustomerInfoForm from "../../../components/ReservationPage/CustomerInfoForm";
@@ -9,8 +10,11 @@ import OrderSummary from "../../../components/ReservationPage/OrderSummary";
 import FoodSelectionModal from "../../../components/ReservationPage/FoodSelectionModal";
 import PaymentModal from "../../../components/ReservationPage/PaymentModal";
 import { useBooking } from "../../../hooks/useBooking";
+import { useAuth } from "../../../context/authContext";
 
 export default function DatBanPage() {
+  const router = useRouter();
+  const { user, isLoading, isInitialized } = useAuth();
   const {
     // State
     selectedDate,
@@ -21,7 +25,6 @@ export default function DatBanPage() {
     formData,
     setFormData,
     foods,
-    isLoading,
     foodsData,
     orderId,
     showFoodModal,
@@ -36,8 +39,6 @@ export default function DatBanPage() {
     notification,
     setNotification,
     today,
-    user,
-    loading,
 
     // Functions
     fetchAvailableSlots,
@@ -51,7 +52,14 @@ export default function DatBanPage() {
     getPaymentAmount,
   } = useBooking();
 
-  // Debug log khi component mount và khi các state quan trọng thay đổi
+  // Redirect nếu chưa đăng nhập
+  useEffect(() => {
+    if (isInitialized && !user && !isLoading) {
+      router.replace(`/dang-nhap?returnUrl=${encodeURIComponent("/dat-ban")}`);
+    }
+  }, [user, isLoading, isInitialized, router]);
+
+  // Debug log
   useEffect(() => {
     console.log("DatBanPage mounted or updated");
     console.log("showPaymentModal:", showPaymentModal);
@@ -59,7 +67,8 @@ export default function DatBanPage() {
     console.log("orderId:", orderId);
   }, [showPaymentModal, paymentQRCode, orderId]);
 
-  if (loading) {
+  // Hiển thị loading spinner khi chưa khởi tạo xong hoặc đang loading
+  if (!isInitialized || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -67,20 +76,10 @@ export default function DatBanPage() {
     );
   }
 
+  // Nếu đã khởi tạo xong và không có user thì không render gì
+  // (sẽ được redirect trong useEffect)
   if (!user) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-4">Vui lòng đăng nhập</h2>
-          <button
-            onClick={() => (window.location.href = "/dang-nhap")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-all"
-          >
-            Đăng nhập
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -142,8 +141,8 @@ export default function DatBanPage() {
               fetchFoods();
             }}
             onSubmitOrder={submitOrder}
-            isLoading={isLoading}
             getPaymentAmount={getPaymentAmount}
+            isLoading={isLoading}
           />
         </div>
       </div>
