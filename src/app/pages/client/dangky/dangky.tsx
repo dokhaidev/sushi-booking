@@ -4,6 +4,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function RegisterPage() {
   const [data, setData] = useState({
@@ -23,7 +24,7 @@ export default function RegisterPage() {
     if (!data.email) {
       newErr.email = "Email không được để trống";
     } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-      newErr.email = "email không hợp lệ";
+      newErr.email = "Email không hợp lệ";
     }
     if (!data.password) {
       newErr.password = "Mật khẩu không được để trống";
@@ -38,13 +39,10 @@ export default function RegisterPage() {
     if (!data.phone) {
       newErr.phone = "Số điện thoại không được để trống";
     } else if (data.phone.length < 10) {
-      newErr.phone = "Số điện thoại có ít nhất 10 ký tự";
+      newErr.phone = "Số điện thoại phải có ít nhất 10 ký tự";
     }
     if (!agreeTerms) {
       newErr.agreeTerms = "Bạn cần đồng ý với điều khoản dịch vụ";
-    }
-    if (!subscribe) {
-      newErr.subscribe = "Bạn cần đồng ý nhận thông tin về ưu đãi qua email";
     }
     setErrors(newErr);
     return Object.keys(newErr).length === 0;
@@ -54,7 +52,10 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await axios.post("http://127.0.0.1:8000/api/register", data);
+      await axios.post("http://127.0.0.1:8000/api/register", {
+        ...data,
+        subscribe,
+      });
       router.push("/dang-nhap");
     } catch (e) {
       console.log(`Lỗi: ${e}`);
@@ -62,201 +63,351 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F1E9]">
-      <section className="py-[60px] sm:px-16 lg:px-24">
-        <div className="container mx-auto max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-[#333333]">
-              Đăng ký tài khoản
-            </h1>
-            <p className="text-[#666666] mt-2">
-              Tạo tài khoản để đặt món và nhận ưu đãi đặc biệt
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-red-50 to-amber-50">
+      {/* Main Content */}
+      <div className="container mx-auto py-[60px] px-4 md:px-12">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+          {/* Image Section */}
+          <div className="hidden lg:block w-full lg:w-[60%] relative">
+            <div className="relative h-[600px] rounded-2xl overflow-hidden shadow-xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-amber-500/10 z-10"></div>
+              <Image
+                src="https://kenh14cdn.com/thumb_w/700/2017/mnmnhat27-1507112465320.jpg"
+                alt="Sushi đẹp"
+                layout="fill"
+                objectFit="fill"
+                className="opacity-90"
+              />
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <form onSubmit={handleSubmit}>
-              <div className="mb-6">
-                <label
-                  htmlFor="fullName"
-                  className="block text-sm font-medium text-[#594545] mb-1"
-                >
-                  Họ và tên
-                </label>
-                <input
-                  type="text"
-                  id="fullName"
-                  className="w-full px-4 py-2 border border-[#E8D5C4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E7676]"
-                  placeholder="Vui lòng nhập họ tên"
-                  onChange={(e) => setData({ ...data, name: e.target.value })}
-                />
-                {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
-              </div>
-
-              <div className="mb-6">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-[#594545] mb-1"
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-4 py-2 border border-[#E8D5C4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E7676]"
-                  placeholder="Vui lòng nhập Email"
-                  onChange={(e) => setData({ ...data, email: e.target.value })}
-                />
-                {errors.email && <p style={{ color: "red" }}>{errors.email}</p>}
-              </div>
-
-              <div className="mb-6">
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-[#333333] mb-1"
-                >
-                  Số điện thoại
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-4 py-2 border border-[#E8D5C4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E7676]"
-                  placeholder="Vui lòng nhập số điện thoại"
-                  onChange={(e) => setData({ ...data, phone: e.target.value })}
-                />
-                {errors.phone && <p style={{ color: "red" }}>{errors.phone}</p>}
-              </div>
-
-              <div className="mb-6">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-[#333333] mb-1"
-                >
-                  Mật khẩu
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  className="w-full px-4 py-2 border border-[#E8D5C4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E7676]"
-                  placeholder="••••••••"
-                  onChange={(e) =>
-                    setData({ ...data, password: e.target.value })
-                  }
-                />
-                {errors.password && (
-                  <p style={{ color: "red" }}>{errors.password}</p>
-                )}
-                <p className="mt-1 text-xs text-[#666666]">
-                  Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường
-                  và số
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-[#666666] mb-1"
-                >
-                  Xác nhận mật khẩu
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  className="w-full px-4 py-2 border border-[#E8D5C4] rounded-md focus:outline-none focus:ring-2 focus:ring-[#9E7676]"
-                  placeholder="••••••••"
-                  onChange={(e) => setCfPass(e.target.value)}
-                />
-                {errors.password && (
-                  <p style={{ color: "red" }}>{errors.password}</p>
-                )}
-              </div>
-
-              <div className="flex items-start mb-6">
-                <div className="flex items-center h-5">
-                  <input
-                    id="terms"
-                    type="checkbox"
-                    className="h-4 w-4 text-[#9E7676] border-[#E8D5C4] rounded focus:ring-[#9E7676]"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                  />
+          {/* Form Section */}
+          <div className="w-full lg:w-[40%]">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-red-100 w-full mx-auto">
+              {/* Decorative top border */}
+              <div className="h-1 bg-gradient-to-r from-red-500 to-amber-500"></div>
+              <div className="p-8">
+                <div className="text-center mb-6">
+                  <h1 className="text-2xl font-bold text-[#AF763E] mb-2">
+                    Tạo tài khoản mới
+                  </h1>
+                  <p className="text-[#333333]">
+                    Điền thông tin để đăng ký tài khoản
+                  </p>
                 </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="terms" className="text-[#333333]">
-                    Tôi đồng ý với{" "}
-                    <a
-                      href="#"
-                      className="text-[#333333] hover:text-[#815B5B] underline"
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="fullName"
+                      className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Điều khoản dịch vụ
-                    </a>{" "}
-                    và{" "}
-                    <a
-                      href="#"
-                      className="text-[#333333] hover:text-[#815B5B] underline"
+                      Họ và tên
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        id="fullName"
+                        className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
+                          errors.name
+                            ? "border-red-300 bg-red-50"
+                            : "border-red-200"
+                        }`}
+                        placeholder="Nguyễn Văn A"
+                        onChange={(e) =>
+                          setData({ ...data, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-[#AF763E]">
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Chính sách bảo mật
-                    </a>
-                  </label>
-                  {errors.agreeTerms && (
-                    <p style={{ color: "red" }}>{errors.agreeTerms}</p>
-                  )}
+                      Email
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <input
+                        type="email"
+                        id="email"
+                        className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
+                          errors.email
+                            ? "border-red-300 bg-red-50"
+                            : "border-red-200"
+                        }`}
+                        placeholder="email@example.com"
+                        onChange={(e) =>
+                          setData({ ...data, email: e.target.value })
+                        }
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-[#AF763E]">
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-[#333333] mb-1"
+                    >
+                      Số điện thoại
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <input
+                        type="tel"
+                        id="phone"
+                        className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
+                          errors.phone
+                            ? "border-red-300 bg-red-50"
+                            : "border-red-200"
+                        }`}
+                        placeholder="0987654321"
+                        onChange={(e) =>
+                          setData({ ...data, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-[#AF763E]">
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-[#333333] mb-1"
+                    >
+                      Mật khẩu
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <input
+                        type="password"
+                        id="password"
+                        className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
+                          errors.password
+                            ? "border-red-300 bg-red-50"
+                            : "border-red-200"
+                        }`}
+                        placeholder="••••••••"
+                        onChange={(e) =>
+                          setData({ ...data, password: e.target.value })
+                        }
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-[#AF763E]">
+                        {errors.password}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-red-500">
+                      Mật khẩu phải có ít nhất 6 ký tự
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-[#333333] mb-1"
+                    >
+                      Xác nhận mật khẩu
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          ></path>
+                        </svg>
+                      </div>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
+                          errors.password
+                            ? "border-red-300 bg-red-50"
+                            : "border-red-200"
+                        }`}
+                        placeholder="••••••••"
+                        onChange={(e) => setCfPass(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-start pt-2">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="terms"
+                        type="checkbox"
+                        className="h-4 w-4 text-[#AF763E] focus:ring-red-500 border-red-300 rounded"
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="terms" className="text-[#333333]">
+                        Tôi đồng ý với{" "}
+                        <a
+                          href="#"
+                          className="text-amber-700 hover:text-amber-800 underline"
+                        >
+                          Điều khoản dịch vụ
+                        </a>{" "}
+                        và{" "}
+                        <a
+                          href="#"
+                          className="text-amber-700 hover:text-amber-800 underline"
+                        >
+                          Chính sách bảo mật
+                        </a>
+                      </label>
+                      {errors.agreeTerms && (
+                        <p className="mt-1 text-sm text-[#AF763E]">
+                          {errors.agreeTerms}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="newsletter"
+                        type="checkbox"
+                        className="h-4 w-4 text-[#AF763E] focus:ring-red-500 border-red-300 rounded"
+                        checked={subscribe}
+                        onChange={(e) => setSubscribe(e.target.checked)}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="newsletter" className="text-[#333333]">
+                        Tôi muốn nhận thông tin về ưu đãi và sự kiện đặc biệt
+                        qua email
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#AF763E] hover:bg-[#BD944A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                    >
+                      Đăng ký
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-[#333333]">
+                    Đã có tài khoản?{" "}
+                    <Link
+                      href="/dang-nhap"
+                      className="font-medium text-amber-700 hover:text-amber-800"
+                    >
+                      Đăng nhập ngay
+                    </Link>
+                  </p>
                 </div>
               </div>
-
-              <div className="flex items-start mb-6">
-                <div className="flex items-center h-5">
-                  <input
-                    id="newsletter"
-                    type="checkbox"
-                    className="h-4 w-4 text-[#9E7676] border-[#E8D5C4] rounded focus:ring-[#9E7676]"
-                    checked={subscribe}
-                    onChange={(e) => setSubscribe(e.target.checked)}
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="newsletter" className="text-[#333333]">
-                    Tôi muốn nhận thông tin về ưu đãi và sự kiện đặc biệt qua
-                    email
-                  </label>
-                  {errors.subscribe && (
-                    <p style={{ color: "red" }}>{errors.subscribe}</p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 mt-6 text-white bg-[#AF763E] rounded-lg hover:bg-[#BD944A]"
-              >
-                Đăng ký
-              </button>
-            </form>
-          </div>
-
-          <div className="text-center mt-6">
-            <p className="text-[#333333]">
-              Đã có tài khoản?{" "}
-              <Link
-                href="/dang-nhap"
-                className="text-[#666666] font-medium hover:text-[#815B5B]"
-              >
-                Đăng nhập
-              </Link>
-            </p>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="py-8 px-4 bg-[#FFF3E4]">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-[#594545] mb-8 text-center">
+      {/* Benefits Section - Mobile */}
+      <section className="lg:hidden py-12 px-4 bg-gradient-to-r from-red-50 to-amber-50">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-[#333333] mb-8 text-center">
             Lợi ích khi đăng ký tài khoản
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-16 h-16 bg-[#9E7676] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
+              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-8 w-8 text-white"
@@ -272,17 +423,17 @@ export default function RegisterPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-[#594545] mb-2">
+              <h3 className="text-lg font-semibold text-[#333333] mb-2">
                 Tích điểm ưu đãi
               </h3>
-              <p className="text-sm text-[#815B5B]">
+              <p className="text-sm text-[#333333]">
                 Tích điểm với mỗi đơn hàng và đổi điểm để nhận các ưu đãi đặc
                 biệt
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-16 h-16 bg-[#9E7676] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
+              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-8 w-8 text-white"
@@ -298,17 +449,17 @@ export default function RegisterPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-[#594545] mb-2">
+              <h3 className="text-lg font-semibold text-[#333333] mb-2">
                 Đặt hàng nhanh chóng
               </h3>
-              <p className="text-sm text-[#815B5B]">
+              <p className="text-sm text-[#333333]">
                 Lưu địa chỉ và phương thức thanh toán để đặt hàng nhanh chóng
                 hơn
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-16 h-16 bg-[#9E7676] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
+              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-8 w-8 text-white"
@@ -324,10 +475,10 @@ export default function RegisterPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-[#594545] mb-2">
+              <h3 className="text-lg font-semibold text-[#333333] mb-2">
                 Thông báo ưu đãi
               </h3>
-              <p className="text-sm text-[#815B5B]">
+              <p className="text-sm text-[#333333]">
                 Nhận thông báo về các chương trình khuyến mãi và sự kiện đặc
                 biệt
               </p>

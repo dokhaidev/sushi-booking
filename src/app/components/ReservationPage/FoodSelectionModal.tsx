@@ -40,7 +40,13 @@ export default function FoodSelectionModal({
 }: FoodSelectionModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Safe category extraction
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+    }).format(value);
+
   const getSafeCategory = (category: any): string => {
     if (!category) return "other";
     if (typeof category === "string") return category;
@@ -50,13 +56,11 @@ export default function FoodSelectionModal({
     return "other";
   };
 
-  // Generate unique categories
   const foodCategories = [
     "all",
     ...Array.from(new Set(foods.map((food) => getSafeCategory(food.category)))),
   ];
 
-  // Filter foods
   const filteredFoods = foods
     .filter((food) => {
       const foodCategory = getSafeCategory(food.category);
@@ -68,7 +72,6 @@ export default function FoodSelectionModal({
       food.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -84,7 +87,6 @@ export default function FoodSelectionModal({
     visible: { opacity: 1, y: 0 },
   };
 
-  // Key generator with prefix
   const generateKey = (prefix: string, ...args: (string | number)[]) => {
     return `${prefix}-${args.join("-")}`;
   };
@@ -128,7 +130,6 @@ export default function FoodSelectionModal({
               <div className="lg:col-span-2 flex flex-col overflow-hidden border-r">
                 {/* Search and Category Tabs */}
                 <div className="p-5 border-b">
-                  {/* Search */}
                   <div className="relative mb-4">
                     <input
                       type="text"
@@ -232,7 +233,7 @@ export default function FoodSelectionModal({
                             </div>
                             <div className="flex items-center justify-between mt-2">
                               <span className="text-[#AF763E] font-bold">
-                                {food.price.toLocaleString()} VNĐ
+                                {formatCurrency(food.price)}
                               </span>
                               <button
                                 onClick={() => onAddFood(food)}
@@ -319,7 +320,7 @@ export default function FoodSelectionModal({
                                 {food.name}
                               </p>
                               <p className="text-xs text-[#AF763E] font-medium">
-                                {food.price.toLocaleString()} VNĐ
+                                {formatCurrency(food.price)}
                               </p>
                             </div>
                           </div>
@@ -366,7 +367,7 @@ export default function FoodSelectionModal({
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-600">Tổng cộng:</span>
                     <span className="text-xl font-bold text-[#AF763E]">
-                      {totalPrice.toLocaleString()} VNĐ
+                      {formatCurrency(totalPrice)}
                     </span>
                   </div>
                   <motion.button

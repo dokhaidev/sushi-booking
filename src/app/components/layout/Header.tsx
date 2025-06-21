@@ -241,35 +241,13 @@ const Header = () => {
                         </div>
 
                         <Link
-                          href="/user"
+                          href="/thong-tin-ca-nhan"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center px-4 py-3 text-sm text-[#594545] hover:bg-[#F8F1E6] transition-colors"
                         >
                           <FiUser className="mr-3 text-[#815B5B]" size={16} />
                           Thông tin cá nhân
                         </Link>
-
-                        <Link
-                          href="/user/orders"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center px-4 py-3 text-sm text-[#594545] hover:bg-[#F8F1E6] transition-colors"
-                        >
-                          <FiClock className="mr-3 text-[#815B5B]" size={16} />
-                          Lịch sử đơn hàng
-                        </Link>
-
-                        <Link
-                          href="/user/settings"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center px-4 py-3 text-sm text-[#594545] hover:bg-[#F8F1E6] transition-colors"
-                        >
-                          <FiSettings
-                            className="mr-3 text-[#815B5B]"
-                            size={16}
-                          />
-                          Cài đặt tài khoản
-                        </Link>
-
                         <div className="border-t border-[#F0E6D2]">
                           <button
                             onClick={() => {
@@ -414,51 +392,12 @@ const Header = () => {
                           }}
                         >
                           <Link
-                            href="/user"
+                            href="/thong-tin-ca-nhan"
                             className="flex items-center px-4 py-2 text-[#815B5B] hover:bg-[#F8F1E6] rounded-md"
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <FiUser className="mr-3 flex-shrink-0" size={16} />
                             <span className="truncate">Thông tin cá nhân</span>
-                          </Link>
-                        </motion.div>
-
-                        <motion.div
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: navLinks.length * 0.05 + 0.2,
-                          }}
-                        >
-                          <Link
-                            href="/user/orders"
-                            className="flex items-center px-4 py-2 text-[#815B5B] hover:bg-[#F8F1E6] rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <FiClock className="mr-3 flex-shrink-0" size={16} />
-                            <span className="truncate">Lịch sử đơn hàng</span>
-                          </Link>
-                        </motion.div>
-
-                        <motion.div
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: navLinks.length * 0.05 + 0.25,
-                          }}
-                        >
-                          <Link
-                            href="/user/settings"
-                            className="flex items-center px-4 py-2 text-[#815B5B] hover:bg-[#F8F1E6] rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <FiSettings
-                              className="mr-3 flex-shrink-0"
-                              size={16}
-                            />
-                            <span className="truncate">Cài đặt tài khoản</span>
                           </Link>
                         </motion.div>
 

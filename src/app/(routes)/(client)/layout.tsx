@@ -1,18 +1,11 @@
 "use client";
 
-import { Roboto } from "next/font/google";
 import "../../globals.css";
 import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
 import dynamic from "next/dynamic";
-
-const roboto = Roboto({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-body",
-  display: "swap",
-  weight: ["400", "500", "700"],
-  adjustFontFallback: true,
-});
+import MiniChat from "../../components/MiniChatApp/MiniChat";
+import BackToTopButton from "../../components/BackToTopButton/BackToTopButton";
 
 const AuthProviderNoSSR = dynamic(
   () => import("../../context/AuthProviderWrapper"),
@@ -30,8 +23,10 @@ export default function RootLayout({
         <AuthProviderNoSSR>
           <Header />
           {children}
+          <BackToTopButton />
           <Footer />
         </AuthProviderNoSSR>
+        <MiniChat />
       </body>
     </html>
   );

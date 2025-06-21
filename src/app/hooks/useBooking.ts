@@ -15,7 +15,7 @@ import type {
 
 export function useBooking() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isInitialized } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -33,22 +33,21 @@ export function useBooking() {
     customer_phone: "",
   });
   const [foods, setFoods] = useState<SelectedFoodItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [foodsData, setFoodsData] = useState<FoodItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showFoodModal, setShowFoodModal] = useState(false);
-  const [activeFoodCategory, setActiveFoodCategory] = useState<string>("all");
-  const [depositAmount] = useState(200000);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentQRCode, setPaymentQRCode] = useState("");
+  const [paymentQRCode, setPaymentQRCode] = useState<string>("");
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [activeFoodCategory, setActiveFoodCategory] = useState("all");
   const [notification, setNotification] = useState<NotificationState>({
     message: "",
     type: "info",
     show: false,
   });
 
+  const depositAmount = 200000;
   const today = new Date().toISOString().split("T")[0];
 
   const showNotification = (
@@ -67,17 +66,16 @@ export function useBooking() {
       return;
     }
 
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("auth");
-      const response = await axios.post<{ available_slots: TimeSlot[] }>(
+      const response = await axios.post(
         "http://127.0.0.1:8000/api/tables/DateTime",
         { reservation_date: selectedDate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAvailableSlots(response.data.available_slots || []);
     } catch (error) {
-      console.error("Error fetching slots:", error);
       showNotification("Lỗi khi kiểm tra bàn trống", "error");
     } finally {
       setIsLoading(false);
@@ -93,7 +91,6 @@ export function useBooking() {
       });
       setFoodsData(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching foods:", error);
       showNotification("Lỗi khi tải danh sách món ăn", "error");
     } finally {
       setIsLoading(false);
@@ -102,19 +99,19 @@ export function useBooking() {
 
   const handleSelectTime = (time: string) => {
     setSelectedTime(time);
-    const selectedSlot = availableSlots.find((slot) => slot.time === time);
+    const slot = availableSlots.find((s) => s.time === time);
 
-    if (!selectedSlot || selectedSlot.tables.length === 0) {
+    if (!slot || slot.tables.length === 0) {
       showNotification("Không có bàn trống trong khung giờ này", "error");
       return;
     }
 
-    const suitableTables = selectedSlot.tables
-      .filter((table) => table.max_guests >= formData.guest_count)
+    const suitable = slot.tables
+      .filter((t) => t.max_guests >= formData.guest_count)
       .sort((a, b) => a.max_guests - b.max_guests);
 
-    if (suitableTables.length > 0) {
-      setSelectedTable(suitableTables[0]);
+    if (suitable.length > 0) {
+      setSelectedTable(suitable[0]);
       setFormData((prev) => ({
         ...prev,
         reservation_date: selectedDate,
@@ -122,23 +119,10 @@ export function useBooking() {
       }));
     } else {
       showNotification(
-        `Không có bàn phù hợp cho ${formData.guest_count} khách. Vui lòng chọn khung giờ khác hoặc điều chỉnh số lượng khách.`,
+        `Không có bàn phù hợp cho ${formData.guest_count} khách.`,
         "error"
       );
     }
-  };
-
-  const generateQRCode = (
-    orderId: number,
-    amount: number,
-    paymentType: string
-  ) => {
-    // Tạo QR code với thông tin thanh toán
-    const prefix = paymentType === "cash" ? "COC" : "FULL";
-    const qrImage = `https://api.vietqr.io/image/970422-0367438455-mlaoiwq.jpg?accountName=HUYNH%20PHAN%20DO%20KHAI&amount=${amount}&addInfo=${prefix}%20${orderId}`;
-
-    console.log("QR Code URL:", qrImage);
-    return qrImage;
   };
 
   const submitOrder = async () => {
@@ -152,88 +136,58 @@ export function useBooking() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("auth");
-      const hasFoods = foods.length > 0;
 
-      const payload = {
-        ...formData,
-        table_id: selectedTable?.table_id,
-        deposit_amount: depositAmount,
-        foods: hasFoods
-          ? foods.map((food) => ({
-              food_id: food.food_id,
-              quantity: food.quantity,
-              price: food.price,
-            }))
-          : [],
-      };
-
-      console.log("Sending payload:", payload);
-
+      // B1: Tạo đơn hàng
       const response = await axios.post(
         "http://127.0.0.1:8000/api/orders/bookTables",
-        payload,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          ...formData,
+          table_id: selectedTable.table_id,
+          deposit_amount: depositAmount,
+          foods: foods.map((f) => ({
+            food_id: f.food_id,
+            quantity: f.quantity,
+            price: f.price,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      console.log("API Response:", response.data);
+      const { order_id } = response.data;
+      setOrderId(order_id);
 
-      const { message, order_id } = response.data;
+      // B2: Tính số tiền cần thanh toán qua VNPay
+      let amountToPay = depositAmount;
 
-      if (response.status === 200 && order_id) {
-        setOrderId(order_id);
-        console.log("Order ID set:", order_id);
-
-        // Xác định số tiền cần thanh toán dựa trên phương thức
-        let amountToPay = 0;
-        let paymentMessage = "";
-
-        if (formData.payment_method === "cash") {
-          // Tiền mặt: chỉ thanh toán cọc
-          amountToPay = depositAmount;
-          paymentMessage = `Đặt bàn thành công! Vui lòng thanh toán cọc ${amountToPay.toLocaleString()} VNĐ`;
-        } else if (
-          formData.payment_method === "momo" ||
-          formData.payment_method === "bank"
-        ) {
-          // Momo/Bank: thanh toán toàn bộ
-          amountToPay = formData.total_price + depositAmount;
-          paymentMessage = `Đặt bàn thành công! Vui lòng thanh toán toàn bộ ${amountToPay.toLocaleString()} VNĐ`;
-        }
-
-        console.log("Amount to pay:", amountToPay);
-        console.log("Payment method:", formData.payment_method);
-
-        // Tạo QR code và hiển thị modal thanh toán
-        const qrCode = generateQRCode(
-          order_id,
-          amountToPay,
-          formData.payment_method
-        );
-        setPaymentQRCode(qrCode);
-        console.log("Payment QR Code set:", qrCode);
-
-        // Hiển thị modal thanh toán
-        setShowPaymentModal(true);
-        console.log("Payment modal shown");
-
-        // Hiển thị thông báo
-        showNotification(paymentMessage, "success");
-        setShowSuccess(true);
-      } else {
-        showNotification(message || "Đặt bàn không thành công", "error");
+      if (formData.payment_method !== "cash" && formData.total_price > 0) {
+        amountToPay = formData.total_price + depositAmount;
       }
-    } catch (error: any) {
-      console.error("Lỗi khi gửi đơn đặt:", error);
+
+      // B3: Gửi yêu cầu tạo link thanh toán VNPay
+      const payRes = await axios.post(
+        "http://127.0.0.1:8000/api/orders/vnpay-url",
+        { order_id, amount: amountToPay },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const payUrl = payRes.data?.data;
+
+      if (payUrl) {
+        window.location.href = payUrl;
+      } else {
+        showNotification("Không lấy được URL thanh toán VNPay", "error");
+      }
+    } catch (err: any) {
+      console.error("Booking Error:", err);
       showNotification(
-        error?.response?.data?.message || "Lỗi khi gửi yêu cầu đặt bàn",
+        err?.response?.data?.message || "Lỗi khi đặt bàn",
         "error"
       );
     } finally {
@@ -243,13 +197,8 @@ export function useBooking() {
 
   const handlePaymentComplete = () => {
     setPaymentCompleted(true);
-    showNotification(
-      "Thanh toán thành công! Chúng tôi đã gửi xác nhận qua SMS",
-      "success"
-    );
-    setTimeout(() => {
-      setShowPaymentModal(false);
-    }, 2000);
+    setShowPaymentModal(false);
+    showNotification("Thanh toán thành công!", "success");
   };
 
   const handleAddFood = (food: FoodItem) => {
@@ -260,52 +209,43 @@ export function useBooking() {
           f.food_id === food.id ? { ...f, quantity: f.quantity + 1 } : f
         );
       }
-      return [
-        ...prev,
-        {
-          food_id: food.id,
-          name: food.name,
-          quantity: 1,
-          price: food.price,
-          image: food.image,
-        },
-      ];
+      return [...prev, { ...food, food_id: food.id, quantity: 1 }];
     });
   };
 
-  const handleRemoveFood = (foodId: number) => {
-    setFoods((prev) => prev.filter((food) => food.food_id !== foodId));
+  const handleRemoveFood = (id: number) => {
+    setFoods((prev) => prev.filter((f) => f.food_id !== id));
   };
 
-  const handleFoodQuantityChange = (foodId: number, quantity: number) => {
-    if (quantity < 1) {
-      handleRemoveFood(foodId);
-      return;
-    }
+  const handleFoodQuantityChange = (id: number, quantity: number) => {
+    if (quantity < 1) return handleRemoveFood(id);
     setFoods((prev) =>
-      prev.map((food) =>
-        food.food_id === foodId ? { ...food, quantity } : food
-      )
+      prev.map((f) => (f.food_id === id ? { ...f, quantity } : f))
     );
   };
 
-  // Effects
+  const getPaymentAmount = () => {
+    return formData.payment_method === "cash"
+      ? depositAmount
+      : formData.total_price + depositAmount;
+  };
+
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        customer_id: Number(user.id),
+        customer_id: +user.id,
         customer_name: user.name || "",
-        customer_phone: user.phone ? String(user.phone) : "",
+        customer_phone: user.phone || "",
       }));
     }
   }, [user]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && isInitialized) {
       router.push("/dang-nhap");
     }
-  }, [user, authLoading, router]);
+  }, [authLoading, user, isInitialized]);
 
   useEffect(() => {
     const total = foods.reduce(
@@ -315,30 +255,7 @@ export function useBooking() {
     setFormData((prev) => ({ ...prev, total_price: total }));
   }, [foods]);
 
-  const getPaymentAmount = () => {
-    if (formData.payment_method === "cash") {
-      return depositAmount; // Chỉ cọc
-    } else {
-      return formData.total_price + depositAmount; // Toàn bộ
-    }
-  };
-
-  // Debug function
-  const debugPayment = () => {
-    console.log("=== DEBUG PAYMENT ===");
-    console.log("Foods:", foods);
-    console.log("Payment method:", formData.payment_method);
-    console.log("Total price:", formData.total_price);
-    console.log("Deposit amount:", depositAmount);
-    console.log("Payment amount:", getPaymentAmount());
-    console.log("Order ID:", orderId);
-    console.log("Payment QR Code:", paymentQRCode);
-    console.log("Show Payment Modal:", showPaymentModal);
-    console.log("====================");
-  };
-
   return {
-    // State
     selectedDate,
     setSelectedDate,
     availableSlots,
@@ -347,10 +264,8 @@ export function useBooking() {
     formData,
     setFormData,
     foods,
-    isLoading,
     foodsData,
     orderId,
-    showSuccess,
     showFoodModal,
     setShowFoodModal,
     activeFoodCategory,
@@ -364,10 +279,9 @@ export function useBooking() {
     setNotification,
     today,
     user,
-    authLoading,
+    isLoading,
+    isInitialized,
 
-    // Functions
-    showNotification,
     fetchAvailableSlots,
     fetchFoods,
     handleSelectTime,
@@ -377,6 +291,5 @@ export function useBooking() {
     handleRemoveFood,
     handleFoodQuantityChange,
     getPaymentAmount,
-    debugPayment,
   };
 }

@@ -17,7 +17,7 @@ interface OrderSummaryProps {
   onAddFood: () => void;
   onSubmitOrder: () => void;
   isLoading: boolean;
-  getPaymentAmount: () => number; // Thêm prop này
+  getPaymentAmount: () => number;
 }
 
 export default function OrderSummary({
@@ -30,8 +30,14 @@ export default function OrderSummary({
   onAddFood,
   onSubmitOrder,
   isLoading,
-  getPaymentAmount, // Thêm prop này
+  getPaymentAmount,
 }: OrderSummaryProps) {
+  // Làm tròn lên số khách thành số chẵn và tối đa 10
+  const displayGuestCount = Math.min(
+    Math.ceil(formData.guest_count / 2) * 2,
+    10
+  );
+
   return (
     <motion.div
       className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6"
@@ -52,8 +58,7 @@ export default function OrderSummary({
             <div>
               <h3 className="font-medium text-gray-800">Thông tin bàn</h3>
               <p className="text-sm text-gray-600">
-                Bàn {selectedTable.table_number} • {selectedTable.max_guests}{" "}
-                khách
+                Bàn {displayGuestCount} khách
               </p>
               <p className="text-sm text-gray-600">
                 {selectedDate} • {selectedTime}
@@ -153,7 +158,6 @@ export default function OrderSummary({
             </span>
           </div>
 
-          {/* Hiển thị thông tin thanh toán dựa trên phương thức */}
           {formData.payment_method === "cash" ? (
             <div className="bg-blue-50 rounded-lg p-3 mt-3 mb-3">
               <p className="text-sm text-blue-700 font-medium">
@@ -167,7 +171,7 @@ export default function OrderSummary({
             <div className="bg-green-50 rounded-lg p-3 mt-3 mb-3">
               <p className="text-sm text-green-700 font-medium">
                 📱{" "}
-                {formData.payment_method === "momo"
+                {formData.payment_method === "vnpay"
                   ? "Thanh toán Momo"
                   : "Chuyển khoản"}
               </p>
