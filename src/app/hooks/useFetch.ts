@@ -1,7 +1,7 @@
 "use client";
 import  { useEffect, useState } from "react";
 import axios from "axios";
-import { Category, Group, Food, Combo } from "../types";
+import { Category, Group, Food, Combo, Voucher } from "../types";
 
 
 export function useFetch() {
@@ -9,11 +9,12 @@ export function useFetch() {
   const [foodGroups, setFoodGroups] = useState<Group[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
   const [combos, setCombos] = useState<Combo[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
 
   // Pagination state
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  // const [showAddCategory, setShowAddCategory] = useState(false);
+  // const [newCategoryName, setNewCategoryName] = useState("");
+  // const [newCategoryDescription, setNewCategoryDescription] = useState("");
 
 
   // Gọi API lấy danh mục
@@ -28,25 +29,25 @@ export function useFetch() {
   }, []);
 
   // Hiển thị popup thêm danh mục
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
+  // const handleAddCategory = async () => {
+  //   if (!newCategoryName.trim()) return;
 
-    try {
-      const response = await axios.post("http://127.0.0.1:8000/api/insert-category", {
-        name: newCategoryName,
-        description: newCategoryDescription,
-      });
+  //   try {
+  //     const response = await axios.post("http://127.0.0.1:8000/api/insert-category", {
+  //       name: newCategoryName,
+  //       description: newCategoryDescription,
+  //     });
 
-      const newCategory = response.data.data;
+  //     const newCategory = response.data.data;
 
-      setCategories([...categories, newCategory]);
-      setNewCategoryName("");
-      setNewCategoryDescription(""); // Reset mô tả
-      setShowAddCategory(false);
-    } catch (error: any) {
-      console.error("Lỗi khi thêm danh mục:", error?.response?.data || error.message);
-    }
-  };
+  //     setCategories([...categories, newCategory]);
+  //     setNewCategoryName("");
+  //     setNewCategoryDescription(""); // Reset mô tả
+  //     setShowAddCategory(false);
+  //   } catch (error: any) {
+  //     console.error("Lỗi khi thêm danh mục:", error?.response?.data || error.message);
+  //   }
+  // };
 
 
 
@@ -80,10 +81,18 @@ export function useFetch() {
       })
       .catch(err => console.error("Lỗi khi lấy combo:", err));
   }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8000/api/voucher")
+      .then((res) => setVouchers(res.data))
+      .catch((err) => console.error("Lỗi khi lấy danh sách voucher:", err));
+  }, []);
   return {
     categories,
     foodGroups,
     foods,
-    combos
+    combos,
+    vouchers
   };
 }

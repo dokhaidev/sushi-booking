@@ -17,3 +17,13 @@ export interface Food {
     name: string;
   };
 }
+
+export interface FoodAdd {
+  name: string;
+  category_id: number;
+  group_id?: number;
+  jpName?: string;
+  description?: string;
+  price: number;
+  image?: File;
+}

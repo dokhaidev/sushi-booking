@@ -6,3 +6,8 @@ export interface Group {
         name: string;
     };
 }
+
+export interface FoodGroupAdd {
+  name: string;
+  category_id: number;
+}

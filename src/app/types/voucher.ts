@@ -7,3 +7,12 @@ export interface Voucher {
   status: string;
   usage_limit: number;
 }
+
+export interface VoucherAdd {
+  code: string;
+  usage_limit: number;
+  discount_value: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  status: "active" | "inactive";
+}
