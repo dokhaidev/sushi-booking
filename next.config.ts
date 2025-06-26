@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
       "example.net",
       "example.edu",
       "example.co.uk",
+      "kenh14cdn.com",
       "example.io",
       "example.us",
       "example.ca",

@@ -71,7 +71,7 @@ export default function DateTimeSelector({
                   ...formData,
                   guest_count: Math.max(
                     1,
-                    Math.min(20, Number(e.target.value))
+                    Math.min(10, Number(e.target.value))
                   ),
                 })
               }

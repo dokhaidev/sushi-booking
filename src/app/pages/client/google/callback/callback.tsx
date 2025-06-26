@@ -5,6 +5,34 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "../../../../context/authContext";
 import Cookies from "js-cookie";
 
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
+  return (
+    <div className="min-h-screen bg-[#F8F1E9] flex items-center justify-center">
+      <div className="text-center text-red-600">
+        <p className="text-lg font-medium">
+          Có lỗi xảy ra khi xử lý đăng nhập Google
+        </p>
+        <p className="text-sm mt-2">{error.message}</p>
+        <button
+          onClick={() => {
+            resetErrorBoundary();
+            window.location.href = "/dang-nhap";
+          }}
+          className="mt-4 px-4 py-2 bg-[#AF763E] text-white rounded hover:bg-[#BD944A] transition-colors"
+        >
+          Quay lại trang đăng nhập
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GoogleCallbackContent() {
   const { login } = useAuth();
   const router = useRouter();
@@ -17,33 +45,36 @@ function GoogleCallbackContent() {
 
       if (error) {
         console.error("Google auth error:", error);
-        router.push(
-          `/dang-nhap?error=${encodeURIComponent("Đăng nhập Google thất bại")}`
-        );
+        let errorMessage = "Đăng nhập Google thất bại";
+
+        if (error === "access_denied") {
+          errorMessage = "Bạn đã từ chối quyền truy cập Google";
+        } else if (error === "google_auth_failed") {
+          errorMessage = "Xác thực Google không thành công";
+        } else if (error === "invalid_token") {
+          errorMessage = "Token không hợp lệ";
+        }
+
+        router.push(`/dang-nhap?error=${encodeURIComponent(errorMessage)}`);
         return;
       }
 
       if (token) {
         try {
-          // Lưu token vào cookie với cùng cấu hình như login thường
           const cookieOptions = {
-            expires: 7, // 7 days default
+            expires: 7,
             path: "/",
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict" as const,
           };
           Cookies.set("access_token", token, cookieOptions);
-
-          // Gọi login context để cập nhật state
           await login(token);
 
-          // Kiểm tra nếu có redirect URL đã lưu
           const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
           if (redirectUrl && redirectUrl !== "/dang-nhap") {
             sessionStorage.removeItem("redirectAfterLogin");
             router.push(redirectUrl);
           } else {
-            // Chuyển về trang chủ
             router.push("/");
           }
         } catch (error) {
@@ -55,7 +86,6 @@ function GoogleCallbackContent() {
           );
         }
       } else {
-        // Không có token, chuyển về trang đăng nhập
         router.push(
           `/dang-nhap?error=${encodeURIComponent(
             "Không nhận được thông tin đăng nhập"
@@ -64,7 +94,19 @@ function GoogleCallbackContent() {
       }
     };
 
+    // Add timeout for the callback process
+    const timer = setTimeout(() => {
+      if (!searchParams.get("token") && !searchParams.get("error")) {
+        router.push(
+          `/dang-nhap?error=${encodeURIComponent(
+            "Quá trình đăng nhập mất quá nhiều thời gian"
+          )}`
+        );
+      }
+    }, 30000); // 30 seconds timeout
+
     handleCallback();
+    return () => clearTimeout(timer);
   }, [searchParams, router, login]);
 
   return (

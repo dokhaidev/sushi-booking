@@ -8,7 +8,6 @@ import CustomerInfoForm from "../../../components/ReservationPage/CustomerInfoFo
 import PaymentNotesForm from "../../../components/ReservationPage/PaymentNotesForm";
 import OrderSummary from "../../../components/ReservationPage/OrderSummary";
 import FoodSelectionModal from "../../../components/ReservationPage/FoodSelectionModal";
-import PaymentModal from "../../../components/ReservationPage/PaymentModal";
 import { useBooking } from "../../../hooks/useBooking";
 import { useAuth } from "../../../context/authContext";
 
@@ -159,18 +158,6 @@ export default function DatBanPage() {
         onQuantityChange={handleFoodQuantityChange}
         totalPrice={formData.total_price}
         isLoading={isLoading}
-      />
-
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        paymentQRCode={paymentQRCode}
-        depositAmount={depositAmount}
-        orderId={orderId}
-        paymentCompleted={paymentCompleted}
-        onPaymentComplete={handlePaymentComplete}
-        paymentMethod={formData.payment_method}
-        totalAmount={getPaymentAmount()}
       />
     </div>
   );
