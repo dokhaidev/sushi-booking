@@ -4,10 +4,15 @@ import type React from "react";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChefHat, ArrowRight, Search, Star, Clock } from "lucide-react";
 import CardList from "../ProductCard/cardList";
 import Link from "next/link";
+import {
+  motion,
+  AnimatePresence,
+  type Variants,
+  type Transition,
+} from "framer-motion";
 
 interface Category {
   id: number;
@@ -67,39 +72,38 @@ export default function Menus() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
-  // Animation variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
         delayChildren: 0.2,
-      },
+      } as Transition,
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut",
-      },
+        ease: [0.34, 1.56, 0.64, 1], // Thay string bằng easing function hợp lệ
+      } as Transition,
     },
   };
 
-  const tabVariants = {
+  const tabVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: {
       opacity: 1,
       scale: 1,
       transition: {
         duration: 0.4,
-        ease: "easeOut",
-      },
+        ease: [0.34, 1.56, 0.64, 1], // Thay string bằng easing function hợp lệ
+      } as Transition,
     },
   };
 

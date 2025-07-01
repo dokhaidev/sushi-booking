@@ -1,6 +1,10 @@
 "use client";
 import { FaPlus, FaPen, FaEyeSlash } from "react-icons/fa";
-import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+} from "../../../../../components/ui/Card";
 import { Button } from "../../../../../components/ui/button";
 import { useFetch } from "../../../../../hooks/useFetch";
 import usePagination from "@/src/app/hooks/usePagination";
@@ -40,7 +44,9 @@ export default function GroupFoodComponent({
     setFormData({ name: "", category_id: 0 });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -61,7 +67,10 @@ export default function GroupFoodComponent({
   return (
     <div className="col-span-12" ref={groupRef}>
       <Card>
-        <CardHeader header="Danh sách loại danh mục" className="flex justify-between items-center">
+        <CardHeader
+          header="Danh sách loại danh mục"
+          className="flex justify-between items-center"
+        >
           <div className="flex gap-2 w-full max-w-md">
             <SearchInput value={searchText} onChange={setSearchText} />
           </div>
@@ -84,7 +93,10 @@ export default function GroupFoodComponent({
             </thead>
             <tbody>
               {currentFoodGroups.map((cate, index) => (
-                <tr key={cate.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
+                <tr
+                  key={cate.id}
+                  className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}
+                >
                   <td className="px-4 py-2">{cate.id}</td>
                   <td className="px-4 py-2">{cate.name}</td>
                   <td className="px-4 py-2">{cate.category?.name}</td>
@@ -112,7 +124,11 @@ export default function GroupFoodComponent({
       </Card>
 
       {/* POPUP */}
-      <Popup isOpen={isOpen} onClose={handleClosePopup} title="Thêm loại danh mục">
+      <Popup
+        isOpen={isOpen}
+        onClose={handleClosePopup}
+        title="Thêm loại danh mục"
+      >
         <form className="space-y-4">
           <InputField
             label="Tên loại danh mục"
@@ -123,7 +139,10 @@ export default function GroupFoodComponent({
           />
 
           <div>
-            <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="category_id"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Danh mục cha
             </label>
             <select

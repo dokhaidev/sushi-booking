@@ -5,6 +5,7 @@ import { Noto_Serif_JP } from "next/font/google";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import Link from "next/link";
 import Image from "next/image";
 
 // Load font
@@ -47,9 +48,9 @@ export default function BannerMenu() {
   });
 
   return (
-    <section className="menu-banner relative bg-gradient-to-br from-[#241c0d] via-[#161009] to-[#1e170b] h-[665px] max-h-[665px] min-h-[665px] overflow-hidden py-[60px] sm:px-16 lg:px-24">
+    <section className="menu-banner relative bg-gradient-to-br from-[#4b3720] via-[#3a2917] to-[#2e200f] h-[665px] max-h-[665px] min-h-[665px] overflow-hidden py-[60px] sm:px-16 lg:px-24">
       {/* Background texture */}
-      <div className="absolute inset-0 opacity-10 bg-[url('/images/japanese-paper-texture.png')] bg-repeat pointer-events-none" />
+      <div className="absolute inset-0 opacity-20 bg-[url('/images/japanese-paper-texture.png')] bg-repeat pointer-events-none" />
 
       {/* Decorative sushi emojis */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
@@ -91,7 +92,7 @@ export default function BannerMenu() {
 
         {/* Light glow */}
         <motion.div
-          className="absolute top-[-150px] left-[-150px] w-[400px] h-[400px] bg-gradient-to-br from-[#A68345]/30 to-transparent rounded-full blur-3xl"
+          className="absolute top-[-150px] left-[-150px] w-[400px] h-[400px] bg-gradient-to-br from-[#A68345]/50 to-transparent rounded-full blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -104,13 +105,13 @@ export default function BannerMenu() {
         />
       </div>
 
-      {/* Main content in 2 columns - Adjusted for new padding */}
+      {/* Main content */}
       <div className="relative z-10 w-full h-full max-w-8xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 lg:gap-12">
-        {/* Left column - Text */}
+        {/* Left column */}
         <div className="flex-1 w-full text-center md:text-left flex flex-col gap-4">
           {/* Japanese title */}
           <motion.div
-            className={`${notoSerifJP.variable} font-noto-serif-jp text-[#E8D5C4] text-2xl sm:text-3xl md:text-4xl tracking-widest`}
+            className={`${notoSerifJP.variable} font-noto-serif-jp text-[#F4E5D4] text-2xl sm:text-3xl md:text-4xl tracking-widest`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
@@ -120,7 +121,7 @@ export default function BannerMenu() {
 
           {/* Main title */}
           <motion.h1
-            className="menu-title text-5xl sm:text-6xl md:text-7xl font-bold text-[#E8D5C4] tracking-tight leading-tight"
+            className="menu-title text-5xl sm:text-6xl md:text-7xl font-bold text-[#F4E5D4] tracking-tight leading-tight"
             style={{ textShadow: "0px 2px 10px rgba(0, 0, 0, 0.5)" }}
           >
             <span className="block">SUSHI TAKUMI</span>
@@ -131,7 +132,7 @@ export default function BannerMenu() {
 
           {/* Subtext */}
           <motion.p
-            className="text-[#E8D5C4]/80 text-base sm:text-lg w-full max-w-xl mt-2"
+            className="text-[#F4E5D4]/80 text-base sm:text-lg w-full max-w-xl mt-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
@@ -141,14 +142,14 @@ export default function BannerMenu() {
           </motion.p>
 
           {/* CTA */}
+
           <motion.a
-            href="#menu-section"
             className="mt-6 inline-block px-6 py-3 bg-[#A68345] hover:bg-[#BD944A] text-white rounded-full shadow-lg transition-all duration-300 text-sm sm:text-base w-max mx-auto md:mx-0"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.2, duration: 0.5 }}
           >
-            XEM MENU NGAY
+            ĐẶT BÀN NGAY
           </motion.a>
         </div>
 

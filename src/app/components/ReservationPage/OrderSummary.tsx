@@ -1,10 +1,17 @@
 "use client";
 import { motion } from "framer-motion";
-import { FiHome, FiClock, FiChevronRight, FiImage } from "react-icons/fi";
+import {
+  FiHome,
+  FiClock,
+  FiChevronRight,
+  FiImage,
+  FiPercent,
+} from "react-icons/fi";
 import type {
   Table,
   SelectedFoodItem,
   BookingFormData,
+  SelectedComboItem,
 } from "../../types/booking";
 
 interface OrderSummaryProps {
@@ -12,12 +19,18 @@ interface OrderSummaryProps {
   selectedDate: string;
   selectedTime: string;
   foods: SelectedFoodItem[];
+  combos?: SelectedComboItem[];
   formData: BookingFormData;
   depositAmount: number;
   onAddFood: () => void;
+  onAddCombo: () => void;
   onSubmitOrder: () => void;
   isLoading: boolean;
   getPaymentAmount: () => number;
+  voucherCode: string;
+  setVoucherCode: (val: string) => void;
+  discountAmount: number;
+  applyVoucherCode: () => void;
 }
 
 export default function OrderSummary({
@@ -28,15 +41,17 @@ export default function OrderSummary({
   formData,
   depositAmount,
   onAddFood,
+  onAddCombo,
   onSubmitOrder,
   isLoading,
   getPaymentAmount,
+  voucherCode,
+  setVoucherCode,
+  discountAmount,
+  applyVoucherCode,
+  combos = [],
 }: OrderSummaryProps) {
-  // Làm tròn lên số khách thành số chẵn và tối đa 10
-  const displayGuestCount = Math.min(
-    Math.ceil(formData.guest_count / 2) * 2,
-    10
-  );
+  const displayGuestCount = Math.min(formData.guest_count, 10);
 
   return (
     <motion.div
@@ -83,13 +98,14 @@ export default function OrderSummary({
       )}
 
       <div className="border-t border-gray-200 pt-4">
+        {/* Food section */}
         <div className="flex justify-between items-center mb-3">
           <h3 className="font-medium text-gray-800">Món ăn đã chọn</h3>
           <button
             onClick={onAddFood}
             className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
           >
-            {foods.length > 0 ? "Chỉnh sửa" : "Thêm món"}{" "}
+            {foods.length > 0 ? "Chỉnh sửa" : "Thêm món"}
             <FiChevronRight className="ml-1" />
           </button>
         </div>
@@ -140,17 +156,142 @@ export default function OrderSummary({
           </div>
         )}
 
+        {/* Combo section */}
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-medium text-gray-800">Combo đã chọn</h3>
+          <button
+            onClick={onAddCombo}
+            className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
+          >
+            {combos.length > 0 ? "Chỉnh sửa" : "Thêm combo"}
+            <FiChevronRight className="ml-1" />
+          </button>
+        </div>
+
+        {combos.length > 0 ? (
+          <div className="space-y-3 mb-4">
+            {combos.map((combo) => (
+              <div
+                key={combo.combo_id}
+                className="flex justify-between items-center"
+              >
+                <div className="flex items-center">
+                  {combo.image ? (
+                    <img
+                      src={combo.image || "/placeholder.svg"}
+                      alt={combo.name}
+                      className="w-10 h-10 rounded-md object-cover mr-3"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center mr-3">
+                      <FiImage className="text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">
+                      {combo.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {parseFloat(combo.price).toLocaleString()} VNĐ ×{" "}
+                      {combo.quantity}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {combo.items.map((item, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-gray-100 px-2 py-0.5 rounded"
+                        >
+                          {item.name} × {item.quantity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm font-medium">
+                  {(parseFloat(combo.price) * combo.quantity).toLocaleString()}{" "}
+                  VNĐ
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
+            <p className="text-gray-500 text-sm">Chưa có combo nào được chọn</p>
+            <button
+              onClick={onAddCombo}
+              className="mt-2 text-[#AF763E] text-sm font-medium"
+            >
+              + Thêm combo
+            </button>
+          </div>
+        )}
+
+        {/* VOUCHER */}
+        <div className="mt-3 mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mã giảm giá
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={voucherCode}
+              onChange={(e) => setVoucherCode(e.target.value)}
+              placeholder="Nhập mã giảm giá..."
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF763E]"
+            />
+            <button
+              onClick={applyVoucherCode}
+              className="bg-[#AF763E] text-white px-4 py-2 rounded-md text-sm hover:opacity-90"
+              disabled={isLoading}
+            >
+              Áp dụng
+            </button>
+          </div>
+          {discountAmount > 0 && (
+            <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
+              <FiPercent className="text-green-500" />
+              Giảm {discountAmount.toLocaleString()} VNĐ
+            </p>
+          )}
+        </div>
+
         <div className="border-t border-gray-200 pt-3">
           <div className="flex justify-between mb-1">
             <span className="text-gray-600">Tạm tính món ăn:</span>
             <span className="font-medium">
-              {formData.total_price.toLocaleString()} VNĐ
+              {foods
+                .reduce((sum, food) => sum + food.price * food.quantity, 0)
+                .toLocaleString()}{" "}
+              VNĐ
             </span>
           </div>
+
+          <div className="flex justify-between mb-1">
+            <span className="text-gray-600">Tạm tính combo:</span>
+            <span className="font-medium">
+              {combos
+                .reduce(
+                  (sum, combo) =>
+                    sum + parseFloat(combo.price) * combo.quantity,
+                  0
+                )
+                .toLocaleString()}{" "}
+              VNĐ
+            </span>
+          </div>
+
+          {discountAmount > 0 && (
+            <div className="flex justify-between mb-1 text-green-700">
+              <span className="text-sm">Giảm giá:</span>
+              <span>-{discountAmount.toLocaleString()} VNĐ</span>
+            </div>
+          )}
+
           <div className="flex justify-between mb-1">
             <span className="text-gray-600">Phí dịch vụ:</span>
             <span className="font-medium">0 VNĐ</span>
           </div>
+
           <div className="flex justify-between mb-1">
             <span className="text-gray-600">Tiền cọc:</span>
             <span className="font-medium text-orange-600">

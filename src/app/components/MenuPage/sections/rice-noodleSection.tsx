@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import BoxSP from "../../ProductCard/boxSP";
 import { ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -9,7 +8,7 @@ interface FoodItem {
   id: number;
   name: string;
   jpName: string;
-  price: string;
+  price: string | number;
   desc: string;
   image: string;
 }
@@ -22,19 +21,34 @@ interface FoodGroup {
 
 export default function RiceNoodlesSection() {
   const [groups, setGroups] = useState<FoodGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ Hàm định dạng giá tiền Việt Nam
+  const formatPriceVND = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
 
   useEffect(() => {
     const fetchFoods = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           "http://127.0.0.1:8000/api/foods/category/4/groups"
         );
         const result = await res.json();
         if (result.type === "group") {
           setGroups(result.data);
+        } else {
+          setError("Dữ liệu không hợp lệ.");
         }
       } catch (error) {
         console.error("Lỗi khi fetch dữ liệu:", error);
+        setError("Không thể tải dữ liệu cơm & mì.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -44,50 +58,90 @@ export default function RiceNoodlesSection() {
   return (
     <section
       id="rice"
-      className="py-[60px] sm:px-16 lg:px-24 bg-gradient-to-br from-[#FAF4EC] via-[#F8F1E9] to-[#F5EDE3]"
+      className="py-16 px-6 md:px-16 lg:px-24 bg-gradient-to-br from-[#FAF4EC] via-[#F8F1E9] to-[#F5EDE3]"
     >
-      <div className="container mx-auto">
+      <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-10"
+          className="text-center mb-12"
         >
-          <div className="flex items-center justify-center gap-3 md:gap-5 mb-2">
-            <div className="h-px w-12 md:w-24 bg-[#555]" />
-            <h2 className="text-xl md:text-3xl font-bold uppercase tracking-wider text-[#444] flex items-center gap-2">
-              <ChefHat className="text-[#A68345]" size={24} />
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="h-px w-16 bg-[#999]" />
+            <h2 className="text-2xl md:text-4xl font-semibold tracking-wider text-[#3D3D3D] flex items-center gap-2">
+              <ChefHat className="text-[#A68345]" size={28} />
               Cơm & Mì
             </h2>
-            <div className="h-px w-12 md:w-24 bg-[#555]" />
+            <div className="h-px w-16 bg-[#999]" />
           </div>
-          <p className="text-[#666] text-sm md:text-base mt-2">
+          <p className="text-[#666] text-base md:text-lg mt-2">
             Các món cơm và mì truyền thống Nhật Bản
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {groups.map((group) => (
-            <div key={group.group_id}>
-              <h3 className="text-xl font-semibold text-[#333333] mb-6 pb-2 border-b border-[#666666]">
-                {group.group_name}
-              </h3>
-              <div className="space-y-7">
-                {group.foods.map((item, index) => (
-                  <BoxSP
-                    key={index}
-                    {...item}
-                    titleColor={
-                      group.group_name === "Mì" ? "#594545" : undefined
-                    }
-                    jpColor={group.group_name === "Mì" ? "#9E7676" : undefined}
-                  />
-                ))}
+        {loading ? (
+          <p className="text-center text-gray-600">Đang tải cơm & mì...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : groups.length === 0 ? (
+          <p className="text-center text-gray-500">Không có món nào.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {groups.map((group) => (
+              <div key={group.group_id}>
+                <h3 className="text-xl md:text-2xl font-semibold text-[#333] mb-4 pb-2 border-b border-[#ccc]">
+                  {group.group_name}
+                </h3>
+
+                <div className="space-y-6">
+                  {group.foods.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
+                    >
+                      <img
+                        src={item.image || "/placeholder.svg"}
+                        alt={item.name}
+                        className="w-1/3 h-40 object-cover"
+                      />
+                      <div className="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-lg font-medium text-[#333]">
+                            {item.name}
+                            {item.jpName && (
+                              <span className="ml-1 text-sm text-[#666]">
+                                ({item.jpName})
+                              </span>
+                            )}
+                          </h4>
+                          {item.desc && (
+                            <p className="text-sm text-[#777] mt-1 italic">
+                              {item.desc}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center mt-4">
+                          <span className="text-lg font-bold text-[#D64B4B]">
+                            {formatPriceVND(
+                              typeof item.price === "string"
+                                ? parseFloat(item.price)
+                                : item.price
+                            )}
+                          </span>
+                          <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-4 py-2 rounded-md transition">
+                            Đặt món
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -10,17 +10,42 @@ export default function RollsSection() {
   const [rolls, setRolls] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cart, setCart] = useState<MenuItem[]>([]);
+
+  const formatPrice = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
 
   useEffect(() => {
     const fetchRolls = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(
           "http://127.0.0.1:8000/api/food/category/3"
         );
-        setRolls(response.data); // đảm bảo API trả về mảng các MenuItem
-        setLoading(false);
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data?.data || [];
+
+        const mappedData: MenuItem[] = data.map((item: any) => ({
+          id: typeof item.id === "string" ? Number.parseInt(item.id) : item.id,
+          name: item.name,
+          jpName: item.jpName,
+          price: formatPrice(
+            typeof item.price === "string"
+              ? Number.parseFloat(item.price)
+              : item.price
+          ),
+          description: item.description,
+        }));
+        setRolls(mappedData);
       } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu rolls:", err);
         setError("Không thể tải dữ liệu roll.");
+      } finally {
         setLoading(false);
       }
     };
@@ -28,12 +53,23 @@ export default function RollsSection() {
     fetchRolls();
   }, []);
 
+  const addToCart = (item: MenuItem) => {
+    setCart((prevCart) => [...prevCart, item]);
+    console.log("Đã thêm món vào giỏ:", item.name);
+  };
+
   return (
     <section
       id="rolls"
-      className="py-[60px] sm:px-16 lg:px-24 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0]"
+      className="py-[60px] sm:px-6 lg:px-20 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0] relative overflow-hidden"
     >
-      <div className="container mx-auto">
+      {/* Background Decorative Elements */}
+      <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#dfe3d2] rounded-full opacity-20 z-0" />
+      <div className="absolute top-1/2 left-[10%] w-36 h-36 bg-[#dfe3d2] rounded-full opacity-15 z-0" />
+      <div className="absolute bottom-[-80px] right-[-80px] w-[220px] h-[220px] bg-[#dfe3d2] rounded-full opacity-10 z-0" />
+
+      <div className="relative z-10 container mx-auto">
+        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -54,41 +90,69 @@ export default function RollsSection() {
           </p>
         </motion.div>
 
+        {/* Content Section */}
         {loading ? (
-          <p className="text-center text-[#666]">Đang tải dữ liệu...</p>
-        ) : error ? (
-          <p className="text-center text-red-500">{error}</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {rolls.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between p-4 border-b border-[#666666]"
-              >
-                <div>
-                  <div className="flex items-center mb-1">
-                    <h3 className="text-lg font-semibold text-[#333333]">
-                      {item.name}
-                    </h3>
-                    <span className="italic ml-2 text-sm text-[#333333]">
-                      ( {item.jpName} )
-                    </span>
-                  </div>
-                  <p className="text-[#666666] text-sm italic">
-                    {item.description}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xl font-bold text-[#FF0000] mb-2">
-                    {item.price}
-                  </span>
-                  <button className="text-lg bg-[#8E9482] hover:bg-[#815B5B] text-white px-4 py-1 rounded-md transition-colors">
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="text-center text-[#A68345] py-6 animate-pulse flex justify-center items-center gap-2">
+            <ChefHat className="animate-spin" size={28} />
+            Đang tải món ăn...
           </div>
+        ) : error ? (
+          <div className="text-center text-red-500 py-6">{error}</div>
+        ) : rolls.length === 0 ? (
+          <div className="text-center text-[#777] py-6">
+            Không có roll nào để hiển thị.
+          </div>
+        ) : (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 },
+              },
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+          >
+            {rolls.map((item) => (
+              <motion.div
+                key={item.id}
+                className="border-b border-dashed border-[#ccc] pb-4"
+                variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+              >
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-[#333]">
+                      {item.name}
+                      {item.jpName && (
+                        <span className="ml-2 italic text-sm text-[#777]">
+                          ({item.jpName})
+                        </span>
+                      )}
+                    </h3>
+                    {item.description && (
+                      <p className="text-sm text-[#666] italic">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#A83D3D] font-bold text-base">
+                      {item.price}
+                    </span>
+                    <button
+                      className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition"
+                      onClick={() => addToCart(item)}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
       </div>
     </section>

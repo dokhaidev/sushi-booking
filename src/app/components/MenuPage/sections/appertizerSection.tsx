@@ -10,7 +10,14 @@ export default function AppetizersSection() {
   const [appetizers, setAppetizers] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cart, setCart] = useState<MenuItem[]>([]); // State lưu món đã thêm
+  const [cart, setCart] = useState<MenuItem[]>([]);
+
+  const formatPrice = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
 
   useEffect(() => {
     const fetchAppetizers = async () => {
@@ -22,11 +29,14 @@ export default function AppetizersSection() {
         const data = Array.isArray(response.data)
           ? response.data
           : response.data?.data || [];
+
         const mappedData: MenuItem[] = data.map((item: any) => ({
           id: typeof item.id === "string" ? parseInt(item.id) : item.id,
           name: item.name,
           jpName: item.jpName,
-          price: typeof item.price === "string" ? item.price : `${item.price}¥`,
+          price: formatPrice(
+            typeof item.price === "string" ? parseFloat(item.price) : item.price
+          ),
           description: item.description,
         }));
         setAppetizers(mappedData);
@@ -49,15 +59,13 @@ export default function AppetizersSection() {
   return (
     <section
       id="appetizers"
-      className="py-[60px] sm:px-6 lg:px-20 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0] relative overflow-hidden"
+      className="w-full py-[60px] sm:px-6 lg:px-20 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0] relative overflow-hidden"
     >
-      {/* Decor circles */}
       <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#dfe3d2] rounded-full opacity-20 z-0" />
       <div className="absolute top-1/2 left-[10%] w-36 h-36 bg-[#dfe3d2] rounded-full opacity-15 z-0" />
       <div className="absolute bottom-[-80px] right-[-80px] w-[220px] h-[220px] bg-[#dfe3d2] rounded-full opacity-10 z-0" />
 
       <div className="relative z-10 container mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -78,7 +86,6 @@ export default function AppetizersSection() {
           </p>
         </motion.div>
 
-        {/* Nội dung */}
         {loading ? (
           <div className="text-center text-[#A68345] py-6 animate-pulse flex justify-center items-center gap-2">
             <ChefHat className="animate-spin" size={28} />

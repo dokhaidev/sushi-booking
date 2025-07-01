@@ -5,13 +5,13 @@ import { Namespace, Translations, LanguageDictionary } from "./types";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 
-// ✅ Import các dictionary dùng đường dẫn tương đối (không dùng @ alias)
+// Import các dictionary dùng đường dẫn tương đối 
 import footer_en from "../../locales/en/footer.json";
 import header_en from "../../locales/en/header.json";
 import footer_vi from "../../locales/vi/footer.json";
 import header_vi from "../../locales/vi/header.json";
 
-// ✅ Dictionary đầy đủ
+//  Dictionary đầy đủ
 const dictionaries: LanguageDictionary = {
   en: {
     footer: footer_en,

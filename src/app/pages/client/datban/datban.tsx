@@ -8,12 +8,19 @@ import CustomerInfoForm from "../../../components/ReservationPage/CustomerInfoFo
 import PaymentNotesForm from "../../../components/ReservationPage/PaymentNotesForm";
 import OrderSummary from "../../../components/ReservationPage/OrderSummary";
 import FoodSelectionModal from "../../../components/ReservationPage/FoodSelectionModal";
+import ComboSelectionModal from "../../../components/ReservationPage/ComboSelectionModal";
 import { useBooking } from "../../../hooks/useBooking";
 import { useAuth } from "../../../context/authContext";
+import {
+  SelectedFoodItem,
+  ComboItem,
+  SelectedComboItem,
+  FoodItem,
+} from "../../../types/booking";
 
 export default function DatBanPage() {
   const router = useRouter();
-  const { user, isLoading, isInitialized } = useAuth();
+  const { user, isLoading: authLoading, isInitialized } = useAuth();
   const {
     // State
     selectedDate,
@@ -24,12 +31,18 @@ export default function DatBanPage() {
     formData,
     setFormData,
     foods,
+    combos,
     foodsData,
+    combosData,
     orderId,
     showFoodModal,
     setShowFoodModal,
+    showComboModal,
+    setShowComboModal,
     activeFoodCategory,
     setActiveFoodCategory,
+    activeComboCategory,
+    setActiveComboCategory,
     depositAmount,
     showPaymentModal,
     setShowPaymentModal,
@@ -38,36 +51,35 @@ export default function DatBanPage() {
     notification,
     setNotification,
     today,
+    voucherCode,
+    setVoucherCode,
+    discountAmount,
 
     // Functions
     fetchAvailableSlots,
     fetchFoods,
+    fetchCombos,
     handleSelectTime,
     submitOrder,
     handlePaymentComplete,
     handleAddFood,
     handleRemoveFood,
     handleFoodQuantityChange,
+    handleAddCombo,
+    handleRemoveCombo,
+    handleComboQuantityChange,
     getPaymentAmount,
+    applyVoucherCode,
   } = useBooking();
 
-  // Redirect nếu chưa đăng nhập
+  // Redirect if not authenticated
   useEffect(() => {
-    if (isInitialized && !user && !isLoading) {
+    if (isInitialized && !user && !authLoading) {
       router.replace(`/dang-nhap?returnUrl=${encodeURIComponent("/dat-ban")}`);
     }
-  }, [user, isLoading, isInitialized, router]);
+  }, [user, authLoading, isInitialized, router]);
 
-  // Debug log
-  useEffect(() => {
-    console.log("DatBanPage mounted or updated");
-    console.log("showPaymentModal:", showPaymentModal);
-    console.log("paymentQRCode:", paymentQRCode);
-    console.log("orderId:", orderId);
-  }, [showPaymentModal, paymentQRCode, orderId]);
-
-  // Hiển thị loading spinner khi chưa khởi tạo xong hoặc đang loading
-  if (!isInitialized || isLoading) {
+  if (!isInitialized || authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -75,11 +87,92 @@ export default function DatBanPage() {
     );
   }
 
-  // Nếu đã khởi tạo xong và không có user thì không render gì
-  // (sẽ được redirect trong useEffect)
   if (!user) {
     return null;
   }
+
+  // Fix: Handle null/undefined image values and normalize combo data structure
+  const normalizedCombosData: ComboItem[] = combosData.map((combo) => ({
+    id: combo.id,
+    name: combo.name,
+    description: combo.description,
+    price: parseFloat(combo.price), // Convert string to number
+    image: combo.image ?? undefined, // Convert null to undefined
+    items: combo.combo_items.map((item) => ({
+      food_id: item.food_id,
+      name: item.food.name,
+      price: item.food.price,
+      quantity: item.quantity,
+    })),
+  }));
+
+  // Chuyển đổi foods sang SelectedFoodItem (thêm id property)
+  const normalizedFoods: SelectedFoodItem[] = foods.map((food) => ({
+    id: food.food_id, // Add missing id property
+    food_id: food.food_id,
+    name: food.name,
+    price: food.price,
+    quantity: food.quantity,
+    image: food.image,
+  }));
+
+  // Fix: Handle null/undefined image values in combos
+  const normalizedCombos: SelectedComboItem[] = combos.map((combo) => ({
+    combo_id: combo.combo_id,
+    id: combo.id,
+    name: combo.name,
+    price:
+      typeof combo.price === "string" ? parseFloat(combo.price) : combo.price, // Ensure number type
+    quantity: combo.quantity,
+    items: combo.items.map((item) => ({
+      food_id: item.food_id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    })),
+    image: combo.image ?? undefined, // Convert null to undefined
+    description: combo.description,
+  }));
+
+  // Wrapper function để xử lý type mismatch cho FoodItem
+  const handleAddFoodWrapper = (food: FoodItem) => {
+    // Chuyển đổi FoodItem từ component sang format mà hook expect
+    const normalizedFood: FoodItem = {
+      ...food,
+      category:
+        typeof food.category === "object" && food.category !== null
+          ? food.category.name
+          : food.category,
+    };
+    handleAddFood(normalizedFood);
+  };
+
+  // Fix: Create a proper wrapper that matches the expected ComboItem type from the modal
+  const handleAddComboWrapper = (combo: ComboItem) => {
+    // Create a proper Combo object that matches the hook's expected structure
+    const normalizedCombo = {
+      id: combo.id,
+      name: combo.name,
+      image: combo.image ?? null, // Handle undefined by converting to null
+      description: combo.description || "",
+      price: combo.price.toString(), // Convert number back to string for hook
+      status: 1, // Default active status
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      combo_items: combo.items.map((item) => ({
+        id: 0, // Placeholder id
+        combo_id: combo.id,
+        food_id: item.food_id,
+        quantity: item.quantity,
+        food: {
+          id: item.food_id,
+          name: item.name,
+          price: item.price,
+        },
+      })),
+    };
+    handleAddCombo(normalizedCombo);
+  };
 
   return (
     <div className="container mx-auto py-[60px] sm:px-16 lg:px-24">
@@ -132,16 +225,25 @@ export default function DatBanPage() {
             selectedTable={selectedTable}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            foods={foods}
+            foods={normalizedFoods}
+            combos={normalizedCombos}
             formData={formData}
             depositAmount={depositAmount}
             onAddFood={() => {
               setShowFoodModal(true);
               fetchFoods();
             }}
+            onAddCombo={() => {
+              setShowComboModal(true);
+              fetchCombos();
+            }}
             onSubmitOrder={submitOrder}
+            isLoading={authLoading}
             getPaymentAmount={getPaymentAmount}
-            isLoading={isLoading}
+            voucherCode={voucherCode}
+            setVoucherCode={setVoucherCode}
+            discountAmount={discountAmount}
+            applyVoucherCode={applyVoucherCode}
           />
         </div>
       </div>
@@ -150,14 +252,32 @@ export default function DatBanPage() {
         isOpen={showFoodModal}
         onClose={() => setShowFoodModal(false)}
         foods={foodsData}
-        selectedFoods={foods}
+        selectedFoods={normalizedFoods}
         activeFoodCategory={activeFoodCategory}
         setActiveFoodCategory={setActiveFoodCategory}
-        onAddFood={handleAddFood}
+        onAddFood={handleAddFoodWrapper} // Use wrapper function
         onRemoveFood={handleRemoveFood}
         onQuantityChange={handleFoodQuantityChange}
-        totalPrice={formData.total_price}
-        isLoading={isLoading}
+        totalPrice={normalizedFoods.reduce(
+          (sum, food) => sum + food.price * food.quantity,
+          0
+        )}
+        isLoading={authLoading}
+      />
+
+      <ComboSelectionModal
+        isOpen={showComboModal}
+        onClose={() => setShowComboModal(false)}
+        combos={normalizedCombosData}
+        selectedCombos={normalizedCombos}
+        onAddCombo={handleAddComboWrapper} // Use wrapper function
+        onRemoveCombo={handleRemoveCombo}
+        onQuantityChange={handleComboQuantityChange}
+        totalPrice={normalizedCombos.reduce(
+          (sum, combo) => sum + combo.price * combo.quantity,
+          0
+        )}
+        isLoading={authLoading}
       />
     </div>
   );

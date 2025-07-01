@@ -4,15 +4,7 @@ import { useContext, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { AuthContext } from "../../context/authContext";
 import { usePathname } from "next/navigation";
-import {
-  FiMenu,
-  FiX,
-  FiUser,
-  FiLogOut,
-  FiSettings,
-  FiClock,
-  FiHome,
-} from "react-icons/fi";
+import { FiMenu, FiX, FiUser, FiLogOut, FiHome } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Header = () => {
@@ -64,13 +56,22 @@ const Header = () => {
     {
       href: "/",
       label: "Trang chủ",
-      shortLabel: "Home",
+      shortLabel: "Trang chủ",
       icon: <FiHome size={18} className="lg:hidden" />,
     },
-    { href: "/thuc-don", label: "Thực đơn", shortLabel: "Menu" },
-    { href: "/ve-chung-toi", label: "Về chúng tôi", shortLabel: "About" },
-    { href: "/lien-he", label: "Liên hệ", shortLabel: "Contact" },
-    { href: "/dat-ban", label: "Đặt bàn", shortLabel: "Book", highlight: true },
+    { href: "/thuc-don", label: "Thực đơn", shortLabel: "Thực đơn" },
+    {
+      href: "/ve-chung-toi",
+      label: "Về chúng tôi",
+      shortLabel: "Về chúng tôi",
+    },
+    { href: "/lien-he", label: "Liên hệ", shortLabel: "Liên hệ" },
+    {
+      href: "/dat-ban",
+      label: "Đặt bàn",
+      shortLabel: "Đặt bàn",
+      highlight: true,
+    },
   ];
 
   const UserActionsSkeleton = () => (

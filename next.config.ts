@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
       "i0.wp.com",
       "kokugyu.com.vn",
       "product.hstatic.net",
+      "vn.fishroe.net",
+      "bizweb.dktcdn.net",
+      "tournhatban.net",
+      "bioplanet.vn",
+      "danviet.ex-cdn.com",
     ],
   },
 };

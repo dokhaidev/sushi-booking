@@ -22,6 +22,14 @@ export default function SushiSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Hàm định dạng giá tiền VND
+  const formatPriceVND = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
+
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -131,11 +139,16 @@ export default function SushiSection() {
 
                       <div className="flex items-center justify-end gap-2 text-[#A83D3D] font-bold text-base">
                         <span>
-                          {typeof item.price === "number"
-                            ? `¥${item.price}`
-                            : `¥${parseFloat(item.price).toFixed(0)}`}
+                          {formatPriceVND(
+                            typeof item.price === "string"
+                              ? parseFloat(item.price)
+                              : item.price
+                          )}
                         </span>
-                        <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition">
+                        <button
+                          className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition"
+                          onClick={() => handleAddToCart(item)}
+                        >
                           +
                         </button>
                       </div>

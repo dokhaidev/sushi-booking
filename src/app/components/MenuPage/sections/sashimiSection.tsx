@@ -25,6 +25,13 @@ export default function SashimiSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Hàm định dạng giá tiền VND
+  const formatPriceVND = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -124,7 +131,7 @@ export default function SashimiSection() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-lg font-bold text-[#D64B4B]">
-                            ¥{item.price.toFixed(0)}
+                            {formatPriceVND(item.price)}
                           </span>
                           <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition">
                             +
@@ -163,7 +170,7 @@ export default function SashimiSection() {
                           </div>
                           <div className="flex justify-between items-center mt-4">
                             <span className="text-lg font-bold text-[#D64B4B]">
-                              ¥{item.price.toFixed(0)}
+                              {formatPriceVND(item.price)}
                             </span>
                             <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-4 py-2 rounded-md transition">
                               Đặt món
