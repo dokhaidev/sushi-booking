@@ -10,6 +10,7 @@ import {
 } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface User {
   id: string | number;
@@ -114,6 +115,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const userData = await validateToken(token);
         setUser(userData);
         setIsAuthenticated(true);
+
+        // ✅ Set cookie để middleware sử dụng
+        Cookies.set("access_token", token, { path: "/" });
+        Cookies.set("user_info", JSON.stringify(userData), { path: "/" });
 
         // Redirect sau khi login thành công
         router.replace(returnUrl || "/");

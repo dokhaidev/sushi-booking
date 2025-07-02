@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { RotateCw, Zap, Fish, X } from "lucide-react";
+import { RotateCw, Zap, X } from "lucide-react";
 import axios from "axios";
 import confetti from "canvas-confetti";
 import Confetti from "react-confetti";
@@ -15,7 +15,6 @@ interface Voucher {
 export default function SushiWheelButton() {
   const [rotation, setRotation] = useState(0);
   const [open, setOpen] = useState(false);
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [displayVouchers, setDisplayVouchers] = useState<string[]>([]);
   const [result, setResult] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);

@@ -46,8 +46,8 @@ export default function QuanLyDonHang() {
     <div className="grid grid-cols-12 gap-4">
       {/* Header */}
       <TitleDesc
-        title="Quản lý đơn đặt bàn"
-        description="Xem và quản lý tất cả những đơn đặt bàn"
+        title="Quản lý đơn hàng"
+        description="Xem và quản lý tất cả những đơn hàng"
         className="col-span-12"
       />
 
@@ -113,7 +113,7 @@ export default function QuanLyDonHang() {
       {/* Bảng đơn đặt bàn */}
       <div className="col-span-12">
         <Card>
-          <CardHeader header="Đơn đặt bàn gần đây" className="flex justify-between items-center">
+          <CardHeader header="Tất cả đơn hàng" className="flex justify-between items-center">
             <div className="flex gap-2 w-full max-w-md">
               <SearchInput value={searchText} onChange={setSearchText} />
             </div>

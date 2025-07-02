@@ -8,11 +8,17 @@ import Pagination from "../../../../components/ui/Panigation";
 import { FaEye, FaLock } from "react-icons/fa";
 import PopupNotification from "../../../../components/ui/PopupNotification";
 import SearchInput from "@/src/app/components/ui/SearchInput";
+import Popup from "../../../../components/ui/Popup";
+import InputField from "../../../../components/ui/InputField";
+import { Button } from "../../../../components/ui/button";
 
 export default function QuanLyNguoiDung() {
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState<Customer[]>([]);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Customer | null>(null);
+  const [selectedRole, setSelectedRole] = useState("");
   const [popupContent, setPopupContent] = useState({
     title: "",
     message: "",
@@ -65,6 +71,48 @@ export default function QuanLyNguoiDung() {
     setPopupOpen(true);
   };
   }
+
+  const openEditRolePopup = (user: Customer) => {
+    setSelectedUser(user);
+    setSelectedRole(user.role);
+    setEditPopupOpen(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await axios.put(`http://localhost:8000/api/customers/${selectedUser.id}/role`, {
+        role: selectedRole,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // nếu dùng Sanctum cần cookie hoặc token đúng
+        }
+      });
+
+      // Cập nhật lại user trong danh sách
+      const updated = res.data.customer;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === updated.id ? updated : u))
+      );
+
+      setPopupContent({
+        title: "Cập nhật vai trò thành công",
+        message: "Vai trò người dùng đã được cập nhật.",
+        type: "success",
+      });
+      setPopupOpen(true);
+      setEditPopupOpen(false);
+    } catch (err) {
+      console.error("Lỗi cập nhật vai trò:", err);
+      setPopupContent({
+        title: "Lỗi",
+        message: "Không thể cập nhật vai trò người dùng.",
+        type: "error",
+      });
+      setPopupOpen(true);
+    }
+  };
 
 
   return (
@@ -238,6 +286,12 @@ export default function QuanLyNguoiDung() {
                             {user.status === 1 ? "Khóa" : "Mở khóa"}
                           </span>
                         </button>
+                        <button
+                          className="text-sm text-blue-600 underline"
+                          onClick={() => openEditRolePopup(user)}
+                        >
+                          Chỉnh sửa
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -252,6 +306,48 @@ export default function QuanLyNguoiDung() {
             </div>
           </CardContent>
         </Card>
+        <Popup
+          isOpen={editPopupOpen}
+          onClose={() => setEditPopupOpen(false)}
+          title="Chỉnh sửa vai trò người dùng"
+        >
+          <div className="space-y-4">
+            {selectedUser && (
+              <>
+                <InputField label="Tên" name="name" value={selectedUser.name} disabled />
+                <InputField label="Email" name="email" value={selectedUser.email} disabled />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="w-full border rounded-md px-3 py-2"
+                  >
+                    <option value="user">Người dùng</option>
+                    <option value="admin">Quản trị viên</option>
+                    <option value="kitchenmanager">Nhân viên bếp</option>
+                    <option value="menumanager">Nhân viên thực đơn</option>
+                    <option value="ordermanger">Nhân viên đơn hàng</option>
+                  </select>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                    onClick={() => setEditPopupOpen(false)}
+                  >
+                    Huỷ
+                  </Button>
+                  <Button
+                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                    onClick={handleUpdateRole}
+                  >
+                    Lưu thay đổi
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </Popup>
       </div>
     </div>
   );
