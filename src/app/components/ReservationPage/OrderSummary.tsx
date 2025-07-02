@@ -52,6 +52,15 @@ export default function OrderSummary({
   combos = [],
 }: OrderSummaryProps) {
   const displayGuestCount = Math.min(formData.guest_count, 10);
+  const shouldDeposit = formData.guest_count >= 8;
+  const effectiveDeposit = shouldDeposit ? depositAmount : 0;
+  const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+  const payNowAmount =
+    formData.payment_method === "cash" ? effectiveDeposit : finalTotal;
+  const remainingCashPayment =
+    formData.payment_method === "cash"
+      ? Math.max(finalTotal - effectiveDeposit, 0)
+      : 0;
 
   return (
     <motion.div
@@ -97,271 +106,265 @@ export default function OrderSummary({
         </div>
       )}
 
-      <div className="border-t border-gray-200 pt-4">
-        {/* Food section */}
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-medium text-gray-800">Món ăn đã chọn</h3>
+      {/* FOOD */}
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-medium text-gray-800">Món ăn đã chọn</h3>
+        <button
+          onClick={onAddFood}
+          className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
+        >
+          {foods.length > 0 ? "Chỉnh sửa" : "Thêm món"}
+          <FiChevronRight className="ml-1" />
+        </button>
+      </div>
+
+      {foods.length > 0 ? (
+        <div className="space-y-3 mb-4">
+          {foods.map((food) => (
+            <div
+              key={food.food_id}
+              className="flex justify-between items-center"
+            >
+              <div className="flex items-center">
+                {food.image ? (
+                  <img
+                    src={food.image || "/placeholder.svg"}
+                    alt={food.name}
+                    className="w-10 h-10 rounded-md object-cover mr-3"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center mr-3">
+                    <FiImage className="text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    {food.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {food.price.toLocaleString()} VNĐ × {food.quantity}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm font-medium">
+                {(food.price * food.quantity).toLocaleString()} VNĐ
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
+          <p className="text-gray-500 text-sm">Chưa có món nào được chọn</p>
           <button
             onClick={onAddFood}
-            className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
+            className="mt-2 text-[#AF763E] text-sm font-medium"
           >
-            {foods.length > 0 ? "Chỉnh sửa" : "Thêm món"}
-            <FiChevronRight className="ml-1" />
+            + Thêm món ăn
           </button>
         </div>
+      )}
 
-        {foods.length > 0 ? (
-          <div className="space-y-3 mb-4">
-            {foods.map((food) => (
-              <div
-                key={food.food_id}
-                className="flex justify-between items-center"
-              >
-                <div className="flex items-center">
-                  {food.image ? (
-                    <img
-                      src={food.image || "/placeholder.svg"}
-                      alt={food.name}
-                      className="w-10 h-10 rounded-md object-cover mr-3"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center mr-3">
-                      <FiImage className="text-gray-400" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {food.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {food.price.toLocaleString()} VNĐ × {food.quantity}
-                    </p>
+      {/* COMBO */}
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-medium text-gray-800">Combo đã chọn</h3>
+        <button
+          onClick={onAddCombo}
+          className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
+        >
+          {combos.length > 0 ? "Chỉnh sửa" : "Thêm combo"}
+          <FiChevronRight className="ml-1" />
+        </button>
+      </div>
+
+      {combos.length > 0 ? (
+        <div className="space-y-3 mb-4">
+          {combos.map((combo) => (
+            <div
+              key={combo.combo_id}
+              className="flex justify-between items-center"
+            >
+              <div className="flex items-center">
+                {combo.image ? (
+                  <img
+                    src={combo.image || "/placeholder.svg"}
+                    alt={combo.name}
+                    className="w-10 h-10 rounded-md object-cover mr-3"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center mr-3">
+                    <FiImage className="text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    {combo.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {combo.price.toLocaleString()} VNĐ × {combo.quantity}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {combo.items.map((item, index) => (
+                      <span
+                        key={index}
+                        className="text-xs bg-gray-100 px-2 py-0.5 rounded"
+                      >
+                        {item.name} × {item.quantity}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <p className="text-sm font-medium">
-                  {(food.price * food.quantity).toLocaleString()} VNĐ
-                </p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
-            <p className="text-gray-500 text-sm">Chưa có món nào được chọn</p>
-            <button
-              onClick={onAddFood}
-              className="mt-2 text-[#AF763E] text-sm font-medium"
-            >
-              + Thêm món ăn
-            </button>
-          </div>
-        )}
-
-        {/* Combo section */}
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-medium text-gray-800">Combo đã chọn</h3>
+              <p className="text-sm font-medium">
+                {(combo.price * combo.quantity).toLocaleString()} VNĐ
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
+          <p className="text-gray-500 text-sm">Chưa có combo nào được chọn</p>
           <button
             onClick={onAddCombo}
-            className="text-[#AF763E] hover:text-blue-800 text-sm flex items-center"
+            className="mt-2 text-[#AF763E] text-sm font-medium"
           >
-            {combos.length > 0 ? "Chỉnh sửa" : "Thêm combo"}
-            <FiChevronRight className="ml-1" />
+            + Thêm combo
           </button>
         </div>
+      )}
 
-        {combos.length > 0 ? (
-          <div className="space-y-3 mb-4">
-            {combos.map((combo) => (
-              <div
-                key={combo.combo_id}
-                className="flex justify-between items-center"
-              >
-                <div className="flex items-center">
-                  {combo.image ? (
-                    <img
-                      src={combo.image || "/placeholder.svg"}
-                      alt={combo.name}
-                      className="w-10 h-10 rounded-md object-cover mr-3"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center mr-3">
-                      <FiImage className="text-gray-400" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {combo.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {parseFloat(combo.price).toLocaleString()} VNĐ ×{" "}
-                      {combo.quantity}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {combo.items.map((item, index) => (
-                        <span
-                          key={index}
-                          className="text-xs bg-gray-100 px-2 py-0.5 rounded"
-                        >
-                          {item.name} × {item.quantity}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm font-medium">
-                  {(parseFloat(combo.price) * combo.quantity).toLocaleString()}{" "}
-                  VNĐ
-                </p>
-              </div>
-            ))}
+      {/* VOUCHER */}
+      <div className="mt-3 mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Mã giảm giá
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={voucherCode}
+            onChange={(e) => setVoucherCode(e.target.value)}
+            placeholder="Nhập mã giảm giá..."
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF763E]"
+          />
+          <button
+            onClick={applyVoucherCode}
+            className="bg-[#AF763E] text-white px-4 py-2 rounded-md text-sm hover:opacity-90"
+            disabled={isLoading}
+          >
+            Áp dụng
+          </button>
+        </div>
+        {discountAmount > 0 && (
+          <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
+            <FiPercent className="text-green-500" />
+            Giảm {discountAmount.toLocaleString()} VNĐ
+          </p>
+        )}
+      </div>
+
+      {/* TÍNH TIỀN */}
+      <div className="border-t border-gray-200 pt-3">
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">Tạm tính:</span>
+          <span className="font-medium">
+            {formData.total_price.toLocaleString()} VNĐ
+          </span>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between mb-1 text-green-700">
+            <span className="text-sm">Giảm giá:</span>
+            <span>-{discountAmount.toLocaleString()} VNĐ</span>
+          </div>
+        )}
+        <div className="flex justify-between mb-1">
+          <span className="text-gray-600">Tiền cọc:</span>
+          <span className="font-medium text-orange-600">
+            {effectiveDeposit.toLocaleString()} VNĐ
+          </span>
+        </div>
+
+        {/* PHƯƠNG THỨC THANH TOÁN */}
+        {formData.payment_method === "cash" ? (
+          <div className="bg-blue-50 rounded-lg p-3 mt-3 mb-3">
+            <p className="text-sm text-blue-700 font-medium">
+              💰 Thanh toán tiền mặt
+            </p>
+            <p className="text-xs text-blue-600">
+              {shouldDeposit
+                ? "Thanh toán cọc trước, phần còn lại khi đến nhà hàng"
+                : "Thanh toán toàn bộ khi đến nhà hàng"}
+            </p>
           </div>
         ) : (
-          <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
-            <p className="text-gray-500 text-sm">Chưa có combo nào được chọn</p>
-            <button
-              onClick={onAddCombo}
-              className="mt-2 text-[#AF763E] text-sm font-medium"
-            >
-              + Thêm combo
-            </button>
+          <div className="bg-green-50 rounded-lg p-3 mt-3 mb-3">
+            <p className="text-sm text-green-700 font-medium">
+              📱 Thanh toán trực tuyến
+            </p>
+            <p className="text-xs text-green-600">
+              Thanh toán toàn bộ qua ứng dụng
+            </p>
           </div>
         )}
 
-        {/* VOUCHER */}
-        <div className="mt-3 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Mã giảm giá
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={voucherCode}
-              onChange={(e) => setVoucherCode(e.target.value)}
-              placeholder="Nhập mã giảm giá..."
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF763E]"
-            />
-            <button
-              onClick={applyVoucherCode}
-              className="bg-[#AF763E] text-white px-4 py-2 rounded-md text-sm hover:opacity-90"
-              disabled={isLoading}
-            >
-              Áp dụng
-            </button>
-          </div>
-          {discountAmount > 0 && (
-            <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
-              <FiPercent className="text-green-500" />
-              Giảm {discountAmount.toLocaleString()} VNĐ
-            </p>
-          )}
+        <div className="flex justify-between mt-3 pt-2 border-t border-gray-200">
+          <span className="font-semibold">
+            {formData.payment_method === "cash"
+              ? "Cần thanh toán ngay:"
+              : "Tổng thanh toán:"}
+          </span>
+          <span className="font-bold text-red-600">
+            {payNowAmount.toLocaleString()} VNĐ
+          </span>
         </div>
 
-        <div className="border-t border-gray-200 pt-3">
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-600">Tạm tính món ăn:</span>
-            <span className="font-medium">
-              {foods
-                .reduce((sum, food) => sum + food.price * food.quantity, 0)
-                .toLocaleString()}{" "}
-              VNĐ
-            </span>
-          </div>
-
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-600">Tạm tính combo:</span>
-            <span className="font-medium">
-              {combos
-                .reduce(
-                  (sum, combo) =>
-                    sum + parseFloat(combo.price) * combo.quantity,
-                  0
-                )
-                .toLocaleString()}{" "}
-              VNĐ
-            </span>
-          </div>
-
-          {discountAmount > 0 && (
-            <div className="flex justify-between mb-1 text-green-700">
-              <span className="text-sm">Giảm giá:</span>
-              <span>-{discountAmount.toLocaleString()} VNĐ</span>
-            </div>
-          )}
-
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-600">Phí dịch vụ:</span>
-            <span className="font-medium">0 VNĐ</span>
-          </div>
-
-          <div className="flex justify-between mb-1">
-            <span className="text-gray-600">Tiền cọc:</span>
-            <span className="font-medium text-orange-600">
-              {depositAmount.toLocaleString()} VNĐ
-            </span>
-          </div>
-
-          {formData.payment_method === "cash" ? (
-            <div className="bg-blue-50 rounded-lg p-3 mt-3 mb-3">
-              <p className="text-sm text-blue-700 font-medium">
-                💰 Thanh toán tiền mặt
-              </p>
-              <p className="text-xs text-blue-600">
-                Thanh toán cọc trước, phần còn lại thanh toán khi đến nhà hàng
-              </p>
-            </div>
-          ) : (
-            <div className="bg-green-50 rounded-lg p-3 mt-3 mb-3">
-              <p className="text-sm text-green-700 font-medium">
-                📱{" "}
-                {formData.payment_method === "vnpay"
-                  ? "Thanh toán Momo"
-                  : "Chuyển khoản"}
-              </p>
-              <p className="text-xs text-green-600">
-                Thanh toán toàn bộ qua ứng dụng
-              </p>
-            </div>
-          )}
-
-          <div className="flex justify-between mt-3 pt-2 border-t border-gray-200">
-            <span className="font-semibold">
-              {formData.payment_method === "cash"
-                ? "Cần thanh toán ngay:"
-                : "Tổng thanh toán:"}
-            </span>
-            <span className="font-bold text-lg text-[#AF763E]">
-              {getPaymentAmount().toLocaleString()} VNĐ
-            </span>
-          </div>
-
-          {formData.payment_method === "cash" && formData.total_price > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
-              Còn lại {formData.total_price.toLocaleString()} VNĐ thanh toán khi
-              đến nhà hàng
+        {formData.payment_method === "cash" && (
+          <div className="mt-2 bg-yellow-50 rounded-lg p-3 text-sm text-yellow-800 border border-yellow-200">
+            <p className="mb-1 font-medium">💵 Thanh toán tại quán:</p>
+            <p>
+              {shouldDeposit ? (
+                <>
+                  Bạn đã cọc{" "}
+                  <span className="font-semibold">
+                    {effectiveDeposit.toLocaleString()} VNĐ
+                  </span>
+                  . Còn lại cần thanh toán khi đến quán:{" "}
+                  <span className="font-bold text-red-600">
+                    {remainingCashPayment.toLocaleString()} VNĐ
+                  </span>
+                </>
+              ) : (
+                <>
+                  Bạn sẽ thanh toán toàn bộ{" "}
+                  <span className="font-bold text-red-600">
+                    {finalTotal.toLocaleString()} VNĐ
+                  </span>{" "}
+                  khi đến quán.
+                </>
+              )}
             </p>
-          )}
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          onClick={onSubmitOrder}
-          disabled={!selectedTable || isLoading}
-          className={`w-full py-3 rounded-lg text-white mt-6 ${
-            !selectedTable || isLoading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-[#AF763E]"
-          } transition-all shadow-md`}
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin">↻</span>
-              Đang xử lý...
-            </span>
-          ) : (
-            "Xác nhận đặt bàn"
-          )}
-        </motion.button>
+          </div>
+        )}
       </div>
+
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        onClick={onSubmitOrder}
+        disabled={!selectedTable || isLoading}
+        className={`w-full py-3 rounded-lg text-white mt-6 ${
+          !selectedTable || isLoading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#AF763E]"
+        } transition-all shadow-md`}
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="animate-spin">↻</span>
+            Đang xử lý...
+          </span>
+        ) : (
+          "Xác nhận đặt bàn"
+        )}
+      </motion.button>
     </motion.div>
   );
 }

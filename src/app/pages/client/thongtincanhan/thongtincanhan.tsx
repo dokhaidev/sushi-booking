@@ -1,6 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import axios from "axios";
+
+// Define the UserType interface for user objects
+interface UserType {
+  name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  birthdate: string;
+  address: string;
+  avatar: string;
+}
 import {
   User,
   Lock,
@@ -21,7 +33,9 @@ import { useAuth } from "../../../context/authContext";
 
 export default function UserDashboard() {
   const { user: authUser, isLoading, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "orders">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "orders">(
+    "profile"
+  );
   const [editMode, setEditMode] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [tempUser, setTempUser] = useState<any | null>(null);
@@ -36,7 +50,9 @@ export default function UserDashboard() {
         gender: authUser.gender || "",
         birthdate: authUser.birthdate || "",
         address: authUser.address || "",
-        avatar: authUser.avatar || "https://i.pravatar.cc/150?img=56",
+        avatar:
+          authUser.avatar ||
+          "https://img.freepik.com/premium-vector/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-vector-illustration_561158-3407.jpg?w=360",
       };
       setUser(defaultUser);
       setTempUser(defaultUser);
@@ -51,8 +67,8 @@ export default function UserDashboard() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const avatar = event.target?.result as string;
-        setUser((prev) => ({ ...prev, avatar }));
-        setTempUser((prev) => ({ ...prev, avatar }));
+        setUser((prev: UserType | null) => ({ ...prev!, avatar }));
+        setTempUser((prev: UserType | null) => ({ ...prev!, avatar }));
       };
       reader.readAsDataURL(file);
     }
@@ -73,11 +89,15 @@ export default function UserDashboard() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setTempUser((prev) => ({ ...prev, [name]: value }));
+    setTempUser((prev: UserType | null) => ({ ...prev!, [name]: value }));
   };
 
   if (isLoading || !user || !tempUser) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-600">Đang tải...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        Đang tải...
+      </div>
+    );
   }
 
   return (
@@ -309,18 +329,6 @@ function ProfileTab({
               name: "name",
               editable: true,
             },
-            {
-              label: "Giới tính",
-              value: user.gender,
-              name: "gender",
-              editable: true,
-            },
-            {
-              label: "Ngày sinh",
-              value: user.birthdate,
-              name: "birthdate",
-              editable: true,
-            },
           ]}
           onInputChange={onInputChange}
         />
@@ -341,12 +349,6 @@ function ProfileTab({
               name: "phone",
               editable: true,
             },
-            {
-              label: "Địa chỉ",
-              value: user.address,
-              name: "address",
-              editable: true,
-            },
           ]}
           onInputChange={onInputChange}
         />
@@ -356,80 +358,176 @@ function ProfileTab({
 }
 
 function SecurityTab() {
-  const [passwords, setPasswords] = useState({
-    current: "",
-    new: "",
-    confirm: "",
+  const [form, setForm] = useState({
+    email: "",
+    code: "",
+    password: "",
   });
-  const [showPassword, setShowPassword] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
+  const [step, setStep] = useState<"request" | "reset">("request");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggleShowPassword = (field: keyof typeof showPassword) => {
-    setShowPassword({
-      ...showPassword,
-      [field]: !showPassword[field],
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const requestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setIsLoading(true);
+    try {
+      await axios.post("http://127.0.0.1:8000/api/forgot-password", {
+        email: form.email,
+      });
+      setMessage("Mã xác thực đã được gửi về email.");
+      setStep("reset");
+    } catch (err) {
+      setError("Không thể gửi mã xác thực. Vui lòng kiểm tra lại email.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setIsLoading(true);
+    try {
+      await axios.post("http://127.0.0.1:8000/api/reset-password", form);
+      setMessage("Mật khẩu đã được đặt lại thành công.");
+    } catch (err) {
+      setError("Mã xác thực không hợp lệ hoặc đã hết hạn.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-        Bảo mật tài khoản
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+        Đặt lại mật khẩu qua Email
       </h2>
-      <form className="space-y-6">
-        <div className="space-y-5">
-          <PasswordInput
-            label="Mật khẩu hiện tại"
-            value={passwords.current}
-            showPassword={showPassword.current}
-            onChange={(e) =>
-              setPasswords({ ...passwords, current: e.target.value })
-            }
-            onToggleVisibility={() => toggleShowPassword("current")}
-          />
-          <PasswordInput
-            label="Mật khẩu mới"
-            value={passwords.new}
-            showPassword={showPassword.new}
-            onChange={(e) =>
-              setPasswords({ ...passwords, new: e.target.value })
-            }
-            onToggleVisibility={() => toggleShowPassword("new")}
-          />
-          <PasswordInput
-            label="Xác nhận mật khẩu"
-            value={passwords.confirm}
-            showPassword={showPassword.confirm}
-            onChange={(e) =>
-              setPasswords({ ...passwords, confirm: e.target.value })
-            }
-            onToggleVisibility={() => toggleShowPassword("confirm")}
+
+      <form
+        onSubmit={step === "request" ? requestOtp : resetPassword}
+        className="space-y-5"
+      >
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="pt-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md transition"
-          >
-            Cập nhật mật khẩu
-          </motion.button>
-        </div>
+
+        {step === "reset" && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mã xác thực
+              </label>
+              <input
+                type="text"
+                name="code"
+                value={form.code}
+                onChange={handleChange}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md transition"
+        >
+          {isLoading
+            ? "Đang xử lý..."
+            : step === "request"
+            ? "Gửi mã xác thực"
+            : "Đặt lại mật khẩu"}
+        </motion.button>
+
+        {message && <p className="text-green-600 text-sm mt-2">{message}</p>}
+        {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
       </form>
     </div>
   );
 }
 
 function OrdersTab() {
-  const orders = [
-    { id: 101, date: "01/06/2024", total: "450,000đ", status: "Đã giao" },
-    { id: 102, date: "10/06/2024", total: "120,000đ", status: "Đang xử lý" },
-    { id: 103, date: "15/06/2024", total: "320,000đ", status: "Đã huỷ" },
-  ];
+  const { user: authUser } = useAuth();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showDetail, setShowDetail] = useState(false);
+
+  useEffect(() => {
+    if (!authUser?.id) return;
+
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await axios.get(
+          `http://127.0.0.1:8000/api/orders/history/${authUser.id}`
+        );
+        setOrders(res.data);
+      } catch (err) {
+        console.error("Lỗi khi tải đơn hàng:", err);
+        setError("Không thể tải lịch sử đơn hàng. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [authUser?.id]);
+
+  const viewOrderDetail = (order: any) => {
+    setSelectedOrder(order);
+    setShowDetail(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center text-gray-600 py-12">
+        Đang tải đơn hàng...
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500 py-12">{error}</div>;
+  }
 
   return (
     <div>
@@ -438,106 +536,199 @@ function OrdersTab() {
       </h2>
 
       {orders.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-12"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            Không có đơn hàng
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Bạn chưa có đơn hàng nào được đặt.
-          </p>
-        </motion.div>
+        <p className="text-center text-gray-500">Bạn chưa có đơn hàng nào.</p>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-xl"
-        >
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+        <div className="space-y-6">
+          <div className="overflow-auto shadow ring-1 ring-black ring-opacity-5 rounded-xl">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Mã đơn
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Ngày đặt
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Tổng tiền
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Trạng thái
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {orders.map((order, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                      #{order.order_id}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {parseFloat(order.total_price).toLocaleString()}đ
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => viewOrderDetail(order)}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Xem chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Order Detail Modal */}
+          <AnimatePresence>
+            {showDetail && selectedOrder && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                onClick={() => setShowDetail(false)}
+              >
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  transition={{ type: "spring", damping: 25 }}
+                  className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  Mã đơn
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                >
-                  Ngày đặt
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                >
-                  Tổng tiền
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                >
-                  Trạng thái
-                </th>
-                <th
-                  scope="col"
-                  className="relative py-3.5 pl-3 pr-4 sm:pr-6"
-                ></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {orders.map((order, index) => (
-                <motion.tr
-                  key={order.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="hover:bg-gray-50"
-                >
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                    #{order.id}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {order.date}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {order.total}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
-                    <StatusBadge status={order.status} />
-                  </td>
-                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      href="#"
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Xem chi tiết
-                    </motion.a>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </motion.div>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          Chi tiết đơn hàng #{selectedOrder.order_id}
+                        </h3>
+                        <p className="text-gray-500">
+                          Ngày đặt:{" "}
+                          {new Date(selectedOrder.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowDetail(false)}
+                        className="text-gray-400 hover:text-gray-500"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-lg mb-3">
+                          Thông tin đơn hàng
+                        </h4>
+                        <div className="space-y-2">
+                          <p>
+                            <span className="font-medium">Trạng thái:</span>{" "}
+                            <StatusBadge status={selectedOrder.status} />
+                          </p>
+                          <p>
+                            <span className="font-medium">Tổng tiền:</span>{" "}
+                            {parseFloat(
+                              selectedOrder.total_price
+                            ).toLocaleString()}
+                            đ
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-lg mb-3">
+                        Danh sách món ăn
+                      </h4>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                                Tên món
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                                Số lượng
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                                Đơn giá
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                                Thành tiền
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {selectedOrder.items?.map(
+                              (item: any, index: number) => (
+                                <tr key={index}>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {item.food_name ||
+                                      item.combo_name ||
+                                      "Không xác định"}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {item.quantity}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {parseFloat(item.price).toLocaleString()}đ
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {(
+                                      item.quantity * parseFloat(item.price)
+                                    ).toLocaleString()}
+                                    đ
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+
+                          <tfoot className="bg-gray-50">
+                            <tr>
+                              <td
+                                colSpan={3}
+                                className="px-4 py-3 text-right text-sm font-medium text-gray-500"
+                              >
+                                Tổng cộng:
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                                {parseFloat(
+                                  selectedOrder.total_price
+                                ).toLocaleString()}
+                                đ
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={() => setShowDetail(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      >
+                        Đóng
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );
