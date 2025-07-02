@@ -5,12 +5,15 @@ import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
 import { Customer } from "../../../../types/customer";
 import Pagination from "../../../../components/ui/Panigation";
-import { FaEye, FaLock } from "react-icons/fa";
+import { FaEye, FaLock, FaPenFancy, FaUser, FaUsers, FaCashRegister } from "react-icons/fa";
+import { PiChefHat } from "react-icons/pi";
 import PopupNotification from "../../../../components/ui/PopupNotification";
 import SearchInput from "@/src/app/components/ui/SearchInput";
 import Popup from "../../../../components/ui/Popup";
 import InputField from "../../../../components/ui/InputField";
 import { Button } from "../../../../components/ui/button";
+import Cookies from "js-cookie";
+
 
 export default function QuanLyNguoiDung() {
   const [searchText, setSearchText] = useState("");
@@ -82,15 +85,21 @@ export default function QuanLyNguoiDung() {
     if (!selectedUser) return;
 
     try {
-      const res = await axios.put(`http://localhost:8000/api/customers/${selectedUser.id}/role`, {
-        role: selectedRole,
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // nếu dùng Sanctum cần cookie hoặc token đúng
-        }
-      });
+      const token = Cookies.get("access_token"); // Lấy từ cookie
+      if (!token) {
+        throw new Error("Không tìm thấy access_token");
+      }
 
-      // Cập nhật lại user trong danh sách
+      const res = await axios.put(
+        `http://localhost:8000/api/customers/${selectedUser.id}/role`,
+        { role: selectedRole },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       const updated = res.data.customer;
       setUsers((prev) =>
         prev.map((u) => (u.id === updated.id ? updated : u))
@@ -115,6 +124,7 @@ export default function QuanLyNguoiDung() {
   };
 
 
+
   return (
     <div className="grid grid-cols-12 gap-4">
       <PopupNotification
@@ -133,62 +143,102 @@ export default function QuanLyNguoiDung() {
         />
 
         <div className="col-span-12">
-            <Card className="bg-[#fff7f2]">
-                <div className="grid grid-cols-12 gap-4 items-end">
-                {/* Trạng thái */}
-                <div className="col-span-12 md:col-span-3">
-                    <label className="text-sm text-gray-700 font-medium block mb-1">Hạng</label>
-                    <select className="w-full bg-gray-200 px-4 py-2 rounded-md ">
-                    <option>Bạc</option>
-                    <option>Vàng</option>
-                    <option>Bạch kim</option>
-                    </select>
+          {/* Filters */}
+          <Card className="bg-white">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">Hạng</label>
+                  <select className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                    <option>Tất cả hạng</option>
+                    <option>Bạc</option>
+                    <option>Vàng</option>
+                    <option>Bạch kim</option>
+                  </select>
                 </div>
-
-                {/* Thời gian */}
-                <div className="col-span-12 md:col-span-3">
-                    <label className="text-sm text-gray-700 font-medium block mb-1">Vai trò</label>
-                    <select className="w-full bg-gray-200 px-4 py-2 rounded-md ">
-                        <option>Người dùng</option>
-                        <option>Quản trị viên</option>
-                        <option>Nhân viên bếp</option>
-                        <option>Nhân viên bàn</option>
-                        <option>Nhân viên thu ngân</option>
-                    </select>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">Vai trò</label>
+                  <select className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                    <option>Tất cả vai trò</option>
+                    <option>Người dùng</option>
+                    <option>Quản trị viên</option>
+                    <option>Nhân viên bếp</option>
+                    <option>Nhân viên bàn</option>
+                    <option>Nhân viên thu ngân</option>
+                  </select>
                 </div>
-
-                {/* Phương thức thanh toán */}
-                <div className="col-span-12 md:col-span-3">
-                    <label className="text-sm text-gray-700 font-medium block mb-1">Trạng thái</label>
-                    <select className="w-full bg-gray-200 px-4 py-2 rounded-md ">
-                    <option>Đang hoạt động</option>
-                    <option>Chưa kích hoạt</option>
-                    <option>Bị khóa</option>
-                    </select>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-2">Trạng thái</label>
+                  <select className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors">
+                    <option>Tất cả trạng thái</option>
+                    <option>Đang hoạt động</option>
+                    <option>Chưa kích hoạt</option>
+                    <option>Bị khóa</option>
+                  </select>
                 </div>
-
-                {/* Nút lọc đơn hàng */}
-                <div className="col-span-12 md:col-span-3 flex justify-end">
-                    <button className="w-full bg-[#9c6b66] text-white px-6 py-2 rounded-xl">
-                    Lọc đơn hàng
-                    </button>
+                <div className="flex items-end">
+                  <button className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg">
+                    Lọc dữ liệu
+                  </button>
                 </div>
-                </div>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
       {/* Stats */}
-      <div className="col-span-12 grid grid-cols-12 gap-4">
+      {/* <div className="col-span-12 grid grid-cols-12 gap-4">
         {[
           { label: "Tổng số khách hàng", value: users.length, },
           { label: "Tổng số nhân viên bếp", value: users.filter(user => user.role === 'kitchenmanager').length },
           { label: "Tổng số nhân viên bàn", value: users.filter(user => user.role === 'menumanager').length },
-          { label: "Tổng số nhân viên thu ngân", value: users.filter(user => user.role === 'ordermanger').length },
+          { label: "Tổng số nhân viên thu ngân", value: users.filter(user => user.role === 'ordermanager').length },
         ].map((item, i) => (
           <Card className="col-span-3" key={i}>
             <CardContent>
               <p className="text-base text-muted-foreground">{item.label}</p>
               <p className="text-xl font-bold mt-2">{item.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div> */}
+      {/* Stats */}
+      <div className="col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: "Tổng số khách hàng",
+            value: users.length,
+            icon: <FaUser className="w-6 h-6" />,
+            color: "from-blue-500 to-blue-600",
+          },
+          {
+            label: "Nhân viên bếp",
+            value: users.filter((user) => user.role === "kitchenmanager").length,
+            icon: <PiChefHat  className="w-6 h-6" />,
+            color: "from-green-500 to-green-600",
+          },
+          {
+            label: "Nhân viên bàn",
+            value: users.filter((user) => user.role === "menumanager").length,
+            icon: <FaUsers className="w-6 h-6" />,
+            color: "from-purple-500 to-purple-600",
+          },
+          {
+            label: "Nhân viên thu ngân",
+            value: users.filter((user) => user.role === "ordermanager").length,
+            icon: <FaCashRegister className="w-6 h-6" />,
+            color: "from-orange-500 to-orange-600",
+          },
+        ].map((item, i) => (
+          <Card key={i} className="hover:shadow-lg transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">{item.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{item.value}</p>
+                </div>
+                <div className={`p-3 rounded-lg bg-gradient-to-r ${item.color} text-white`}>{item.icon}</div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -252,7 +302,7 @@ export default function QuanLyNguoiDung() {
                           ? 'text-blue-600'
                           : user.role === 'kitchenmanager'
                           ? 'text-orange-600'
-                          : user.role === 'ordermanger'
+                          : user.role === 'ordermanager'
                           ? 'text-green-600'
                           : user.role === 'menumanager'
                           ? 'text-purple-600'
@@ -263,7 +313,7 @@ export default function QuanLyNguoiDung() {
                           ? 'Người dùng'
                           : user.role === 'kitchenmanager'
                           ? 'NV bếp'
-                          : user.role === 'ordermanger'
+                          : user.role === 'ordermanager'
                           ? 'NV đơn hàng'
                           : user.role === 'menumanager'
                           ? 'NV thực đơn'
@@ -276,21 +326,19 @@ export default function QuanLyNguoiDung() {
                           ? 'Đã khóa'
                           : 'Đang hoạt động'}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 flex gap-1">
                         <button
-                          className="px-1 flex items-center gap-1 text-red-700 cursor-pointer border border-red-700 rounded hover:bg-red-100"
+                          className="p-2 flex items-center gap-1 text-red-700 cursor-pointer border border-red-700 rounded hover:bg-red-100"
                           onClick={() => toggleUserStatus(user)}
                         >
                           {user.status === 1 ? <FaLock /> : <FaEye />}
-                          <span className="text-red-700 cursor-pointer font-semibold">
-                            {user.status === 1 ? "Khóa" : "Mở khóa"}
-                          </span>
+
                         </button>
                         <button
-                          className="text-sm text-blue-600 underline"
+                          className="p-2 flex items-center gap-1 text-sm text-blue-700 border border-blue-700 rounded hover:bg-blue-100 font-semibold"
                           onClick={() => openEditRolePopup(user)}
                         >
-                          Chỉnh sửa
+                          <FaPenFancy />
                         </button>
                       </td>
                     </tr>
@@ -326,8 +374,8 @@ export default function QuanLyNguoiDung() {
                     <option value="user">Người dùng</option>
                     <option value="admin">Quản trị viên</option>
                     <option value="kitchenmanager">Nhân viên bếp</option>
-                    <option value="menumanager">Nhân viên thực đơn</option>
-                    <option value="ordermanger">Nhân viên đơn hàng</option>
+                    <option value="menumanager">Nhân viên bàn</option>
+                    <option value="ordermanager">Nhân viên đơn hàng</option>
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

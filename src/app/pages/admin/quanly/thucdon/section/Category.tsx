@@ -11,6 +11,7 @@ import SearchInput from "../../../../../components/ui/SearchInput";
 import React, { useState } from "react";
 import InputField from "@/src/app/components/ui/InputField";
 import { addCategory } from "@/src/app/hooks/useAdd";
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter";
 
 export default function CategoryComponent({
   categoryRef,
