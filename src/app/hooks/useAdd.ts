@@ -4,7 +4,9 @@ import {
   CategoryAdd,
   FoodGroupAdd,
   FoodAdd,
-  VoucherAdd
+  ComboAdd,
+  VoucherAdd,
+  TableAdd
 //   ComboInput,
 } from '../types';
 
@@ -49,34 +51,36 @@ export const addFood = async (data: FoodAdd) => {
 /**
  * Thêm combo
  */
-// export const addCombo = async (data: ComboInput) => {
-//   const formData = new FormData();
-//   formData.append('name', data.name);
-//   formData.append('price', String(data.price));
-//   if (data.description) formData.append('description', data.description);
-//   formData.append('status', data.status ? '1' : '0');
-//   if (data.image) formData.append('image', data.image);
-//   data.items.forEach((item, index) => {
-//     formData.append(`items[${index}][food_id]`, String(item.food_id));
-//     formData.append(`items[${index}][quantity]`, String(item.quantity));
-//   });
+export const addCombo = async (data: ComboAdd) => {
+  const formData = new FormData();
+  formData.append('name', data.name);
+  formData.append('price', String(data.price));
+  formData.append('status', data.status ? '1' : '0');
+  if (data.description) formData.append('description', data.description);
+  if (data.image) formData.append('image', data.image);
 
-//   const response = await axios.post('http://127.0.0.1:8000/api/combo/insert-combos', formData, {
-//     headers: {
-//       'Content-Type': 'multipart/form-data',
-//     },
-//   });
+  data.items.forEach((item, index) => {
+    formData.append(`items[${index}][food_id]`, String(item.food_id));
+    formData.append(`items[${index}][quantity]`, String(item.quantity));
+  });
 
-//   return response.data;
-// };
+  const response = await axios.post('http://127.0.0.1:8000/api/combo/insert-combos', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data;
+};
+
 
 /**
  * Thêm bàn
  */
-// export const addTable = async (data: TableAdd) => {
-//   const response = await axios.post('http://127.0.0.1:8000/api/tables', data);
-//   return response.data;
-// };
+export const addTable = async (data: TableAdd) => {
+  const response = await axios.post("http://127.0.0.1:8000/api/tables", data);
+  return response.data;
+};
 
 /**
  * Thêm voucher

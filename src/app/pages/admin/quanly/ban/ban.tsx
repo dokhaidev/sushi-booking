@@ -1,27 +1,27 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import TitleDesc from "../../../../components/ui/titleDesc";
+import { FaPlus } from "react-icons/fa";
+import { Button } from "@/src/app/components/ui/button";
 import { Card, CardHeader , CardContent } from "../../../../components/ui/Card";
 import Pagination from "../../../../components/ui/Panigation";
-import axios from "axios";
+import { useFetch } from "@/src/app/hooks/useFetch";
+import { Table } from "@/src/app/types";
+import Popup from "@/src/app/components/ui/Popup";
+import InputField from "@/src/app/components/ui/InputField";
+import { addTable } from "@/src/app/hooks/useAdd";
 
 export default function QuanLyBan() {
-  const [tables, setTables] = useState([]);
+  const { tables } = useFetch();
   const [currentPage, setCurrentPage] = useState(1);
+  const [openPopup, setOpenPopup] = useState(false);
+  const [formData, setFormData] = useState({
+    table_number: "",
+    max_guests: "",
+    status: "available",
+  });
+  
   const itemsPerPage = 6;
-
-  useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const res = await axios.get("http://localhost:8000/api/tables");
-        setTables(res.data);
-        console.log("Danh sách bàn:", res.data);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách bàn:", error);
-      }
-    };
-    fetchTables();
-  }, []);
 
   const paginatedData = tables.slice(
     (currentPage - 1) * itemsPerPage,
@@ -41,6 +41,32 @@ export default function QuanLyBan() {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+const handleAddTable = async () => {
+  const maxGuests = parseInt(formData.max_guests);
+  if (isNaN(maxGuests) || maxGuests < 1) {
+    alert("Số lượng khách tối đa phải là số hợp lệ!");
+    return;
+  }
+
+  try {
+    await addTable({
+      table_number: formData.table_number,
+      max_guests: maxGuests,
+      status: formData.status as "available" | "reserved" | "occupied",
+    });
+    setOpenPopup(false);
+    location.reload();
+  } catch (err) {
+    console.error("Lỗi khi thêm bàn:", err);
+    alert("Không thể thêm bàn. Vui lòng kiểm tra dữ liệu đầu vào hoặc kiểm tra log server.");
+  }
+};
+
+
   return (
   <div className="min-h-screen px-6 py-4">
     <TitleDesc
@@ -49,8 +75,97 @@ export default function QuanLyBan() {
       className="mb-6"
     />
 
+    <div className="col-span-12 mb-6">
+      <Card>
+        <div className="grid grid-cols-12 gap-4 items-end">
+            <div className="col-span-12 md:col-span-3">
+                <label className="text-sm text-gray-700 font-medium block mb-1">Trạng thái</label>
+                <select className="w-full bg-gray-200 px-4 py-2 rounded-md">
+                    <option>Tất cả</option>
+                    <option>Còn trống</option>
+                    <option>Đã đặt</option>
+                    <option>Đang sử dụng</option>
+                </select>
+            </div>
+            <div className="col-span-12 md:col-span-3">
+                <label className="text-sm text-gray-700 font-medium block mb-1">Thời gian</label>
+                <select className="w-full bg-gray-200 px-4 py-2 rounded-md">
+                    <option>Tất cả</option>
+                    <option>Hôm nay</option>
+                    <option>Tuần này</option>
+                    <option>Tháng này</option>
+                </select>
+            </div>
+            <div className="col-span-12 md:col-span-3">
+                <label className="text-sm text-gray-700 font-medium block mb-1">Số lượng khách</label>
+                <select className="w-full bg-gray-200 px-4 py-2 rounded-md">
+                    <option>Tất cả</option>
+                    <option>4 khách</option>
+                    <option>6 khách</option>
+                    <option>8 khách</option>
+                    <option>10 khách</option>
+                </select>
+            </div>
+            <div className="col-span-12 md:col-span-3 flex justify-end">
+                <Button className="w-full bg-[#9c6b66] text-white px-6 py-2 rounded-xl">
+                    Lọc
+                </Button>
+            </div>
+        </div>
+        <div className="mt-6">
+          <Button
+            className="bg-[#f3eae4] text-[#9c6b66] px-3 py-1 rounded flex items-center gap-2 text-base cursor-pointer"
+            onClick={() => setOpenPopup(true)}
+          >
+            <FaPlus /> Thêm bàn
+          </Button>
+        </div>
+      </Card>
+    </div>
+
+    <Popup
+      isOpen={openPopup}
+      onClose={() => setOpenPopup(false)}
+      title="Thêm bàn mới"
+    >
+      <div className="space-y-4">
+        <InputField
+          label="Số bàn"
+          name="table_number"
+          value={formData.table_number}
+          onChange={handleChange}
+        />
+        <InputField
+          label="Số khách tối đa"
+          name="max_guests"
+          type="number"
+          value={formData.max_guests}
+          onChange={handleChange}
+        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="available">Còn trống</option>
+            <option value="occupied">Đang sử dụng</option>
+            <option value="reserved">Đã đặt</option>
+          </select>
+        </div>
+        <Button
+          className="w-full bg-[#9c6b66] text-white py-2 rounded"
+          onClick={handleAddTable}
+        >
+          Thêm bàn
+        </Button>
+      </div>
+    </Popup>
+
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {paginatedData.map((table: any, idx: number) => (
+      {paginatedData.map((table: Table, idx: number) => (
         <Card key={idx}>
           <CardHeader header={`Bàn số ${table.table_number}`} />
           <CardContent>

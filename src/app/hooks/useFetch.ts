@@ -1,7 +1,7 @@
 "use client";
 import  { useEffect, useState } from "react";
 import axios from "axios";
-import { Category, Group, Food, Combo, Voucher } from "../types";
+import { Category, Group, Food, Combo, Voucher, Table, Order, OrderDetail } from "../types";
 
 
 export function useFetch() {
@@ -10,6 +10,9 @@ export function useFetch() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [combos, setCombos] = useState<Combo[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
 
   // Pagination state
   // const [showAddCategory, setShowAddCategory] = useState(false);
@@ -27,29 +30,6 @@ export function useFetch() {
       })
       .catch((err) => console.error("Lỗi khi lấy danh mục:", err));
   }, []);
-
-  // Hiển thị popup thêm danh mục
-  // const handleAddCategory = async () => {
-  //   if (!newCategoryName.trim()) return;
-
-  //   try {
-  //     const response = await axios.post("http://127.0.0.1:8000/api/insert-category", {
-  //       name: newCategoryName,
-  //       description: newCategoryDescription,
-  //     });
-
-  //     const newCategory = response.data.data;
-
-  //     setCategories([...categories, newCategory]);
-  //     setNewCategoryName("");
-  //     setNewCategoryDescription(""); // Reset mô tả
-  //     setShowAddCategory(false);
-  //   } catch (error: any) {
-  //     console.error("Lỗi khi thêm danh mục:", error?.response?.data || error.message);
-  //   }
-  // };
-
-
 
   // Gọi API lấy loại danh mục
   useEffect(() => {
@@ -88,11 +68,43 @@ export function useFetch() {
       .then((res) => setVouchers(res.data))
       .catch((err) => console.error("Lỗi khi lấy danh sách voucher:", err));
   }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://127.0.0.1:8000/api/tables")
+      .then((res) => setTables(res.data))
+      .catch((err) => console.error("Lỗi khi lấy bàn:", err));
+  }, []);
+
+  // Gọi API lấy danh sách đơn hàng
+  useEffect(() => {
+    axios
+      .get("http://127.0.0.1:8000/api/orders")
+      .then((res) => {
+        console.log("Danh sách đơn hàng:", res.data);
+        setOrders(res.data);
+      })
+      .catch((err) => console.error("Lỗi khi lấy danh sách đơn hàng:", err));
+  }, []);
+
+  // Lấy chi tiết đơn hàng
+  const fetchOrderDetail = (id: number) => {
+    axios.get(`http://127.0.0.1:8000/api/orders/${id}`)
+      .then(res => {
+        console.log("Chi tiết đơn hàng:", res.data);
+        setOrderDetail(res.data);
+      })
+      .catch(err => console.error("Lỗi khi lấy chi tiết đơn hàng:", err));
+  };
   return {
     categories,
     foodGroups,
     foods,
     combos,
-    vouchers
+    vouchers,
+    tables,
+    orders,
+    orderDetail,
+    fetchOrderDetail,
   };
 }
