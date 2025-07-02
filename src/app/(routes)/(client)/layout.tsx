@@ -6,6 +6,7 @@ import Footer from "../../components/layout/Footer";
 import dynamic from "next/dynamic";
 import MiniChat from "../../components/MiniChatApp/MiniChat";
 import BackToTopButton from "../../components/BackToTopButton/BackToTopButton";
+import LuckyWheel from "../../components/LuckyWheel/LuckyWheel";
 
 const AuthProviderNoSSR = dynamic(
   () => import("../../context/AuthProviderWrapper"),
@@ -27,6 +28,7 @@ export default function RootLayout({
           <Footer />
         </AuthProviderNoSSR>
         <MiniChat />
+        <LuckyWheel />
       </body>
     </html>
   );

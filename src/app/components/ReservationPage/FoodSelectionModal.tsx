@@ -417,18 +417,17 @@ export default function FoodSelectionModal({
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                               <button
-                                onClick={() =>
-                                  onQuantityChange(
-                                    food.id,
-                                    Math.max(1, food.quantity - 1)
-                                  )
-                                }
-                                disabled={food.quantity <= 1}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                                  food.quantity <= 1
-                                    ? "bg-gray-100 text-gray-400"
-                                    : "bg-gray-200 hover:bg-gray-300"
-                                }`}
+                                onClick={() => {
+                                  if (food.quantity <= 1) {
+                                    onRemoveFood(food.id); // Xóa khi số lượng <= 1
+                                  } else {
+                                    onQuantityChange(
+                                      food.id,
+                                      food.quantity - 1
+                                    ); // Giảm số lượng
+                                  }
+                                }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 transition-colors"
                               >
                                 <FiMinus size={16} />
                               </button>

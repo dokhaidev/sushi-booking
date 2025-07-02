@@ -174,6 +174,11 @@ export default function DatBanPage() {
     handleAddCombo(normalizedCombo);
   };
 
+  const remainingCashPayment = Math.max(
+    (formData.total_price || 0) - depositAmount,
+    0
+  );
+
   return (
     <div className="container mx-auto py-[60px] sm:px-16 lg:px-24">
       <AnimatePresence>
