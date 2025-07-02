@@ -47,6 +47,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("auth");
     }
+    Cookies.remove("access_token");
+    Cookies.remove("user_info");
     setUser(null);
     setIsAuthenticated(false);
   }, []);
@@ -58,7 +60,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         timeout: 5000,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.warn("Token không hợp lệ hoặc đã hết hạn");
+        return null;
+      }
       throw error;
     }
   }, []);
@@ -68,15 +74,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         setIsLoading(true);
 
-        let token = null;
+        let token: string | null = null;
         if (typeof window !== "undefined") {
-          // Xử lý token từ URL nếu có
           const query = new URLSearchParams(window.location.search);
           const urlToken = query.get("token");
 
           if (urlToken) {
             localStorage.setItem("auth", urlToken);
-            // Xóa token khỏi URL
             const url = new URL(window.location.href);
             url.searchParams.delete("token");
             window.history.replaceState({}, "", url.toString());
@@ -88,8 +92,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         if (token) {
           const userData = await validateToken(token);
-          setUser(userData);
-          setIsAuthenticated(true);
+          if (userData) {
+            setUser(userData);
+            setIsAuthenticated(true);
+            Cookies.set("access_token", token, { path: "/" });
+            Cookies.set("user_info", JSON.stringify(userData), { path: "/" });
+          } else {
+            clearAuthData();
+          }
+        } else {
+          clearAuthData();
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -113,14 +125,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         const userData = await validateToken(token);
+        if (!userData) {
+          throw new Error("Token không hợp lệ hoặc đã hết hạn");
+        }
+
         setUser(userData);
         setIsAuthenticated(true);
-
-        // ✅ Set cookie để middleware sử dụng
         Cookies.set("access_token", token, { path: "/" });
         Cookies.set("user_info", JSON.stringify(userData), { path: "/" });
 
-        // Redirect sau khi login thành công
         router.replace(returnUrl || "/");
       } catch (error) {
         console.error("Login failed:", error);
@@ -136,14 +149,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async (): Promise<void> => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("auth") : null;
-    if (!token) return;
 
     try {
-      await axios.get("http://127.0.0.1:8000/api/logout", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (token) {
+        await axios.get("http://127.0.0.1:8000/api/logout", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
     } catch (error) {
-      console.error("Logout API failed:", error);
+      console.warn("Logout API failed hoặc token đã hết hạn:", error);
     } finally {
       clearAuthData();
       router.replace("/dang-nhap");
@@ -160,8 +174,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         typeof window !== "undefined" ? localStorage.getItem("auth") : null;
       if (token) {
         const userData = await validateToken(token);
-        setUser(userData);
-        setIsAuthenticated(true);
+        if (userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          clearAuthData();
+        }
       } else {
         clearAuthData();
       }
