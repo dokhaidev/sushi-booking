@@ -20,13 +20,14 @@ export default function CategoryComponent({
 }) {
     const [searchText, setSearchText] = useState("");
     const { categories } = useFetch();
+    const filteredCategories = useSearchFilter(categories, searchText, ["name"]);
     const {
         currentPage,
         setCurrentPage,
         currentData: currentCategories,
         totalItems,
         itemsPerPage,
-    } = usePagination(categories, 10);
+    } = usePagination(filteredCategories, 10);
     
     // Popup state
   const [isPopupOpen, setIsPopupOpen] = useState(false);

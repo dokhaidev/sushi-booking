@@ -13,6 +13,7 @@ import { FoodAdd } from "@/src/app/types";
 import Popup from "@/src/app/components/ui/Popup";
 import InputField from "@/src/app/components/ui/InputField";
 import { addFood } from "@/src/app/hooks/useAdd";
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter";
 
 export default function FoodComponent({
   foodRef,
@@ -21,14 +22,14 @@ export default function FoodComponent({
 }) {
   const [searchText, setSearchText] = useState("");
   const { foods, categories, foodGroups } = useFetch();
-
+  const filteredFoods = useSearchFilter(foods, searchText, ["name", "jpName", ]);
   const {
     currentPage,
     setCurrentPage,
     currentData: currentFood,
     totalItems,
     itemsPerPage,
-  } = usePagination(foods, 10);
+  } = usePagination(filteredFoods, 10);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [newFood, setNewFood] = useState<FoodAdd>({

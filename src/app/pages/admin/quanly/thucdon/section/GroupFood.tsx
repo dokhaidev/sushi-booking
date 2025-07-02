@@ -1,10 +1,6 @@
 "use client";
 import { FaPlus, FaPen, FaEyeSlash } from "react-icons/fa";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from "../../../../../components/ui/Card";
+import { Card, CardHeader, CardContent} from "../../../../../components/ui/Card";
 import { Button } from "../../../../../components/ui/button";
 import { useFetch } from "../../../../../hooks/useFetch";
 import usePagination from "@/src/app/hooks/usePagination";
@@ -16,6 +12,7 @@ import InputField from "../../../../../components/ui/InputField";
 import { addFoodGroup } from "../../../../../hooks/useAdd";
 import { FoodGroupAdd } from "../../../../../types/foodgroup";
 import { Category } from "../../../../../types/category";
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter";
 
 export default function GroupFoodComponent({
   groupRef,
@@ -24,13 +21,14 @@ export default function GroupFoodComponent({
 }) {
   const [searchText, setSearchText] = useState("");
   const { foodGroups, categories } = useFetch(); // lấy category cho form
+  const filteredFoods = useSearchFilter(foodGroups, searchText, ["name"]);
   const {
     currentPage,
     setCurrentPage,
     currentData: currentFoodGroups,
     totalItems,
     itemsPerPage,
-  } = usePagination(foodGroups, 10);
+  } = usePagination(filteredFoods, 10);
 
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<FoodGroupAdd>({

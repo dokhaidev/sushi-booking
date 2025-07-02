@@ -1,10 +1,11 @@
 "use client";
 import  { useEffect, useState } from "react";
 import axios from "axios";
-import { Category, Group, Food, Combo, Voucher, Table, Order, OrderDetail } from "../types";
+import { Customer, Category, Group, Food, Combo, Voucher, Table, Order, OrderDetail } from "../types";
 
 
 export function useFetch() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [foodGroups, setFoodGroups] = useState<Group[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
@@ -14,11 +15,16 @@ export function useFetch() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
 
-  // Pagination state
-  // const [showAddCategory, setShowAddCategory] = useState(false);
-  // const [newCategoryName, setNewCategoryName] = useState("");
-  // const [newCategoryDescription, setNewCategoryDescription] = useState("");
-
+  // Goi API lấy người dùng
+  useEffect(() => {
+    axios
+      .get("http://localhost:8000/api/admin/customers")
+      .then((res) => {
+        console.log("Danh sách người dùng:", res.data);
+        setCustomers(res.data);
+      })
+      .catch((err) => console.error("Lỗi khi lấy người dùng:", err));
+  }, []);
 
   // Gọi API lấy danh mục
   useEffect(() => {
@@ -97,6 +103,8 @@ export function useFetch() {
       .catch(err => console.error("Lỗi khi lấy chi tiết đơn hàng:", err));
   };
   return {
+    customers,
+    setCustomers,
     categories,
     foodGroups,
     foods,

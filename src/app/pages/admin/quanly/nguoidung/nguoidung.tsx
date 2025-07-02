@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import TitleDesc from "../../../../components/ui/titleDesc";
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card";
@@ -13,11 +13,11 @@ import Popup from "../../../../components/ui/Popup";
 import InputField from "../../../../components/ui/InputField";
 import { Button } from "../../../../components/ui/button";
 import Cookies from "js-cookie";
-
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter";
+import { useFetch } from "@/src/app/hooks/useFetch";
 
 export default function QuanLyNguoiDung() {
   const [searchText, setSearchText] = useState("");
-  const [users, setUsers] = useState<Customer[]>([]);
   const [popupOpen, setPopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Customer | null>(null);
@@ -30,20 +30,15 @@ export default function QuanLyNguoiDung() {
   const [userPage, setUserPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    axios.get("http://localhost:8000/api/admin/customers") // sửa lại URL nếu khác
-      .then((res) => {
-        console.log("Danh sách người dùng:", res.data);
-        setUsers(res.data)
-      })
-      .catch((err) => console.error("Lỗi khi lấy users:", err));
-  }, []);
+  const { customers, setCustomers } = useFetch();
+
 
     // Phân trang dữ liệu
   const paginate = <T,>(data: T[], page: number) =>
     data.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-  // Lấy dữ liệu người dùng hiện tại theo trang
-  const currentUsers = paginate(users, userPage);
+    // Lấy dữ liệu người dùng hiện tại theo trang
+  const filteredUses = useSearchFilter(customers, searchText, ["name", "email", "phone"]);
+  const currentUsers = paginate(filteredUses, userPage);
 
   const toggleUserStatus = async (user: Customer) => {
   const newStatus = user.status === 1 ? 0 : 1 ;
@@ -55,7 +50,7 @@ export default function QuanLyNguoiDung() {
     const updatedUser = res.data.customer;
 
     // Cập nhật lại danh sách user tại local state
-    setUsers((prev) =>
+    setCustomers((prev) =>
       prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
     );
     setPopupContent({
@@ -101,7 +96,7 @@ export default function QuanLyNguoiDung() {
       );
 
       const updated = res.data.customer;
-      setUsers((prev) =>
+      setCustomers((prev) =>
         prev.map((u) => (u.id === updated.id ? updated : u))
       );
 
@@ -207,25 +202,25 @@ export default function QuanLyNguoiDung() {
         {[
           {
             label: "Tổng số khách hàng",
-            value: users.length,
+            value: customers.length,
             icon: <FaUser className="w-6 h-6" />,
             color: "from-blue-500 to-blue-600",
           },
           {
             label: "Nhân viên bếp",
-            value: users.filter((user) => user.role === "kitchenmanager").length,
+            value: customers.filter((user) => user.role === "kitchenmanager").length,
             icon: <PiChefHat  className="w-6 h-6" />,
             color: "from-green-500 to-green-600",
           },
           {
             label: "Nhân viên bàn",
-            value: users.filter((user) => user.role === "menumanager").length,
+            value: customers.filter((user) => user.role === "menumanager").length,
             icon: <FaUsers className="w-6 h-6" />,
             color: "from-purple-500 to-purple-600",
           },
           {
             label: "Nhân viên thu ngân",
-            value: users.filter((user) => user.role === "ordermanager").length,
+            value: customers.filter((user) => user.role === "ordermanager").length,
             icon: <FaCashRegister className="w-6 h-6" />,
             color: "from-orange-500 to-orange-600",
           },
@@ -347,7 +342,7 @@ export default function QuanLyNguoiDung() {
               </table>
               <Pagination
                 currentPage={userPage}
-                totalItems={users.length}
+                totalItems={customers.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setUserPage}
             />

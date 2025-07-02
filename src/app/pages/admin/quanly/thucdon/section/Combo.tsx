@@ -14,17 +14,19 @@ import Popup from "../../../../../components/ui/Popup"
 import InputField from "../../../../../components/ui/InputField"
 import type { ComboAdd, ComboItemAdd } from "@/src/app/types"
 import { addCombo } from "@/src/app/hooks/useAdd"
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
 
 export default function ComboComponent({ comboRef }: { comboRef: React.RefObject<HTMLDivElement | null> }) {
   const [searchText, setSearchText] = useState("")
   const { combos, foods } = useFetch()
+  const filteredCombos = useSearchFilter(combos, searchText, ["name"]);
   const {
     currentPage,
     setCurrentPage,
     currentData: currentCombos,
     totalItems,
     itemsPerPage,
-  } = usePagination(combos, 10)
+  } = usePagination(filteredCombos, 10)
 
   const [showAddComboPopup, setShowAddComboPopup] = useState(false)
   const [openFoodPopup, setOpenFoodPopup] = useState(false)
