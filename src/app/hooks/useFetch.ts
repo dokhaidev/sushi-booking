@@ -2,8 +2,6 @@
 import  { useEffect, useState } from "react";
 import axios from "axios";
 import { Customer, Category, Group, Food, Combo, Voucher, Table, Order, OrderDetail } from "../types";
-
-
 export function useFetch() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -110,6 +108,7 @@ export function useFetch() {
     foods,
     combos,
     vouchers,
+    setVouchers,
     tables,
     orders,
     orderDetail,

@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import TitleDesc from "../../../../components/ui/titleDesc"
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card"
 import Pagination from "../../../../components/ui/Panigation"
 import SearchInput from "../../../../components/ui/SearchInput"
 import { useFetch } from "@/src/app/hooks/useFetch"
+import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
 import Popup from "@/src/app/components/ui/Popup"
+import { FaShoppingCart, FaClock, FaCheckCircle, FaMoneyBillWave, FaFilter, FaTimes } from "react-icons/fa"
 
 export default function QuanLyDonHang() {
   const { orders, fetchOrderDetail, orderDetail } = useFetch()
@@ -15,105 +18,339 @@ export default function QuanLyDonHang() {
   const [showOrderDetail, setShowOrderDetail] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: "",
+    timeRange: "",
+    paymentMethod: "",
+  })
+
   const itemsPerPage = 5
 
-  const paginatedOrders = orders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  // Search filtering
+  const searchFiltered = useSearchFilter(orders, searchText, ["id", "customer.name", "customer.phone"])
 
-  const ordersToday = orders.filter((order) => {
+  // Advanced filtering function
+  const applyFilters = (data: any[], filters: { status: string; timeRange: string; paymentMethod: string }) => {
+    return data.filter((order) => {
+      // Status filter
+      if (filters.status && filters.status !== "all") {
+        if (order.status !== filters.status) {
+          return false
+        }
+      }
+
+      // Time range filter
+      if (filters.timeRange && filters.timeRange !== "all") {
+        const orderDate = new Date(order.created_at)
+        const today = new Date()
+        const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()))
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+
+        switch (filters.timeRange) {
+          case "today":
+            const todayStr = new Date().toISOString().slice(0, 10)
+            if (order.created_at?.slice(0, 10) !== todayStr) return false
+            break
+          case "week":
+            if (orderDate < startOfWeek) return false
+            break
+          case "month":
+            if (orderDate < startOfMonth) return false
+            break
+        }
+      }
+
+      // Payment method filter
+      if (filters.paymentMethod && filters.paymentMethod !== "all") {
+        if (order.payment_method !== filters.paymentMethod) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }
+
+  // Combined filtering
+  const filteredOrders = useMemo(() => {
+    return applyFilters(searchFiltered, filters)
+  }, [searchFiltered, filters])
+
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  // Statistics calculations based on filtered data
+  const ordersToday = filteredOrders.filter((order) => {
     const today = new Date().toISOString().slice(0, 10)
     return order.created_at?.slice(0, 10) === today
   })
 
   const totalToday = ordersToday.length
-  const pendingOrders = orders.filter((order) => order.status === "pending")
-  const confirmedOrders = orders.filter((order) => order.status === "success")
+  const pendingOrders = filteredOrders.filter((order) => order.status === "pending")
+  const confirmedOrders = filteredOrders.filter((order) => order.status === "success")
   const totalRevenue = confirmedOrders.reduce((sum, order) => sum + Number(order.total_price || 0), 0)
 
-  // Hàm xử lý khi click vào nút "Chi tiết"
+  // Handle filter changes
+  const handleFilterChange = (filterType: string, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }))
+    setCurrentPage(1)
+  }
+
+  // Apply filters
+  const handleApplyFilters = () => {
+    setCurrentPage(1)
+  }
+
+  // Clear filters
+  const handleClearFilters = () => {
+    setFilters({
+      status: "",
+      timeRange: "",
+      paymentMethod: "",
+    })
+    setSearchText("")
+    setCurrentPage(1)
+  }
+
+  // Handle view detail
   const handleViewDetail = async (orderId: number) => {
     setSelectedOrderId(orderId)
     await fetchOrderDetail(orderId)
     setShowOrderDetail(true)
   }
 
-  // Hàm đóng popup chi tiết
+  // Handle close detail
   const handleCloseDetail = () => {
     setShowOrderDetail(false)
     setSelectedOrderId(null)
   }
 
+  const statisticsData = [
+    {
+      label: "Đơn hôm nay",
+      value: totalToday,
+      icon: <FaShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />,
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-600",
+    },
+    {
+      label: "Chờ xử lý",
+      value: pendingOrders.length,
+      icon: <FaClock className="w-5 h-5 sm:w-6 sm:h-6" />,
+      color: "from-yellow-500 to-yellow-600",
+      bgColor: "bg-yellow-50",
+      textColor: "text-yellow-600",
+    },
+    {
+      label: "Đã hoàn tất",
+      value: confirmedOrders.length,
+      icon: <FaCheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-50",
+      textColor: "text-green-600",
+    },
+    {
+      label: "Tổng doanh thu",
+      value: totalRevenue.toLocaleString() + " ₫",
+      icon: <FaMoneyBillWave className="w-5 h-5 sm:w-6 sm:h-6" />,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-600",
+    },
+  ]
+
   return (
     <div className="grid grid-cols-12 gap-4">
       {/* Header */}
-      <TitleDesc
-        title="Quản lý đơn hàng"
-        description="Xem và quản lý tất cả những đơn hàng"
-        className="col-span-12"
-      />
+      <TitleDesc title="Quản lý đơn hàng" description="Xem và quản lý tất cả những đơn hàng" className="col-span-12" />
 
-      {/* Bộ lọc */}
+      {/* Filters */}
       <div className="col-span-12">
-        <Card className="bg-[#fff7f2]">
-          <div className="grid grid-cols-12 gap-4 items-end">
-            {/* Trạng thái */}
-            <div className="col-span-12 md:col-span-3">
-              <label className="text-sm text-gray-700 font-medium block mb-1">Trạng thái</label>
-              <select className="w-full bg-gray-200 px-4 py-2 rounded-md appearance-none">
-                <option>Tất cả</option>
-                <option>Chờ xử lý</option>
-                <option>Đã xử lý</option>
-              </select>
+        <Card className="bg-white">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">Trạng thái</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange("status", e.target.value)}
+                  className="w-full bg-white border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="pending">Chờ xử lý</option>
+                  <option value="confirmed">Đã xác nhận</option>
+                  <option value="success">Hoàn tất</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">Thời gian</label>
+                <select
+                  value={filters.timeRange}
+                  onChange={(e) => handleFilterChange("timeRange", e.target.value)}
+                  className="w-full bg-white border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="week">Tuần này</option>
+                  <option value="month">Tháng này</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">Thanh toán</label>
+                <select
+                  value={filters.paymentMethod}
+                  onChange={(e) => handleFilterChange("paymentMethod", e.target.value)}
+                  className="w-full bg-white border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+                >
+                  <option value="">Tất cả</option>
+                  <option value="cash">Tiền mặt</option>
+                  <option value="momo">Ví Momo</option>
+                  <option value="vnpay">Ví VNPay</option>
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  onClick={handleApplyFilters}
+                  className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2"
+                >
+                  <FaFilter className="w-4 h-4" />
+                  <span className="hidden sm:inline">Lọc đơn hàng</span>
+                  <span className="sm:hidden">Lọc</span>
+                </button>
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  onClick={handleClearFilters}
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2"
+                >
+                  <FaTimes className="w-4 h-4" />
+                  <span className="hidden sm:inline">Xóa bộ lọc</span>
+                  <span className="sm:hidden">Xóa</span>
+                </button>
+              </div>
             </div>
 
-            {/* Thời gian */}
-            <div className="col-span-12 md:col-span-3">
-              <label className="text-sm text-gray-700 font-medium block mb-1">Thời gian</label>
-              <select className="w-full bg-gray-200 px-4 py-2 rounded-md appearance-none">
-                <option>Hôm nay</option>
-                <option>Tuần này</option>
-                <option>Tháng này</option>
-              </select>
-            </div>
-
-            {/* Phương thức thanh toán */}
-            <div className="col-span-12 md:col-span-3">
-              <label className="text-sm text-gray-700 font-medium block mb-1">Phương thức thanh toán</label>
-              <select className="w-full bg-gray-200 px-4 py-2 rounded-md appearance-none">
-                <option>Tất cả</option>
-                <option>Tiền mặt</option>
-                <option>Chuyển khoản</option>
-              </select>
-            </div>
-
-            {/* Nút lọc */}
-            <div className="col-span-12 md:col-span-3 flex justify-end">
-              <button className="w-full bg-[#9c6b66] text-white px-6 py-2 rounded-xl">Lọc đơn hàng</button>
-            </div>
-          </div>
+            {/* Filter Summary */}
+            {(filters.status || filters.timeRange || filters.paymentMethod || searchText) && (
+              <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-medium text-orange-800">Bộ lọc đang áp dụng:</span>
+                  {searchText && (
+                    <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
+                      Tìm kiếm: &quot;{searchText}&quot;
+                    </span>
+                  )}
+                  {filters.status && (
+                    <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
+                      Trạng thái:{" "}
+                      {filters.status === "pending"
+                        ? "Chờ xử lý"
+                        : filters.status === "confirmed"
+                          ? "Đã xác nhận"
+                          : filters.status === "success"
+                            ? "Hoàn tất"
+                            : "Đã hủy"}
+                    </span>
+                  )}
+                  {filters.timeRange && (
+                    <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
+                      Thời gian:{" "}
+                      {filters.timeRange === "today"
+                        ? "Hôm nay"
+                        : filters.timeRange === "week"
+                          ? "Tuần này"
+                          : "Tháng này"}
+                    </span>
+                  )}
+                  {filters.paymentMethod && (
+                    <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
+                      Thanh toán:{" "}
+                      {filters.paymentMethod === "cash"
+                        ? "Tiền mặt"
+                        : filters.paymentMethod === "momo"
+                          ? "Ví Momo"
+                          : "Ví VNPay"}
+                    </span>
+                  )}
+                  <span className="text-sm text-orange-700">({filteredOrders.length} kết quả)</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
 
-      {/* Thống kê nhanh */}
-      <div className="col-span-12 grid grid-cols-12 gap-4">
-        {[
-          { label: "Tổng đơn hôm nay", value: totalToday },
-          { label: "Tổng đơn chờ xử lý", value: pendingOrders.length },
-          { label: "Đơn đã xử lý", value: confirmedOrders.length },
-          { label: "Tổng doanh thu", value: totalRevenue.toLocaleString() + " ₫" },
-        ].map((item, i) => (
-          <Card className="col-span-3" key={i}>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{item.label}</p>
-              <p className="text-xl font-bold mt-2">{item.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Statistics - Responsive */}
+      <div className="col-span-12">
+        {/* Desktop and Tablet Layout */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {statisticsData.map((item, index) => (
+            <Card
+              key={index}
+              className="hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-0 shadow-md"
+            >
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2 leading-tight">
+                      {item.label}
+                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-none">
+                      {typeof item.value === "number" ? item.value : item.value}
+                    </p>
+                  </div>
+                  <div className={`p-2 sm:p-3 rounded-lg bg-gradient-to-r ${item.color} text-white ml-2 sm:ml-4`}>
+                    {item.icon}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="sm:hidden space-y-3">
+          {statisticsData.map((item, index) => (
+            <Card key={index} className="hover:shadow-md transition-all duration-200 border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-full ${item.bgColor} flex-shrink-0`}>
+                    <div className={item.textColor}>{item.icon}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 truncate">{item.label}</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">
+                      {typeof item.value === "number" ? item.value : item.value}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Summary Bar for Mobile */}
+        <div className="sm:hidden mt-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-orange-800">Tổng đơn hàng:</span>
+            <span className="font-bold text-orange-900">{filteredOrders.length} đơn</span>
+          </div>
+        </div>
       </div>
 
-      {/* Bảng đơn đặt bàn */}
+      {/* Orders Table */}
       <div className="col-span-12">
         <Card>
-          <CardHeader header="Tất cả đơn hàng" className="flex justify-between items-center">
+          <CardHeader header="Tất cả đơn hàng" className="flex justify-between items-center">
             <div className="flex gap-2 w-full max-w-md">
               <SearchInput value={searchText} onChange={setSearchText} />
             </div>
@@ -123,61 +360,90 @@ export default function QuanLyDonHang() {
               <table className="min-w-full text-sm text-left">
                 <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                   <tr>
-                    <th className="px-4 py-2">MÃ ĐƠN</th>
-                    <th className="px-4 py-2">KHÁCH HÀNG</th>
-                    <th className="px-4 py-2">TỔNG TIỀN</th>
-                    <th className="px-4 py-2">TRẠNG THÁI</th>
-                    <th className="px-4 py-2">THAO TÁC</th>
+                    <th className="px-2 sm:px-4 py-2">MÃ ĐƠN</th>
+                    <th className="px-2 sm:px-4 py-2 hidden sm:table-cell">KHÁCH HÀNG</th>
+                    <th className="px-2 sm:px-4 py-2">TỔNG TIỀN</th>
+                    <th className="px-2 sm:px-4 py-2">HÌNH THỨC THANH TOÁN</th>
+                    <th className="px-2 sm:px-4 py-2">TRẠNG THÁI</th>
+                    <th className="px-2 sm:px-4 py-2">THAO TÁC</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedOrders.map((order, idx) => (
-                    <tr key={order.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-2">#{order.id}</td>
-                      <td className="px-4 py-2">{order.customer?.name}</td>
-                      <td className="px-4 py-2">{order.total_price.toLocaleString()} ₫</td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={`text-xs px-2 py-1 rounded font-medium ${
-                            order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
+                  {paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order, idx) => (
+                      <tr key={order.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
+                        <td className="px-2 sm:px-4 py-2 font-medium">#{order.id}</td>
+                        <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">
+                          <div className="max-w-[150px] truncate">{order.customer?.name}</div>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 font-semibold text-green-600">
+                          {order.total_price.toLocaleString()} ₫
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 font-medium">
+                          <span
+                            className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
+                              order.payment_method === "cash"
+                                ? "bg-[#4CAF50] text-white"
+                                : order.payment_method === "momo"
+                                  ? "bg-[#D82D8B] text-white"
+                                  : "bg-[#0066B2] text-white"
+                                  }`}>
+                              {order.payment_method === "cash"
+                                ? "Tiền mặt"
+                                : order.payment_method === "momo"
+                                  ? "Ví Momo"
+                                  : "Ví VNPay"}
+                            </span>
+                          </td>
+                        <td className="px-2 sm:px-4 py-2">
+                          <span
+                            className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
+                              order.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : order.status === "confirmed"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : order.status === "cancelled"
+                                    ? "bg-red-100 text-red-800"
+                                    : order.status === "success"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {order.status === "pending"
+                              ? "Chờ xử lý"
                               : order.status === "confirmed"
-                                ? "bg-blue-100 text-blue-800"
+                                ? "Đã xác nhận"
                                 : order.status === "cancelled"
-                                  ? "bg-red-100 text-red-800"
+                                  ? "Đã hủy"
                                   : order.status === "success"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {order.status === "pending"
-                            ? "Chờ xử lý"
-                            : order.status === "confirmed"
-                              ? "Đã xác nhận"
-                              : order.status === "cancelled"
-                                ? "Đã hủy"
-                                : order.status === "success"
-                                  ? "Hoàn tất"
-                                  : "Không rõ"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <button
-                          className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
-                          onClick={() => handleViewDetail(order.id)}
-                        >
-                          Chi tiết
-                        </button>
+                                    ? "Hoàn tất"
+                                    : "Không rõ"}
+                          </span>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2">
+                          <button
+                            className="text-blue-600 hover:underline hover:text-blue-800 transition-colors text-sm font-medium"
+                            onClick={() => handleViewDetail(order.id)}
+                          >
+                            Chi tiết
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                        Không tìm thấy đơn hàng nào phù hợp với bộ lọc
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
 
-              {/* Phân trang */}
+              {/* Pagination */}
               <Pagination
                 currentPage={currentPage}
-                totalItems={orders.length}
+                totalItems={filteredOrders.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
               />
@@ -186,7 +452,7 @@ export default function QuanLyDonHang() {
         </Card>
       </div>
 
-      {/* Popup hiển thị chi tiết đơn hàng */}
+      {/* Order Detail Popup */}
       <Popup
         isOpen={showOrderDetail}
         onClose={handleCloseDetail}
@@ -199,10 +465,10 @@ export default function QuanLyDonHang() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Thông tin đơn hàng */}
+            {/* Order Information */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin đơn hàng</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Mã đơn hàng:</span>
                   <span className="font-medium ml-2">#{orderDetail.id}</span>
@@ -246,7 +512,7 @@ export default function QuanLyDonHang() {
               </div>
             </div>
 
-            {/* Thông tin khách hàng */}
+            {/* Customer Information */}
             {orderDetail.customer && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin khách hàng</h3>
@@ -271,7 +537,7 @@ export default function QuanLyDonHang() {
               </div>
             )}
 
-            {/* Thông tin bàn */}
+            {/* Table Information */}
             {orderDetail.tables && orderDetail.tables.length > 0 && (
               <div className="bg-orange-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin bàn</h3>
@@ -280,7 +546,6 @@ export default function QuanLyDonHang() {
                     <div key={table.id || idx}>
                       <span className="text-gray-600">Bàn số:</span>
                       <span className="font-medium ml-2">{table.table_number}</span>
-
                       {table.max_guests && (
                         <>
                           <span className="text-gray-600 ml-4">Sức chứa:</span>
@@ -293,31 +558,31 @@ export default function QuanLyDonHang() {
               </div>
             )}
 
-            {/* Chi tiết món ăn */}
+            {/* Order Items */}
             {orderDetail.items && orderDetail.items.length > 0 && (
               <div className="bg-green-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-lg mb-3 text-gray-800">Chi tiết món ăn</h3>
                 <div className="space-y-3">
                   {orderDetail.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                    <div
+                      key={index}
+                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-3 rounded border gap-2 sm:gap-4"
+                    >
                       <div className="flex-1">
                         <div className="font-medium text-gray-800">
                           {item.food?.name || item.combo?.name || "Món ăn"}
                         </div>
-                        {/* {item.food?.description && (
-                          <div className="text-sm text-gray-600 mt-1">{item.food.description}</div>
-                        )} */}
                       </div>
-                      <div className="text-center mx-4">
-                        <div className="text-sm text-gray-600">Số lượng</div>
+                      <div className="flex flex-row sm:flex-col text-center">
+                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Số lượng:</div>
                         <div className="font-medium">{item.quantity}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">Đơn giá</div>
+                      <div className="flex flex-row sm:flex-col text-right">
+                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Đơn giá:</div>
                         <div className="font-medium">{Number(item.price).toLocaleString()} ₫</div>
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="text-sm text-gray-600">Thành tiền</div>
+                      <div className="flex flex-row sm:flex-col text-right">
+                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Thành tiền:</div>
                         <div className="font-bold text-green-600">
                           {(Number(item.price) * item.quantity).toLocaleString()} ₫
                         </div>
@@ -327,14 +592,6 @@ export default function QuanLyDonHang() {
                 </div>
               </div>
             )}
-
-            {/* Ghi chú */}
-            {/* {orderDetail.notes && (
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2 text-gray-800">Ghi chú</h3>
-                <p className="text-sm text-gray-700">{orderDetail.notes}</p>
-              </div>
-            )} */}
           </div>
         )}
       </Popup>

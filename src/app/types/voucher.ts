@@ -14,5 +14,5 @@ export interface VoucherAdd {
   discount_value: number;
   start_date: string; // YYYY-MM-DD
   end_date: string;   // YYYY-MM-DD
-  status: "active" | "inactive";
+  status: "active" | "expired" | "disable";
 }

@@ -8,6 +8,7 @@ interface InputFieldProps {
   placeholder?: string;
   value?: string;
   className?: string;
+  min?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   disabled?: boolean;
@@ -20,6 +21,7 @@ const InputField: React.FC<InputFieldProps> = ({
   placeholder = "",
   value,
   className,
+  min,
   onChange,
   required = false,
   disabled = false,
@@ -38,6 +40,7 @@ const InputField: React.FC<InputFieldProps> = ({
         name={name}
         placeholder={placeholder}
         value={value}
+        min={min}
         onChange={onChange}
         required={required}
         disabled={disabled}

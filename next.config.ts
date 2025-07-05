@@ -52,6 +52,7 @@ const nextConfig: NextConfig = {
       "tournhatban.net",
       "bioplanet.vn",
       "danviet.ex-cdn.com",
+      "127.0.0.1"
     ],
   },
 };

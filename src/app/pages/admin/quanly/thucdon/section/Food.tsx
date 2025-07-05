@@ -83,7 +83,6 @@ export default function FoodComponent({
                   <th className="px-4 py-2">Loại danh mục</th>
                   <th className="px-4 py-2">Danh mục</th>
                   <th className="px-4 py-2">Giá</th>
-                  <th className="px-4 py-2">Mùa</th>
                   <th className="px-4 py-2">Trạng thái</th>
                   <th className="px-4 py-2">Thao tác</th>
                 </tr>
@@ -95,7 +94,7 @@ export default function FoodComponent({
                     <td className="px-4 py-2">
                       {food.image && (
                         <Image
-                          src={`${food.image}`}
+                          src={`http://127.0.0.1:8000/storage/${food.image}`}
                           alt={food.name}
                           width={200}
                           height={200}
@@ -110,7 +109,6 @@ export default function FoodComponent({
                     <td className="px-4 py-2">
                       {Number(food.price).toLocaleString("vi-VN")} đ
                     </td>
-                    <td className="px-4 py-2">{food.season}</td>
                     <td className="px-4 py-2">
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
