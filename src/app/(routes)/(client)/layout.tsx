@@ -26,9 +26,9 @@ export default function RootLayout({
           {children}
           <BackToTopButton />
           <Footer />
+          <LuckyWheel />
         </AuthProviderNoSSR>
         <MiniChat />
-        <LuckyWheel />
       </body>
     </html>
   );
