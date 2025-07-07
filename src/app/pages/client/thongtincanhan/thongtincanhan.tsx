@@ -13,6 +13,7 @@ interface UserType {
   address: string;
   avatar: string;
 }
+
 import {
   User,
   Lock,
@@ -26,6 +27,7 @@ import {
   Check,
   X,
   Camera,
+  Gift,
 } from "lucide-react";
 import classNames from "classnames";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,9 +35,9 @@ import { useAuth } from "../../../context/authContext";
 
 export default function UserDashboard() {
   const { user: authUser, isLoading, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "orders">(
-    "profile"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "profile" | "security" | "orders" | "vouchers"
+  >("profile");
   const [editMode, setEditMode] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [tempUser, setTempUser] = useState<any | null>(null);
@@ -146,6 +148,12 @@ export default function UserDashboard() {
                 icon={<History className="w-5 h-5" />}
                 label="Đơn hàng"
               />
+              <TabButton
+                active={activeTab === "vouchers"}
+                onClick={() => setActiveTab("vouchers")}
+                icon={<Gift className="w-5 h-5" />}
+                label="Voucher"
+              />
             </nav>
           </motion.div>
 
@@ -195,6 +203,18 @@ export default function UserDashboard() {
                   transition={{ duration: 0.3 }}
                 >
                   <OrdersTab />
+                </motion.div>
+              )}
+
+              {activeTab === "vouchers" && (
+                <motion.div
+                  key="vouchers"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <VouchersTab />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -734,6 +754,97 @@ function OrdersTab() {
   );
 }
 
+function VouchersTab() {
+  const { user } = useAuth();
+  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchVouchers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await axios.get(
+          `http://127.0.0.1:8000/api/user-vouchers/${user.id}`
+        );
+        setVouchers(res.data);
+      } catch (err) {
+        console.error("Lỗi khi tải voucher:", err);
+        setError("Không thể tải danh sách voucher. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVouchers();
+  }, [user?.id]);
+
+  if (loading) {
+    return (
+      <div className="text-center text-gray-600 py-12">Đang tải voucher...</div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500 py-12">{error}</div>;
+  }
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-8">Voucher của bạn</h2>
+
+      {vouchers.length === 0 ? (
+        <p className="text-center text-gray-500">Bạn chưa có voucher nào.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {vouchers.map((voucher, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ y: -5 }}
+              className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-sm p-6 border border-amber-200 hover:shadow-md transition"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <Gift className="text-amber-600" />
+                </div>
+                <span className="text-xs font-medium px-3 py-1 bg-amber-200 text-amber-800 rounded-full">
+                  {voucher.status === "active" ? "Có hiệu lực" : "Đã sử dụng"}
+                </span>
+              </div>
+
+              <h3 className="text-lg font-bold text-amber-800 mb-2">
+                Giảm {parseInt(voucher.discount_value).toLocaleString()}đ
+              </h3>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Mã voucher:</span>
+                  <span className="font-medium">{voucher.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Ngày hết hạn:</span>
+                  <span className="font-medium">
+                    {new Date(voucher.expiry_date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-amber-200">
+                <p className="text-xs text-amber-700">
+                  {voucher.description || "Áp dụng cho tất cả đơn hàng"}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ========== UI Components ==========
 
 function TabButton({
@@ -751,7 +862,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={classNames(
-        "flex items-center justify-center py-4 px-6 text-sm font-medium w-1/3 relative",
+        "flex items-center justify-center py-4 px-6 text-sm font-medium w-1/4 relative",
         active
           ? "text-blue-600"
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"

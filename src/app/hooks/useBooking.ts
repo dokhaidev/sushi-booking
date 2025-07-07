@@ -75,10 +75,32 @@ export function useBooking() {
 
   const depositAmount = calculateDepositAmount();
 
-  const handlePaymentComplete = () => {
+  const updateOrderStatus = async (orderId: number) => {
+    try {
+      const token = localStorage.getItem("auth");
+      const res = await axios.put(
+        `http://127.0.0.1:8000/api/order/update-status/${orderId}`,
+        { status: "success" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showNotification(
+        res.data.message || "Cập nhật đơn hàng thành công",
+        "success"
+      );
+    } catch (err) {
+      console.error("Lỗi cập nhật trạng thái đơn hàng:", err);
+      showNotification("Không thể cập nhật trạng thái đơn hàng", "error");
+    }
+  };
+
+  const handlePaymentComplete = async () => {
     setPaymentCompleted(true);
     setShowPaymentModal(false);
     showNotification("Thanh toán thành công!", "success");
+
+    if (orderId) {
+      await updateOrderStatus(orderId);
+    }
   };
 
   const fetchAvailableSlots = async () => {
@@ -130,6 +152,156 @@ export function useBooking() {
       showNotification("Lỗi khi tải danh sách combo", "error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const applyVoucherCode = async () => {
+    if (!voucherCode) {
+      showNotification("Vui lòng nhập mã giảm giá", "error");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("auth");
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/applyVoucher",
+        {
+          code: voucherCode,
+          total: formData.total_price,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const { new_total, message } = res.data;
+      const discount = formData.total_price - new_total;
+
+      if (discount > 0) {
+        setDiscountAmount(discount);
+        showNotification(message || "Áp dụng mã thành công!", "success");
+      } else {
+        setDiscountAmount(0);
+        showNotification("Mã không hợp lệ hoặc hết hạn", "error");
+      }
+    } catch {
+      setDiscountAmount(0);
+      showNotification("Lỗi khi áp dụng mã giảm giá", "error");
+    }
+  };
+
+  const submitOrder = async () => {
+    if (!selectedTable) {
+      showNotification("Vui lòng chọn bàn", "error");
+      return;
+    }
+
+    if (!formData.customer_name || !formData.customer_phone) {
+      showNotification("Vui lòng nhập thông tin liên hệ", "error");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("auth");
+
+      const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+      const deposit = calculateDepositAmount();
+      const remainingPayment =
+        formData.payment_method === "cash"
+          ? Math.max(finalTotal - deposit, 0)
+          : 0;
+
+      const payAmount =
+        formData.payment_method === "cash" ? deposit : finalTotal + deposit;
+
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/orders/bookTables",
+        {
+          ...formData,
+          total_price: finalTotal,
+          deposit_amount: deposit,
+          remaining_payment: remainingPayment,
+          table_id: selectedTable.table_id,
+          voucher_code: voucherCode || null,
+          foods: foods.map((f) => ({
+            food_id: f.food_id,
+            quantity: f.quantity,
+            price: f.price,
+          })),
+          combos: combos.map((c) => ({
+            combo_id: c.combo_id,
+            quantity: c.quantity,
+            price: c.price,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const order_id = res.data.order_id;
+      setOrderId(order_id);
+
+      const shouldRedirectToVNPAY =
+        formData.payment_method === "vnpay" || formData.guest_count >= 8;
+
+      if (shouldRedirectToVNPAY) {
+        const payRes = await axios.post(
+          "http://127.0.0.1:8000/api/orders/vnpay-url",
+          { order_id, amount: payAmount },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const payUrl = payRes.data?.data;
+        if (payUrl) {
+          window.location.href = payUrl;
+        } else {
+          showNotification("Không lấy được link thanh toán", "error");
+        }
+      } else {
+        showNotification(
+          "Đặt bàn thành công! Vui lòng thanh toán tại nhà hàng.",
+          "success"
+        );
+        await updateOrderStatus(order_id); // ✅ tích điểm luôn
+        router.push("/");
+      }
+    } catch (err: any) {
+      console.error("Booking error:", err);
+      showNotification(
+        err?.response?.data?.message || "Lỗi khi đặt bàn",
+        "error"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectTime = (time: string) => {
+    setSelectedTime(time);
+    const slot = availableSlots.find((s) => s.time === time);
+    if (!slot || slot.tables.length === 0) {
+      showNotification("Không có bàn trống khung giờ này", "error");
+      return;
+    }
+
+    const suitable = slot.tables
+      .filter((t) => t.max_guests >= formData.guest_count)
+      .sort((a, b) => a.max_guests - b.max_guests);
+
+    if (suitable.length > 0) {
+      setSelectedTable(suitable[0]);
+      setFormData((prev) => ({
+        ...prev,
+        reservation_date: selectedDate,
+        reservation_time: time.length === 5 ? `${time}:00` : time,
+      }));
+    } else {
+      showNotification(
+        `Không có bàn phù hợp cho ${formData.guest_count} khách`,
+        "error"
+      );
     }
   };
 
@@ -202,155 +374,6 @@ export function useBooking() {
     setCombos((prev) =>
       prev.map((c) => (c.combo_id === id ? { ...c, quantity } : c))
     );
-  };
-
-  const applyVoucherCode = async () => {
-    if (!voucherCode) {
-      showNotification("Vui lòng nhập mã giảm giá", "error");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("auth");
-      const res = await axios.post(
-        "http://127.0.0.1:8000/api/applyVoucher",
-        {
-          code: voucherCode,
-          total: formData.total_price,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const { new_total, message } = res.data;
-      const discount = formData.total_price - new_total;
-
-      if (discount > 0) {
-        setDiscountAmount(discount);
-        showNotification(`${message || "Áp dụng mã thành công!"}`, "success");
-      } else {
-        setDiscountAmount(0);
-        showNotification("Mã không hợp lệ hoặc hết hạn", "error");
-      }
-    } catch {
-      setDiscountAmount(0);
-      showNotification("Lỗi khi áp dụng mã giảm giá", "error");
-    }
-  };
-
-  const submitOrder = async () => {
-    if (!selectedTable) {
-      showNotification("Vui lòng chọn bàn", "error");
-      return;
-    }
-
-    if (!formData.customer_name || !formData.customer_phone) {
-      showNotification("Vui lòng nhập thông tin liên hệ", "error");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("auth");
-
-      const finalTotal = Math.max(formData.total_price - discountAmount, 0);
-      const deposit = calculateDepositAmount();
-      const remainingPayment =
-        formData.payment_method === "cash"
-          ? Math.max(finalTotal - deposit, 0)
-          : 0;
-
-      const payAmount =
-        formData.payment_method === "cash" ? deposit : finalTotal + deposit;
-
-      const res = await axios.post(
-        "http://127.0.0.1:8000/api/orders/bookTables",
-        {
-          ...formData,
-          total_price: finalTotal,
-          deposit_amount: deposit,
-          remaining_payment: remainingPayment,
-          table_id: selectedTable.table_id,
-          voucher_code: voucherCode || null,
-          foods: foods.map((f) => ({
-            food_id: f.food_id,
-            quantity: f.quantity,
-            price: f.price,
-          })),
-          combos: combos.map((c) => ({
-            combo_id: c.combo_id,
-            quantity: c.quantity,
-            price: c.price,
-          })),
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const order_id = res.data.order_id;
-      setOrderId(order_id);
-
-      // 👉 Nếu đủ 8 khách trở lên thì mới chuyển sang cổng thanh toán VNPAY
-      if (formData.guest_count >= 8) {
-        const payRes = await axios.post(
-          "http://127.0.0.1:8000/api/orders/vnpay-url",
-          { order_id, amount: payAmount },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const payUrl = payRes.data?.data;
-        if (payUrl) {
-          window.location.href = payUrl;
-        } else {
-          showNotification("Không lấy được link thanh toán", "error");
-        }
-      } else {
-        // 👇 Nếu khách dưới 8 người, chỉ lưu DB và thông báo
-        showNotification(
-          "Đặt bàn thành công! Vui lòng thanh toán trực tiếp tại nhà hàng.",
-          "success"
-        );
-        // Optional: chuyển hướng sang trang cảm ơn
-        router.push("/");
-      }
-    } catch (err: any) {
-      console.error("Booking error:", err);
-      showNotification(
-        err?.response?.data?.message || "Lỗi khi đặt bàn",
-        "error"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectTime = (time: string) => {
-    setSelectedTime(time);
-    const slot = availableSlots.find((s) => s.time === time);
-    if (!slot || slot.tables.length === 0) {
-      showNotification("Không có bàn trống khung giờ này", "error");
-      return;
-    }
-
-    const suitable = slot.tables
-      .filter((t) => t.max_guests >= formData.guest_count)
-      .sort((a, b) => a.max_guests - b.max_guests);
-
-    if (suitable.length > 0) {
-      setSelectedTable(suitable[0]);
-      setFormData((prev) => ({
-        ...prev,
-        reservation_date: selectedDate,
-        reservation_time: time.length === 5 ? `${time}:00` : time,
-      }));
-    } else {
-      showNotification(
-        `Không có bàn phù hợp cho ${formData.guest_count} khách`,
-        "error"
-      );
-    }
   };
 
   const getPaymentAmount = () => {

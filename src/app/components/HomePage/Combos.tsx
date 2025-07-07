@@ -54,7 +54,6 @@ export default function ComboSlider() {
           throw new Error("Dữ liệu không hợp lệ");
         }
 
-        // Thêm rating ngẫu nhiên và tính serving_size
         const processedCombos = response.data.map((combo: Combo) => ({
           ...combo,
           rating: parseFloat((Math.random() * 0.5 + 4.5).toFixed(1)),
@@ -78,6 +77,11 @@ export default function ComboSlider() {
     fetchCombos();
   }, []);
 
+  const goToSlide = (index: number) => {
+    setDirection(index > currentIndex ? "right" : "left");
+    setCurrentIndex(index);
+  };
+
   const nextSlide = () => {
     if (combos.length === 0) return;
     setDirection("right");
@@ -88,6 +92,22 @@ export default function ComboSlider() {
     if (combos.length === 0) return;
     setDirection("left");
     setCurrentIndex((prev) => (prev === 0 ? combos.length - 1 : prev - 1));
+  };
+
+  // Animation variants for smoother transitions
+  const slideVariants = {
+    enter: (direction: "left" | "right") => ({
+      x: direction === "right" ? "100%" : "-100%",
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: "left" | "right") => ({
+      x: direction === "right" ? "-100%" : "100%",
+      opacity: 0,
+    }),
   };
 
   if (loading) {
@@ -175,7 +195,7 @@ export default function ComboSlider() {
           {/* Navigation arrows */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all duration-300 -ml-4"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all duration-300 -ml-4 hover:scale-110 active:scale-95"
             aria-label="Previous combo"
           >
             <ArrowLeft className="text-amber-600" />
@@ -183,7 +203,7 @@ export default function ComboSlider() {
 
           <button
             onClick={nextSlide}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all duration-300 -mr-4"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white transition-all duration-300 -mr-4 hover:scale-110 active:scale-95"
             aria-label="Next combo"
           >
             <ArrowRight className="text-amber-600" />
@@ -191,14 +211,18 @@ export default function ComboSlider() {
 
           {/* Combo slides */}
           <div className="relative h-[500px] overflow-hidden rounded-3xl shadow-xl bg-white">
-            <AnimatePresence custom={direction} mode="wait">
+            <AnimatePresence custom={direction} initial={false}>
               <motion.div
                 key={currentIndex}
                 custom={direction}
-                initial={{ opacity: 0, x: direction === "right" ? 100 : -100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: direction === "right" ? -100 : 100 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
                 className="absolute inset-0 flex flex-col md:flex-row"
               >
                 {/* Combo info (left side) */}
@@ -253,24 +277,38 @@ export default function ComboSlider() {
                     <div className="text-3xl font-bold text-amber-700 mb-6">
                       {parseFloat(currentCombo.price).toLocaleString()} VNĐ
                     </div>
-                    <button className="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-3 px-6 rounded-lg font-medium hover:shadow-lg transition-all duration-300">
+                    <button className="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-3 px-6 rounded-lg font-medium hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95">
                       Đặt Ngay
                     </button>
                   </div>
                 </div>
 
                 {/* Combo image (right side) */}
-                <div className="w-full md:w-1/2 h-64 md:h-auto relative overflow-hidden bg-gray-100">
-                  {currentCombo.combo_items[0]?.food.image ? (
-                    <img
-                      src={currentCombo.combo_items[0].food.image}
+                <div className="w-full md:w-1/2 h-64 md:h-auto relative overflow-hidden bg-[#363A5B] flex items-center justify-center">
+                  {/* Overlay tối hai bên */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#363A5B] via-transparent to-[#363A5B] z-0" />
+
+                  {currentCombo.image ? (
+                    <motion.img
+                      src={currentCombo.image}
                       alt={currentCombo.name}
-                      className="w-full h-full object-cover"
+                      className="max-h-full max-w-full object-contain z-10 relative"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <motion.div
+                      className="w-full h-full flex items-center justify-center text-white z-10 relative"
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                    >
                       <ChefHat size={48} />
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               </motion.div>
@@ -280,16 +318,17 @@ export default function ComboSlider() {
           {/* Dots indicator */}
           <div className="flex justify-center mt-6 gap-2">
             {combos.map((_, index) => (
-              <button
+              <motion.button
                 key={index}
-                onClick={() => {
-                  setDirection(index > currentIndex ? "right" : "left");
-                  setCurrentIndex(index);
-                }}
+                onClick={() => goToSlide(index)}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentIndex ? "bg-amber-600 w-6" : "bg-amber-200"
+                  index === currentIndex ? "bg-amber-600" : "bg-amber-200"
                 }`}
                 aria-label={`Go to combo ${index + 1}`}
+                whileHover={{ scale: 1.2 }}
+                animate={{
+                  width: index === currentIndex ? 24 : 12,
+                }}
               />
             ))}
           </div>

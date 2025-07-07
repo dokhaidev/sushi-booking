@@ -1,31 +1,21 @@
 {
-  "brand_name": "寿司匠",
-  "links": {
+  "nav": {
     "home": "Trang chủ",
-    "home_short": "Home",
     "menu": "Thực đơn",
-    "menu_short": "Menu",
     "about": "Về chúng tôi",
-    "about_short": "About",
     "contact": "Liên hệ",
-    "contact_short": "Contact",
-    "book": "Đặt bàn",
-    "book_short": "Book"
+    "reservation": "Đặt bàn"
   },
-  "auth": {
+  "user": {
     "login": "Đăng nhập",
-    "register": "Đăng ký"
-  },
-  "user_menu": {
+    "register": "Đăng ký",
     "profile": "Thông tin cá nhân",
-    "orders": "Lịch sử đơn hàng",
-    "settings": "Cài đặt tài khoản",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "menu_label": "Menu người dùng"
   },
-  "aria_labels": {
-    "home": "Về trang chủ",
-    "logo": "Logo Sushi Takumi",
-    "menu": "Mở/đóng menu",
-    "user_menu": "Mở/đóng menu người dùng"
+  "aria": {
+    "home_link": "Trang chủ",
+    "menu_button": "Menu",
+    "user_menu": "Menu người dùng"
   }
 }

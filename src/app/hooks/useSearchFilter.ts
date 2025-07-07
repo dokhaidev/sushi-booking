@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 
-type KeyOf<T> = keyof T;
-
 /** Xóa dấu tiếng Việt để so sánh không phân biệt dấu */
 function removeVietnameseTones(str: string): string {
   return str
@@ -15,7 +13,7 @@ function removeVietnameseTones(str: string): string {
 export function useSearchFilter<T>(
   data: T[],
   searchText: string,
-  keysToSearch: KeyOf<T>[]
+  keysToSearch: string[] // thay vì KeyOf<T>[]
 ): T[] {
   const filteredData = useMemo(() => {
     if (!searchText.trim()) return data;
@@ -24,7 +22,16 @@ export function useSearchFilter<T>(
 
     return data.filter((item) =>
       keysToSearch.some((key) => {
-        const value = item[key];
+        const keys = key.split(".");
+        let value: any = item;
+        for (const k of keys) {
+          if (value && typeof value === "object") {
+            value = value[k];
+          } else {
+            value = undefined;
+            break;
+          }
+        }
         return (
           typeof value === "string" &&
           removeVietnameseTones(value).includes(normalizedSearch)
@@ -35,3 +42,4 @@ export function useSearchFilter<T>(
 
   return filteredData;
 }
+

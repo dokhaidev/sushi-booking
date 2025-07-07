@@ -350,14 +350,25 @@ export default function QuanLyNguoiDung() {
             color: "from-orange-500 to-orange-600",
           },
         ].map((item, i) => (
-          <Card key={i} className="hover:shadow-lg transition-shadow duration-200">
+          <Card
+            key={i}
+            className="hover:shadow-lg transition-shadow duration-200"
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">{item.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{item.value}</p>
+                  <p className="text-sm text-gray-600 font-medium">
+                    {item.label}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {item.value}
+                  </p>
                 </div>
-                <div className={`p-3 rounded-lg bg-gradient-to-r ${item.color} text-white`}>{item.icon}</div>
+                <div
+                  className={`p-3 rounded-lg bg-gradient-to-r ${item.color} text-white`}
+                >
+                  {item.icon}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -487,10 +498,22 @@ export default function QuanLyNguoiDung() {
           <div className="space-y-4">
             {selectedUser && (
               <>
-                <InputField label="Tên" name="name" value={selectedUser.name} disabled />
-                <InputField label="Email" name="email" value={selectedUser.email} disabled />
+                <InputField
+                  label="Tên"
+                  name="name"
+                  value={selectedUser.name}
+                  disabled
+                />
+                <InputField
+                  label="Email"
+                  name="email"
+                  value={selectedUser.email}
+                  disabled
+                />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vai trò
+                  </label>
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}

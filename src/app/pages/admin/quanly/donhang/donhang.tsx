@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import axios from "axios"
 import TitleDesc from "../../../../components/ui/titleDesc"
 import { Card, CardContent, CardHeader } from "../../../../components/ui/Card"
 import Pagination from "../../../../components/ui/Panigation"
@@ -9,7 +10,10 @@ import SearchInput from "../../../../components/ui/SearchInput"
 import { useFetch } from "@/src/app/hooks/useFetch"
 import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
 import Popup from "@/src/app/components/ui/Popup"
-import { FaShoppingCart, FaClock, FaCheckCircle, FaMoneyBillWave, FaFilter, FaTimes } from "react-icons/fa"
+import PopupNotification from "@/src/app/components/ui/PopupNotification"
+import { Button } from "@/src/app/components/ui/button"
+import { FaShoppingCart, FaClock, FaCheckCircle, FaMoneyBillWave, FaFilter, FaTimes, FaEdit, FaInfo } from "react-icons/fa"
+import type { Order } from "@/src/app/types/order"
 
 export default function QuanLyDonHang() {
   const { orders, fetchOrderDetail, orderDetail } = useFetch()
@@ -17,6 +21,20 @@ export default function QuanLyDonHang() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showOrderDetail, setShowOrderDetail] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+
+  // Status update states
+  const [showStatusPopup, setShowStatusPopup] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [newStatus, setNewStatus] = useState("")
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+
+  // Notification states
+  const [popupOpen, setPopupOpen] = useState(false)
+  const [popupContent, setPopupContent] = useState({
+    title: "",
+    message: "",
+    type: "info" as "info" | "success" | "error",
+  })
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -128,6 +146,85 @@ export default function QuanLyDonHang() {
     setSelectedOrderId(null)
   }
 
+  // Handle status update
+  const handleUpdateStatus = (order: Order) => {
+    setSelectedOrder(order)
+    setNewStatus(order.status)
+    setShowStatusPopup(true)
+  }
+
+  const handleConfirmStatusUpdate = async () => {
+    if (!selectedOrder || !newStatus) return
+
+    setIsUpdatingStatus(true)
+
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`, {
+        status: newStatus,
+      })
+
+      // Update the order in the local state
+      const updatedOrders = orders.map((order) =>
+        order.id === selectedOrder.id ? { ...order, status: newStatus } : order,
+      )
+
+      // Since we don't have setOrders from useFetch, we'll refresh the page
+      setShowStatusPopup(false)
+      setSelectedOrder(null)
+      setNewStatus("")
+
+      setPopupContent({
+        title: "Thành công",
+        message: response.data.message || "Cập nhật trạng thái đơn hàng thành công!",
+        type: "success",
+      })
+      setPopupOpen(true)
+
+      // Refresh page after 2 seconds
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (error: any) {
+      console.error("Lỗi cập nhật trạng thái:", error)
+
+      let errorMessage = "Có lỗi xảy ra khi cập nhật trạng thái đơn hàng"
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+
+      setPopupContent({
+        title: "Lỗi",
+        message: errorMessage,
+        type: "error",
+      })
+      setPopupOpen(true)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleCancelStatusUpdate = () => {
+    setShowStatusPopup(false)
+    setSelectedOrder(null)
+    setNewStatus("")
+  }
+
+  // Get status display info
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case "pending":
+        return { label: "Chờ xử lý", color: "bg-yellow-100 text-yellow-800" }
+      case "confirmed":
+        return { label: "Đã xác nhận", color: "bg-blue-100 text-blue-800" }
+      case "success":
+        return { label: "Hoàn tất", color: "bg-green-100 text-green-800" }
+      case "cancelled":
+        return { label: "Đã hủy", color: "bg-red-100 text-red-800" }
+      default:
+        return { label: "Không rõ", color: "bg-gray-100 text-gray-600" }
+    }
+  }
+
   const statisticsData = [
     {
       label: "Đơn hôm nay",
@@ -165,6 +262,15 @@ export default function QuanLyDonHang() {
 
   return (
     <div className="grid grid-cols-12 gap-4">
+      <PopupNotification
+        isOpen={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        title={popupContent.title}
+        type={popupContent.type}
+      >
+        <p>{popupContent.message}</p>
+      </PopupNotification>
+
       {/* Header */}
       <TitleDesc title="Quản lý đơn hàng" description="Xem và quản lý tất cả những đơn hàng" className="col-span-12" />
 
@@ -211,8 +317,8 @@ export default function QuanLyDonHang() {
                 >
                   <option value="">Tất cả</option>
                   <option value="cash">Tiền mặt</option>
-                  <option value="momo">Ví Momo</option>
-                  <option value="vnpay">Ví VNPay</option>
+                  <option value="momo">Ví Momo</option>
+                  <option value="vnpay">Ví VNPay</option>
                 </select>
               </div>
 
@@ -251,14 +357,7 @@ export default function QuanLyDonHang() {
                   )}
                   {filters.status && (
                     <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
-                      Trạng thái:{" "}
-                      {filters.status === "pending"
-                        ? "Chờ xử lý"
-                        : filters.status === "confirmed"
-                          ? "Đã xác nhận"
-                          : filters.status === "success"
-                            ? "Hoàn tất"
-                            : "Đã hủy"}
+                      Trạng thái: {getStatusInfo(filters.status).label}
                     </span>
                   )}
                   {filters.timeRange && (
@@ -277,8 +376,8 @@ export default function QuanLyDonHang() {
                       {filters.paymentMethod === "cash"
                         ? "Tiền mặt"
                         : filters.paymentMethod === "momo"
-                          ? "Ví Momo"
-                          : "Ví VNPay"}
+                          ? "Ví Momo"
+                          : "Ví VNPay"}
                     </span>
                   )}
                   <span className="text-sm text-orange-700">({filteredOrders.length} kết quả)</span>
@@ -363,7 +462,7 @@ export default function QuanLyDonHang() {
                     <th className="px-2 sm:px-4 py-2">MÃ ĐƠN</th>
                     <th className="px-2 sm:px-4 py-2 hidden sm:table-cell">KHÁCH HÀNG</th>
                     <th className="px-2 sm:px-4 py-2">TỔNG TIỀN</th>
-                    <th className="px-2 sm:px-4 py-2">HÌNH THỨC THANH TOÁN</th>
+                    <th className="px-2 sm:px-4 py-2">HÌNH THỨC THANH TOÁN</th>
                     <th className="px-2 sm:px-4 py-2">TRẠNG THÁI</th>
                     <th className="px-2 sm:px-4 py-2">THAO TÁC</th>
                   </tr>
@@ -387,52 +486,52 @@ export default function QuanLyDonHang() {
                                 : order.payment_method === "momo"
                                   ? "bg-[#D82D8B] text-white"
                                   : "bg-[#0066B2] text-white"
-                                  }`}>
-                              {order.payment_method === "cash"
-                                ? "Tiền mặt"
-                                : order.payment_method === "momo"
-                                  ? "Ví Momo"
-                                  : "Ví VNPay"}
-                            </span>
-                          </td>
-                        <td className="px-2 sm:px-4 py-2">
-                          <span
-                            className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
-                              order.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : order.status === "confirmed"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : order.status === "cancelled"
-                                    ? "bg-red-100 text-red-800"
-                                    : order.status === "success"
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-gray-100 text-gray-600"
                             }`}
                           >
-                            {order.status === "pending"
-                              ? "Chờ xử lý"
-                              : order.status === "confirmed"
-                                ? "Đã xác nhận"
-                                : order.status === "cancelled"
-                                  ? "Đã hủy"
-                                  : order.status === "success"
-                                    ? "Hoàn tất"
-                                    : "Không rõ"}
+                            {order.payment_method === "cash"
+                              ? "Tiền mặt"
+                              : order.payment_method === "momo"
+                                ? "Ví Momo"
+                                : "Ví VNPay"}
                           </span>
                         </td>
                         <td className="px-2 sm:px-4 py-2">
-                          <button
-                            className="text-blue-600 hover:underline hover:text-blue-800 transition-colors text-sm font-medium"
-                            onClick={() => handleViewDetail(order.id)}
+                          <span
+                            className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${getStatusInfo(order.status).color}`}
                           >
-                            Chi tiết
-                          </button>
+                            {getStatusInfo(order.status).label}
+                          </span>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2">
+                          <div className="flex gap-2">
+                            <button
+                              className="p-2 flex items-center gap-1 text-sm text-blue-700 border border-blue-700 rounded hover:bg-blue-100 font-semibold cursor-pointer"
+                              onClick={() => handleViewDetail(order.id)}
+                            >
+                              <FaInfo />
+                            </button>
+                            {order.status !== "success" && (
+                              <button
+                                className="p-2 flex items-center gap-1 text-sm text-orange-700 border border-orange-700 rounded hover:bg-orange-100 font-semibold cursor-pointer"
+                                onClick={() => handleUpdateStatus(order)}
+                              >
+                                <FaEdit className="w-3 h-3" />
+                                Sửa
+                              </button>
+                            )}
+                            {order.status === "success" && (
+                              <span className="p-2 flex items-center gap-1 text-sm text-gray-400 border border-gray-400 rounded bg-gray-100 font-medium">
+                                <FaEdit className="w-3 h-3" />
+                                Đã hoàn tất
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                         Không tìm thấy đơn hàng nào phù hợp với bộ lọc
                       </td>
                     </tr>
@@ -451,6 +550,95 @@ export default function QuanLyDonHang() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Update Popup */}
+      <Popup
+        isOpen={showStatusPopup}
+        onClose={handleCancelStatusUpdate}
+        title={`Cập nhật trạng thái đơn hàng #${selectedOrder?.id}`}
+        width="w-full md:w-[500px]"
+      >
+        {selectedOrder && (
+          <div className="space-y-4">
+            {selectedOrder.status === "success" && (
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <div className="flex items-center gap-2">
+                  <FaCheckCircle className="w-5 h-5 text-red-600" />
+                  <div>
+                    <h4 className="font-medium text-red-800">Đơn hàng đã hoàn tất</h4>
+                    <p className="text-sm text-red-700 mt-1">
+                      Đơn hàng này đã được hoàn tất và không thể thay đổi trạng thái. Điểm thưởng đã được tích cho khách
+                      hàng.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-800 mb-2">Thông tin đơn hàng</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>Mã đơn: #{selectedOrder.id}</div>
+                <div>Khách hàng: {selectedOrder.customer?.name || "Khách vãng lai"}</div>
+                <div>Tổng tiền: {selectedOrder.total_price.toLocaleString()} ₫</div>
+                <div>
+                  Trạng thái hiện tại:{" "}
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-medium ${getStatusInfo(selectedOrder.status).color}`}
+                  >
+                    {getStatusInfo(selectedOrder.status).label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {selectedOrder.status !== "success" && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chọn trạng thái mới</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  >
+                    <option value="pending">Chờ xử lý</option>
+                    <option value="confirmed">Đã xác nhận</option>
+                    <option value="success">Hoàn tất</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
+
+                {newStatus === "success" && (
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800">
+                      <strong>Lưu ý:</strong> Khi chuyển trạng thái thành &quot;Hoàn tất&quot;, hệ thống sẽ tự động tích điểm cho
+                      khách hàng và không thể thay đổi lại.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                onClick={handleCancelStatusUpdate}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                {selectedOrder.status === "success" ? "Đóng" : "Hủy"}
+              </Button>
+              {selectedOrder.status !== "success" && (
+                <Button
+                  onClick={handleConfirmStatusUpdate}
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isUpdatingStatus || newStatus === selectedOrder.status}
+                >
+                  {isUpdatingStatus ? "Đang cập nhật..." : "Cập nhật trạng thái"}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Popup>
 
       {/* Order Detail Popup */}
       <Popup
@@ -480,27 +668,9 @@ export default function QuanLyDonHang() {
                 <div>
                   <span className="text-gray-600">Trạng thái:</span>
                   <span
-                    className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                      orderDetail.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : orderDetail.status === "confirmed"
-                          ? "bg-blue-100 text-blue-800"
-                          : orderDetail.status === "cancelled"
-                            ? "bg-red-100 text-red-800"
-                            : orderDetail.status === "success"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-600"
-                    }`}
+                    className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusInfo(orderDetail.status).color}`}
                   >
-                    {orderDetail.status === "pending"
-                      ? "Chờ xử lý"
-                      : orderDetail.status === "confirmed"
-                        ? "Đã xác nhận"
-                        : orderDetail.status === "cancelled"
-                          ? "Đã hủy"
-                          : orderDetail.status === "success"
-                            ? "Hoàn tất"
-                            : "Không rõ"}
+                    {getStatusInfo(orderDetail.status).label}
                   </span>
                 </div>
                 <div>

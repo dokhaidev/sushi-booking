@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import type React from "react"
@@ -16,7 +18,7 @@ import type { Voucher, VoucherAdd } from "@/src/app/types/voucher"
 import { addVoucher } from "@/src/app/hooks/useAdd"
 
 export default function QuanLyKhuyenMai() {
-  const { vouchers, setVouchers } = useFetch()
+  const { vouchers } = useFetch()
   const [searchText, setSearchText] = useState("")
   const [voucherPage, setVoucherPage] = useState(1)
   const [openAddPopup, setOpenAddPopup] = useState(false)
@@ -46,6 +48,11 @@ export default function QuanLyKhuyenMai() {
     end_date: "",
     status: "active",
     usage_limit: 1,
+    used: 0,
+    required_points: 0,
+    required_total: 0,
+    is_personal: false,
+    describe: "",
   })
 
   // Form validation
@@ -58,6 +65,12 @@ export default function QuanLyKhuyenMai() {
       newErrors.code = "Mã khuyến mãi không được để trống"
     } else if (newVoucher.code.length < 3) {
       newErrors.code = "Mã khuyến mãi phải có ít nhất 3 ký tự"
+    } else {
+      // Check if voucher code already exists
+      const existingVoucher = vouchers.find((v) => v.code.toLowerCase() === newVoucher.code.toLowerCase())
+      if (existingVoucher) {
+        newErrors.code = "Mã voucher đã tồn tại trong hệ thống"
+      }
     }
 
     if (!newVoucher.discount_value || newVoucher.discount_value <= 0) {
@@ -89,6 +102,14 @@ export default function QuanLyKhuyenMai() {
 
     if (!newVoucher.usage_limit || newVoucher.usage_limit <= 0) {
       newErrors.usage_limit = "Số lượng sử dụng phải lớn hơn 0"
+    }
+
+    if (newVoucher.required_points && newVoucher.required_points < 0) {
+      newErrors.required_points = "Điểm yêu cầu không được âm"
+    }
+
+    if (newVoucher.required_total && newVoucher.required_total < 0) {
+      newErrors.required_total = "Tổng tiền yêu cầu không được âm"
     }
 
     setErrors(newErrors)
@@ -202,6 +223,11 @@ export default function QuanLyKhuyenMai() {
       end_date: "",
       status: "active",
       usage_limit: 1,
+      used: 0,
+      required_points: 0,
+      required_total: 0,
+      is_personal: false,
+      describe: "",
     })
     setErrors({})
   }
@@ -216,23 +242,53 @@ export default function QuanLyKhuyenMai() {
     setIsSubmitting(true)
 
     try {
-      const added = await addVoucher(newVoucher)
-      setVouchers((prev) => [...prev, added])
+      // Clean up data before sending
+      const voucherData = {
+        ...newVoucher,
+        // Ensure numbers are properly set
+        discount_value: Number(newVoucher.discount_value) || 0,
+        usage_limit: Number(newVoucher.usage_limit) || 1,
+        used: 0, // Always start with 0 used
+        // Remove empty optional fields
+        required_points: newVoucher.required_points || undefined,
+        required_total: newVoucher.required_total || undefined,
+        describe: newVoucher.describe?.trim() || undefined,
+      }
+
+      await addVoucher(voucherData)
+
       setOpenAddPopup(false)
       resetForm()
 
       setPopupContent({
         title: "Thành công",
-        message: "Thêm voucher mới thành công!",
+        message: "Thêm voucher mới thành công! Trang sẽ được tải lại để cập nhật dữ liệu.",
         type: "success",
       })
       setPopupOpen(true)
+
+      // Refresh the page after a short delay to show success message
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
     } catch (error: any) {
       console.error("Thêm voucher thất bại:", error)
 
       let errorMessage = "Có lỗi xảy ra khi thêm voucher"
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message  
+
+      // Check for duplicate code error from API
+      if (
+        error.response?.status === 409 ||
+        error.response?.data?.message?.includes("duplicate") ||
+        error.response?.data?.message?.includes("đã tồn tại") ||
+        error.response?.data?.message?.includes("exists") ||
+        error.response?.data?.error?.includes("duplicate") ||
+        error.response?.data?.error?.includes("đã tồn tại") ||
+        error.response?.data?.error?.includes("exists")
+      ) {
+        errorMessage = "Mã voucher đã tồn tại trong hệ thống"
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error
       }
@@ -250,10 +306,10 @@ export default function QuanLyKhuyenMai() {
 
   // Statistics based on filtered data
   const activeVouchers = filteredVouchers.filter((v) => v.status === "active")
-  const inactiveVouchers = filteredVouchers.filter((v) => v.status === "inactive")
+  const disabledVouchers = filteredVouchers.filter((v) => v.status === "disabled")
   const expiredVouchers = filteredVouchers.filter((v) => {
     const endDate = new Date(v.end_date)
-    return endDate < new Date()
+    return endDate < new Date() || v.status === "expired"
   })
 
   const statisticsData = [
@@ -270,8 +326,8 @@ export default function QuanLyKhuyenMai() {
       color: "from-green-500 to-green-600",
     },
     {
-      label: "Không hoạt động",
-      value: inactiveVouchers.length,
+      label: "Đã vô hiệu hóa",
+      value: disabledVouchers.length,
       icon: <FaTimesCircle className="w-6 h-6" />,
       color: "from-red-500 to-red-600",
     },
@@ -315,7 +371,8 @@ export default function QuanLyKhuyenMai() {
                 >
                   <option value="">Tất cả</option>
                   <option value="active">Đang hoạt động</option>
-                  <option value="inactive">Không hoạt động</option>
+                  <option value="disabled">Đã vô hiệu hóa</option>
+                  <option value="expired">Đã hết hạn</option>
                 </select>
               </div>
 
@@ -375,12 +432,17 @@ export default function QuanLyKhuyenMai() {
                   <span className="text-sm font-medium text-orange-800">Bộ lọc đang áp dụng:</span>
                   {searchText && (
                     <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
-                      Tìm kiếm: &quot;{searchText}&quot;
+                      Tìm kiếm: "{searchText}"
                     </span>
                   )}
                   {filters.status && (
                     <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
-                      Trạng thái: {filters.status === "active" ? "Đang hoạt động" : "Không hoạt động"}
+                      Trạng thái:{" "}
+                      {filters.status === "active"
+                        ? "Đang hoạt động"
+                        : filters.status === "disabled"
+                          ? "Đã vô hiệu hóa"
+                          : "Đã hết hạn"}
                     </span>
                   )}
                   {filters.timeRange && (
@@ -411,11 +473,11 @@ export default function QuanLyKhuyenMai() {
         </Card>
       </div>
 
-      {/* Statistics - Desktop & Tablet Only */}
+      {/* Statistics */}
       <div className="col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {statisticsData.map((item) => (
+        {statisticsData.map((item, index) => (
           <Card
-            key={item.label}
+            key={index}
             className="hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-0 shadow-md"
           >
             <CardContent className="p-6">
@@ -457,7 +519,8 @@ export default function QuanLyKhuyenMai() {
                     <th className="px-4 py-2">Ngày bắt đầu</th>
                     <th className="px-4 py-2">Ngày hết hạn</th>
                     <th className="px-4 py-2">Trạng thái</th>
-                    <th className="px-4 py-2">Số lượng</th>
+                    <th className="px-4 py-2">Số lượt còn lại</th>
+                    <th className="px-4 py-2">Số lượt đã dùng</th>
                     <th className="px-4 py-2">Hành động</th>
                   </tr>
                 </thead>
@@ -468,25 +531,34 @@ export default function QuanLyKhuyenMai() {
                         <td className="px-4 py-2">{voucher.id}</td>
                         <td className="px-4 py-2 font-medium">{voucher.code}</td>
                         <td className="px-4 py-2 font-semibold text-green-600">
-                          {voucher.discount_value.toLocaleString()} ₫
+                          {(Number(voucher.discount_value) || 0).toLocaleString()} ₫
                         </td>
                         <td className="px-4 py-2">{new Date(voucher.start_date).toLocaleDateString("vi-VN")}</td>
                         <td className="px-4 py-2">{new Date(voucher.end_date).toLocaleDateString("vi-VN")}</td>
                         <td className="px-4 py-2">
                           <span
                             className={`text-xs px-2 py-1 rounded font-medium ${
-                              voucher.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                              voucher.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : voucher.status === "expired"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : "bg-red-100 text-red-800"
                             }`}
                           >
-                            {voucher.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                            {voucher.status === "active"
+                              ? "Hoạt động"
+                              : voucher.status === "expired"
+                                ? "Hết hạn"
+                                : "Vô hiệu hóa"}
                           </span>
                         </td>
-                        <td className="px-4 py-2">{voucher.usage_limit}</td>
+                        <td className="px-4 py-2">{Math.max(0, (voucher.usage_limit || 0) - (voucher.used || 0))}</td>
+                        <td className="px-4 py-2">{voucher.used || 0}</td>
                         <td className="px-4 py-2">
                           <button className="px-2 py-1 flex items-center gap-1 text-red-700 border border-red-700 rounded hover:bg-red-100 transition-colors">
                             {voucher.status === "active" ? <FaEyeSlash /> : <FaEye />}
                             <span className="text-xs font-semibold">
-                              {voucher.status === "active" ? "Khóa" : "Mở khóa"}
+                              {voucher.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
                             </span>
                           </button>
                         </td>
@@ -494,7 +566,7 @@ export default function QuanLyKhuyenMai() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                         {searchText || filters.status || filters.timeRange || filters.discountRange
                           ? "Không tìm thấy khuyến mãi nào phù hợp với bộ lọc"
                           : "Chưa có khuyến mãi nào"}
@@ -523,106 +595,193 @@ export default function QuanLyKhuyenMai() {
           resetForm()
         }}
         title="Thêm Voucher Mới"
-        width="w-full md:w-[600px] lg:w-[700px]"
+        width="w-full md:w-[800px] lg:w-[900px]"
       >
-        <form onSubmit={handleAddVoucher} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <InputField
-                label="Mã khuyến mãi *"
-                name="code"
-                value={newVoucher.code}
-                onChange={(e) => {
-                  setNewVoucher({ ...newVoucher, code: e.target.value.toUpperCase() })
-                  if (errors.code) setErrors({ ...errors, code: "" })
-                }}
-                placeholder="VD: SUMMER2024"
-                required
-              />
-              {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code}</p>}
+        <form onSubmit={handleAddVoucher} className="space-y-6">
+          {/* Basic Information */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin cơ bản</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Mã khuyến mãi *"
+                  name="code"
+                  value={newVoucher.code}
+                  onChange={(e) => {
+                    const newCode = e.target.value.toUpperCase()
+                    setNewVoucher({ ...newVoucher, code: newCode })
+
+                    // Clear existing error
+                    if (errors.code) setErrors({ ...errors, code: "" })
+
+                    // Check for duplicate in real-time
+                    if (newCode.length >= 3) {
+                      const existingVoucher = vouchers.find((v) => v.code.toLowerCase() === newCode.toLowerCase())
+                      if (existingVoucher) {
+                        setErrors({ ...errors, code: "Mã voucher đã tồn tại trong hệ thống" })
+                      }
+                    }
+                  }}
+                  placeholder="VD: SUMMER2024"
+                  required
+                />
+                {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code}</p>}
+              </div>
+
+              <div>
+                <InputField
+                  label="Giá trị khuyến mãi (VNĐ) *"
+                  name="discount_value"
+                  type="number"
+                  value={String(newVoucher.discount_value)}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, discount_value: Number.parseFloat(e.target.value) || 0 })
+                    if (errors.discount_value) setErrors({ ...errors, discount_value: "" })
+                  }}
+                  placeholder="50000"
+                  min="1"
+                  required
+                />
+                {errors.discount_value && <p className="text-red-500 text-xs mt-1">{errors.discount_value}</p>}
+              </div>
+
+              <div>
+                <InputField
+                  label="Số lượng sử dụng *"
+                  name="usage_limit"
+                  type="number"
+                  value={String(newVoucher.usage_limit)}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, usage_limit: Number.parseInt(e.target.value) || 1 })
+                    if (errors.usage_limit) setErrors({ ...errors, usage_limit: "" })
+                  }}
+                  min="1"
+                  required
+                />
+                {errors.usage_limit && <p className="text-red-500 text-xs mt-1">{errors.usage_limit}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái *</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  value={newVoucher.status}
+                  onChange={(e) =>
+                    setNewVoucher({
+                      ...newVoucher,
+                      status: e.target.value as "active" | "expired" | "disabled",
+                    })
+                  }
+                >
+                  <option value="active">Đang hoạt động</option>
+                  <option value="disabled">Vô hiệu hóa</option>
+                  <option value="expired">Hết hạn</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Date Range */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Thời gian áp dụng</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Ngày bắt đầu *"
+                  name="start_date"
+                  type="date"
+                  value={newVoucher.start_date}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, start_date: e.target.value })
+                    if (errors.start_date) setErrors({ ...errors, start_date: "" })
+                  }}
+                  min={new Date().toISOString().split("T")[0]}
+                  required
+                />
+                {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
+              </div>
+
+              <div>
+                <InputField
+                  label="Ngày kết thúc *"
+                  name="end_date"
+                  type="date"
+                  value={newVoucher.end_date}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, end_date: e.target.value })
+                    if (errors.end_date) setErrors({ ...errors, end_date: "" })
+                  }}
+                  min={newVoucher.start_date || new Date().toISOString().split("T")[0]}
+                  required
+                />
+                {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Requirements */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Điều kiện áp dụng</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Điểm yêu cầu"
+                  name="required_points"
+                  type="number"
+                  value={String(newVoucher.required_points || "")}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, required_points: Number.parseInt(e.target.value) || 0 })
+                    if (errors.required_points) setErrors({ ...errors, required_points: "" })
+                  }}
+                  placeholder="0"
+                  min="0"
+                />
+                {errors.required_points && <p className="text-red-500 text-xs mt-1">{errors.required_points}</p>}
+                <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu điểm</p>
+              </div>
+
+              <div>
+                <InputField
+                  label="Tổng tiền yêu cầu (VNĐ)"
+                  name="required_total"
+                  type="number"
+                  value={String(newVoucher.required_total || "")}
+                  onChange={(e) => {
+                    setNewVoucher({ ...newVoucher, required_total: Number.parseFloat(e.target.value) || 0 })
+                    if (errors.required_total) setErrors({ ...errors, required_total: "" })
+                  }}
+                  placeholder="0"
+                  min="0"
+                />
+                {errors.required_total && <p className="text-red-500 text-xs mt-1">{errors.required_total}</p>}
+                <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu tổng tiền tối thiểu</p>
+              </div>
             </div>
 
-            <div>
-              <InputField
-                label="Giá trị khuyến mãi (VNĐ) *"
-                name="discount_value"
-                type="number"
-                value={String(newVoucher.discount_value)}
-                onChange={(e) => {
-                  setNewVoucher({ ...newVoucher, discount_value: Number.parseFloat(e.target.value) || 0 })
-                  if (errors.discount_value) setErrors({ ...errors, discount_value: "" })
-                }}
-                placeholder="50000"
-                min="1"
-                required
-              />
-              {errors.discount_value && <p className="text-red-500 text-xs mt-1">{errors.discount_value}</p>}
+            <div className="mt-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={newVoucher.is_personal || false}
+                  onChange={(e) => setNewVoucher({ ...newVoucher, is_personal: e.target.checked })}
+                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Voucher cá nhân</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">Chỉ áp dụng cho khách hàng cụ thể</p>
             </div>
+          </div>
 
-            <div>
-              <InputField
-                label="Số lượng sử dụng *"
-                name="usage_limit"
-                type="number"
-                value={String(newVoucher.usage_limit)}
-                onChange={(e) => {
-                  setNewVoucher({ ...newVoucher, usage_limit: Number.parseInt(e.target.value) || 1 })
-                  if (errors.usage_limit) setErrors({ ...errors, usage_limit: "" })
-                }}
-                min="1"
-                required
-              />
-              {errors.usage_limit && <p className="text-red-500 text-xs mt-1">{errors.usage_limit}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái *</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                value={newVoucher.status}
-                onChange={(e) =>
-                  setNewVoucher({
-                    ...newVoucher,
-                    status: e.target.value as "active" | "expired" | "disable",
-                  })
-                }
-              >
-                <option value="active">Đang hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
-              </select>
-            </div>
-
-            <div>
-              <InputField
-                label="Ngày bắt đầu *"
-                name="start_date"
-                type="date"
-                value={newVoucher.start_date}
-                onChange={(e) => {
-                  setNewVoucher({ ...newVoucher, start_date: e.target.value })
-                  if (errors.start_date) setErrors({ ...errors, start_date: "" })
-                }}
-                min={new Date().toISOString().split("T")[0]}
-                required
-              />
-              {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
-            </div>
-
-            <div>
-              <InputField
-                label="Ngày kết thúc *"
-                name="end_date"
-                type="date"
-                value={newVoucher.end_date}
-                onChange={(e) => {
-                  setNewVoucher({ ...newVoucher, end_date: e.target.value })
-                  if (errors.end_date) setErrors({ ...errors, end_date: "" })
-                }}
-                min={newVoucher.start_date || new Date().toISOString().split("T")[0]}
-                required
-              />
-              {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
-            </div>
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              rows={3}
+              value={newVoucher.describe || ""}
+              onChange={(e) => setNewVoucher({ ...newVoucher, describe: e.target.value })}
+              placeholder="Mô tả chi tiết về voucher..."
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">

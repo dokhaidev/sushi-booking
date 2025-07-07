@@ -69,7 +69,10 @@ export function useFetch() {
   useEffect(() => {
     axios
       .get("http://localhost:8000/api/voucher")
-      .then((res) => setVouchers(res.data))
+      .then(res => {
+        console.log("Danh sách voucher:", res.data);
+        setVouchers(res.data);
+      })
       .catch((err) => console.error("Lỗi khi lấy danh sách voucher:", err));
   }, []);
 
