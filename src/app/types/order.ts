@@ -28,6 +28,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   status: string;
+  created_at?: string;
   food?: {
     id: number;
     name: string;
@@ -38,8 +39,40 @@ export interface OrderItem {
     name: string;
     image: string;
   };
+  order_info?: {
+    id: number
+    customer_name: string
+    table_numbers: string
+  }
 }
 
 export interface OrderDetail extends Order {
   items: OrderItem[];
+}
+
+// Thêm enum cho status
+export enum OrderItemStatus {
+  PENDING = "pending",
+  PREPARING = "preparing",
+  SERVED = "served",
+  DONE = "done",
+  CANCELLED = "cancelled",
+}
+
+// Mapping status tiếng Việt
+export const ORDER_ITEM_STATUS_LABELS = {
+  [OrderItemStatus.PENDING]: "Chờ xử lý",
+  [OrderItemStatus.PREPARING]: "Đang chuẩn bị",
+  [OrderItemStatus.SERVED]: "Đã phục vụ",
+  [OrderItemStatus.DONE]: "Hoàn thành",
+  [OrderItemStatus.CANCELLED]: "Đã hủy",
+}
+
+// Mapping màu sắc cho status
+export const ORDER_ITEM_STATUS_COLORS = {
+  [OrderItemStatus.PENDING]: "bg-yellow-100 text-yellow-800",
+  [OrderItemStatus.PREPARING]: "bg-blue-100 text-blue-800",
+  [OrderItemStatus.SERVED]: "bg-green-100 text-green-800",
+  [OrderItemStatus.DONE]: "bg-gray-100 text-gray-800",
+  [OrderItemStatus.CANCELLED]: "bg-red-100 text-red-800",
 }

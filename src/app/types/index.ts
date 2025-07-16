@@ -6,3 +6,4 @@ export * from "./foodgroup";
 export * from "./voucher";
 export * from "./table"
 export * from "./order"
+export * from "./feedback";
