@@ -41,15 +41,15 @@ const Sidebar = () => {
           label: "Quản lý đơn hàng",
           href: "/quan-ly/don-hang",
         },
-        // {
-        //   key: "datmon",
-        //   label: "Quản lý đặt món",
-        //   href: "/quan-ly/dat-mon",
-        // },
         {
           key: "khuyenmai",
           label: "Quản lý voucher",
           href: "/quan-ly/khuyen-mai",
+        },
+        {
+          key: "phanhoi",
+          label: "Quản lý phản hồi",
+          href: "/quan-ly/phan-hoi",
         },
       ],
     },
@@ -58,8 +58,8 @@ const Sidebar = () => {
       label: "Nhân viên",
       children: [
         { key: "bep", label: "Nhân viên bếp", href: "/nhan-vien/bep" },
-        { key: "ban", label: "Nhân viên bàn", href: "/nhan-vien/ban" },
-        { key: "thungan", label: "Thu ngân", href: "/nhan-vien/thu-ngan" },
+        // { key: "ban", label: "Nhân viên bàn", href: "/nhan-vien/ban" },
+        // { key: "thungan", label: "Thu ngân", href: "/nhan-vien/thu-ngan" },
       ],
     },
   ];
