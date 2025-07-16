@@ -3,47 +3,66 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ✅ Những đường dẫn cần phân quyền admin
-  const adminPaths = ["/quan-tri"];
-
-  // ✅ Lấy token và thông tin người dùng từ cookie
+  // ✅ Lấy token và user_info từ cookie
   const token = request.cookies.get("access_token")?.value;
   const userInfo = request.cookies.get("user_info")?.value;
 
-  // ✅ Nếu không có token → redirect tới /dang-nhap
+  // ✅ Nếu không có token → chuyển đến /dang-nhap
   if (!token) {
     return NextResponse.redirect(new URL("/dang-nhap", request.url));
   }
 
-  // ✅ Parse user từ cookie
+  // ✅ Parse user_info
   let user = null;
   try {
     if (userInfo) {
-      const decoded = decodeURIComponent(userInfo); // ✅ Decode trước
-        user = JSON.parse(decoded); // ✅ Sau đó parse
+      const decoded = decodeURIComponent(userInfo);
+      user = JSON.parse(decoded);
     }
   } catch (error) {
     console.error("Lỗi parse user_info:", error);
     return NextResponse.redirect(new URL("/dang-nhap", request.url));
   }
 
-  // ✅ Nếu vào route admin mà không phải admin → redirect về trang chủ
-  if (adminPaths.some((path) => pathname.startsWith(path))) {
-    if (!user || user.role !== "admin") {
+  const role = user?.role;
+
+  // ================================
+  // ✅ VALIDATE ROLE ACCESS CONTROL
+  // ================================
+
+  if (pathname.startsWith("/quan-tri")) {
+    // ✅ Chef chỉ được vào /quan-tri/nhan-vien
+    if (role === "chef" && !pathname.startsWith("/quan-tri/nhan-vien")) {
+      return NextResponse.redirect(new URL("/quan-tri/nhan-vien/bep", request.url));
+    }
+
+    // ✅ Manager chỉ được vào /quan-tri/nhan-vien và /quan-tri/quan-ly
+    if (
+      role === "manager" &&
+      !pathname.startsWith("/quan-tri/nhan-vien") &&
+      !pathname.startsWith("/quan-tri/quan-ly")
+    ) {
+      return NextResponse.redirect(new URL("/quan-tri/quan-ly/nguoi-dung", request.url));
+    }
+
+    // ✅ Các vai trò không hợp lệ (không phải admin, manager, chef)
+    if (!["admin", "manager", "chef"].includes(role)) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // ✅ Những path còn lại (ngoài nhan-vien và quan-ly) → chỉ admin được phép
+    if (
+      !pathname.startsWith("/quan-tri/nhan-vien") &&
+      !pathname.startsWith("/quan-tri/quan-ly") &&
+      role !== "admin"
+    ) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
-  // ✅ Nếu hợp lệ → cho phép truy cập
   return NextResponse.next();
 }
 
-// ✅ Định nghĩa matcher: áp dụng middleware cho các route cần bảo vệ
 export const config = {
-  matcher: [
-    "/quan-tri/:path*",
-    // Có thể mở rộng matcher nếu cần
-    // "/nguoi-dung/:path*",
-    // "/don-hang/:path*",
-  ],
+  matcher: ["/quan-tri/:path*"],
 };
