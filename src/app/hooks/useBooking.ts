@@ -13,6 +13,7 @@ import type {
   NotificationState,
   Combo,
   SelectedComboItem,
+  Category,
 } from "../types/booking";
 
 export function useBooking() {
@@ -39,7 +40,9 @@ export function useBooking() {
   const [combos, setCombos] = useState<SelectedComboItem[]>([]);
   const [foodsData, setFoodsData] = useState<FoodItem[]>([]);
   const [combosData, setCombosData] = useState<Combo[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [voucherId, setVoucherId] = useState<number | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [showFoodModal, setShowFoodModal] = useState(false);
   const [showComboModal, setShowComboModal] = useState(false);
@@ -48,6 +51,7 @@ export function useBooking() {
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [activeFoodCategory, setActiveFoodCategory] = useState("all");
   const [activeComboCategory, setActiveComboCategory] = useState("all");
+  const [userVouchers, setUserVouchers] = useState<string[]>([]);
   const [notification, setNotification] = useState<NotificationState>({
     message: "",
     type: "info",
@@ -59,53 +63,88 @@ export function useBooking() {
 
   const today = new Date().toISOString().split("T")[0];
 
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("auth");
+      const res = await axios.get("http://127.0.0.1:8000/api/category", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategories(res.data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUserVouchers = async (userId: number) => {
+    try {
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/getAllVoucherByUser/${userId}`
+      );
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+      if (Array.isArray(data)) {
+        setUserVouchers(data);
+      } else {
+        console.error("Voucher response is not an array:", res.data);
+        setUserVouchers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching vouchers:", error);
+      setUserVouchers([]);
+    }
+  };
+
+  let notificationQueue: {
+    message: string;
+    type: "success" | "error" | "info";
+  }[] = [];
+  let isShowingNotification = false;
+
   const showNotification = (
     message: string,
     type: "success" | "error" | "info" = "info"
   ) => {
-    setNotification({ message, type, show: true });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, show: false }));
-    }, 3000);
+    notificationQueue.push({ message, type });
+
+    const displayNextNotification = () => {
+      if (isShowingNotification || notificationQueue.length === 0) return;
+
+      const next = notificationQueue.shift();
+      if (!next) return;
+
+      setNotification({ message: next.message, type: next.type, show: true });
+      isShowingNotification = true;
+
+      setTimeout(() => {
+        setNotification((prev) => ({ ...prev, show: false }));
+        setTimeout(() => {
+          isShowingNotification = false;
+          displayNextNotification();
+        }, 500); // delay trước khi hiện cái tiếp theo
+      }, 3000); // thời gian hiển thị 1 thông báo
+    };
+
+    displayNextNotification();
   };
 
   const calculateDepositAmount = () => {
-    return formData.guest_count >= 8 ? 200000 : 0;
+    return formData.guest_count > 12 ? 200000 : 0;
   };
 
   const depositAmount = calculateDepositAmount();
-
-  const updateOrderStatus = async (orderId: number) => {
-    try {
-      const token = localStorage.getItem("auth");
-      const res = await axios.put(
-        `http://127.0.0.1:8000/api/order/update-status/${orderId}`,
-        { status: "success" },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      showNotification(
-        res.data.message || "Cập nhật đơn hàng thành công",
-        "success"
-      );
-    } catch (err) {
-      console.error("Lỗi cập nhật trạng thái đơn hàng:", err);
-      showNotification("Không thể cập nhật trạng thái đơn hàng", "error");
-    }
-  };
 
   const handlePaymentComplete = async () => {
     setPaymentCompleted(true);
     setShowPaymentModal(false);
     showNotification("Thanh toán thành công!", "success");
-
-    if (orderId) {
-      await updateOrderStatus(orderId);
-    }
   };
 
   const fetchAvailableSlots = async () => {
     if (!selectedDate) {
-      showNotification("Vui lòng chọn ngày đặt bàn", "error");
+      showNotification("Vui lòng chọn bàn", "error");
       return;
     }
 
@@ -119,7 +158,7 @@ export function useBooking() {
       );
       setAvailableSlots(response.data.available_slots || []);
     } catch {
-      showNotification("Lỗi khi kiểm tra bàn trống", "error");
+      showNotification("Lỗi khi kiểm tra bàn", "error");
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +171,23 @@ export function useBooking() {
       const res = await axios.get("http://127.0.0.1:8000/api/foods", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFoodsData(res.data.data || []);
+
+      // Map category data to each food item
+      const foodsWithCategories = res.data.data.map((food: FoodItem) => {
+        const category = categories.find(
+          (cat) => cat.id === food.category_id // Now both are numbers
+        );
+        return {
+          ...food,
+          category: category || null,
+          price:
+            typeof food.price === "string"
+              ? parseFloat(food.price)
+              : food.price || 0, // Convert string price to number
+        };
+      });
+
+      setFoodsData(foodsWithCategories || []);
     } catch {
       showNotification("Lỗi khi tải danh sách món ăn", "error");
     } finally {
@@ -161,12 +216,18 @@ export function useBooking() {
       return;
     }
 
+    if (!user) {
+      showNotification("Vui lòng đăng nhập để sử dụng mã giảm giá", "error");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("auth");
       const res = await axios.post(
         "http://127.0.0.1:8000/api/applyVoucher",
         {
           code: voucherCode,
+          customer: user.id,
           total: formData.total_price,
         },
         {
@@ -174,19 +235,32 @@ export function useBooking() {
         }
       );
 
-      const { new_total, message } = res.data;
-      const discount = formData.total_price - new_total;
+      const { discount, message, new_total, voucher } = res.data;
 
       if (discount > 0) {
         setDiscountAmount(discount);
-        showNotification(message || "Áp dụng mã thành công!", "success");
+        setVoucherId(voucher?.id || null);
+        showNotification(
+          message || "Áp dụng mã giảm giá thành công!",
+          "success"
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          total_price: new_total,
+        }));
       } else {
         setDiscountAmount(0);
-        showNotification("Mã không hợp lệ hoặc hết hạn", "error");
+        setVoucherId(null);
+        showNotification("Mã giảm giá không hợp lệ hoặc đã hết hạn", "error");
       }
-    } catch {
+    } catch (err: any) {
+      console.error("Voucher error:", err);
       setDiscountAmount(0);
-      showNotification("Lỗi khi áp dụng mã giảm giá", "error");
+      showNotification(
+        err?.response?.data?.message || "Lỗi khi áp dụng mã giảm giá",
+        "error"
+      );
     }
   };
 
@@ -197,7 +271,7 @@ export function useBooking() {
     }
 
     if (!formData.customer_name || !formData.customer_phone) {
-      showNotification("Vui lòng nhập thông tin liên hệ", "error");
+      showNotification("Please enter contact information", "error");
       return;
     }
 
@@ -223,7 +297,7 @@ export function useBooking() {
           deposit_amount: deposit,
           remaining_payment: remainingPayment,
           table_id: selectedTable.table_id,
-          voucher_code: voucherCode || null,
+          voucher_id: voucherId,
           foods: foods.map((f) => ({
             food_id: f.food_id,
             quantity: f.quantity,
@@ -244,7 +318,7 @@ export function useBooking() {
       setOrderId(order_id);
 
       const shouldRedirectToVNPAY =
-        formData.payment_method === "vnpay" || formData.guest_count >= 8;
+        formData.payment_method === "vnpay" || formData.guest_count >= 12;
 
       if (shouldRedirectToVNPAY) {
         const payRes = await axios.post(
@@ -257,20 +331,19 @@ export function useBooking() {
         if (payUrl) {
           window.location.href = payUrl;
         } else {
-          showNotification("Không lấy được link thanh toán", "error");
+          showNotification("Could not get payment link", "error");
         }
       } else {
         showNotification(
           "Đặt bàn thành công! Vui lòng thanh toán tại nhà hàng.",
           "success"
         );
-        await updateOrderStatus(order_id); // ✅ tích điểm luôn
         router.push("/");
       }
     } catch (err: any) {
       console.error("Booking error:", err);
       showNotification(
-        err?.response?.data?.message || "Lỗi khi đặt bàn",
+        err?.response?.data?.message || "Error making booking",
         "error"
       );
     } finally {
@@ -280,48 +353,103 @@ export function useBooking() {
 
   const handleSelectTime = (time: string) => {
     setSelectedTime(time);
+
     const slot = availableSlots.find((s) => s.time === time);
     if (!slot || slot.tables.length === 0) {
-      showNotification("Không có bàn trống khung giờ này", "error");
+      showNotification("No available tables for this time slot", "error");
       return;
     }
 
-    const suitable = slot.tables
-      .filter((t) => t.max_guests >= formData.guest_count)
-      .sort((a, b) => a.max_guests - b.max_guests);
+    const guestCount = formData.guest_count;
+    const sortedTables = [...slot.tables].sort(
+      (a, b) => b.max_guests - a.max_guests
+    );
 
-    if (suitable.length > 0) {
-      setSelectedTable(suitable[0]);
+    if (guestCount <= 12) {
+      const oneTable = sortedTables
+        .filter((t) => t.max_guests >= guestCount)
+        .sort((a, b) => a.max_guests - b.max_guests)[0];
+
+      if (oneTable) {
+        setSelectedTable(oneTable);
+        setFormData((prev) => ({
+          ...prev,
+          reservation_date: selectedDate,
+          reservation_time: time.length === 5 ? `${time}:00` : time,
+        }));
+      } else {
+        showNotification("Không có bàn phù hợp với số lượng khách", "error");
+      }
+      return;
+    }
+
+    let bestPair: Table[] = [];
+    let minWastedSeats = Infinity;
+
+    for (let i = 0; i < sortedTables.length; i++) {
+      for (let j = i + 1; j < sortedTables.length; j++) {
+        const totalGuests =
+          sortedTables[i].max_guests + sortedTables[j].max_guests;
+        if (totalGuests >= guestCount) {
+          const wasted = totalGuests - guestCount;
+          if (wasted < minWastedSeats) {
+            minWastedSeats = wasted;
+            bestPair = [sortedTables[i], sortedTables[j]];
+          }
+        }
+      }
+    }
+
+    if (bestPair.length === 2) {
+      setSelectedTable(bestPair[0]);
+      showNotification(
+        `Guests divided into 2 tables (total seats: ${
+          bestPair[0].max_guests + bestPair[1].max_guests
+        })`,
+        "info"
+      );
       setFormData((prev) => ({
         ...prev,
         reservation_date: selectedDate,
         reservation_time: time.length === 5 ? `${time}:00` : time,
       }));
     } else {
-      showNotification(
-        `Không có bàn phù hợp cho ${formData.guest_count} khách`,
-        "error"
-      );
+      showNotification("Không thể chia khách thành 2 bàn", "error");
     }
   };
 
   const handleAddFood = (food: FoodItem) => {
-    setFoods((prev) => {
+    setFoods((prev: SelectedFoodItem[]) => {
       const existing = prev.find((f) => f.food_id === food.id);
+
+      // Chuẩn hóa category trước khi thêm vào state
+      let normalizedCategory: string | Category | null | undefined;
+
+      if (typeof food.category === "object" && food.category !== null) {
+        normalizedCategory = food.category.name; // Chỉ lấy tên nếu là object
+      } else {
+        normalizedCategory = food.category; // Giữ nguyên nếu là string hoặc null/undefined
+      }
+
       if (existing) {
         return prev.map((f) =>
           f.food_id === food.id ? { ...f, quantity: f.quantity + 1 } : f
         );
       }
+
       return [
         ...prev,
         {
           id: food.id,
           food_id: food.id,
           name: food.name,
-          price: food.price,
+          price:
+            typeof food.price === "string"
+              ? parseFloat(food.price)
+              : food.price || 0,
           quantity: 1,
-          image: food.image,
+          image: food.image ?? null,
+          category: normalizedCategory, // Sử dụng category đã chuẩn hóa
         },
       ];
     });
@@ -352,20 +480,25 @@ export function useBooking() {
           combo_id: combo.id,
           name: combo.name,
           quantity: 1,
-          price: parseFloat(combo.price),
+          price:
+            typeof combo.price === "string"
+              ? parseFloat(combo.price)
+              : combo.price || 0, // Convert combo price to number
           image: combo.image,
           description: combo.description,
           items: combo.combo_items.map((item) => ({
             food_id: item.food.id,
             name: item.food.name,
-            price: item.food.price,
+            price:
+              typeof item.food.price === "string"
+                ? parseFloat(item.food.price)
+                : item.food.price || 0, // Convert item price to number
             quantity: item.quantity,
           })),
         },
       ];
     });
   };
-
   const handleRemoveCombo = (id: number) =>
     setCombos((prev) => prev.filter((c) => c.combo_id !== id));
 
@@ -417,6 +550,16 @@ export function useBooking() {
     setFormData((prev) => ({ ...prev, total_price: foodTotal + comboTotal }));
   }, [foods, combos]);
 
+  useEffect(() => {
+    if (user) {
+      fetchCategories().then(() => {
+        fetchFoods();
+        fetchCombos();
+      });
+      fetchUserVouchers(+user.id);
+    }
+  }, [user]);
+
   return {
     selectedDate,
     setSelectedDate,
@@ -429,6 +572,9 @@ export function useBooking() {
     combos,
     foodsData,
     combosData,
+    categories,
+    voucherId,
+    setVoucherId,
     orderId,
     showFoodModal,
     setShowFoodModal,
@@ -453,6 +599,8 @@ export function useBooking() {
     setVoucherCode,
     discountAmount,
     applyVoucherCode,
+    userVouchers,
+    fetchUserVouchers,
     fetchAvailableSlots,
     fetchFoods,
     fetchCombos,

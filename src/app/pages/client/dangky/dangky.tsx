@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import NotificationPopup from "@/src/app/components/layout/NotificationPopup";
 
 export default function RegisterPage() {
   const [data, setData] = useState({
@@ -14,56 +15,119 @@ export default function RegisterPage() {
     password: "",
   });
   const [cfPass, setCfPass] = useState("");
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [subscribe, setSubscribe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
 
-  const validate = () => {
-    const newErr: any = {};
-    if (!data.email) {
-      newErr.email = "Email không được để trống";
-    } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-      newErr.email = "Email không hợp lệ";
+  // Real-time validation
+  useEffect(() => {
+    const newErrors: Record<string, string> = {};
+
+    if (touched.name && !data.name.trim()) {
+      newErrors.name = "Vui lòng nhập họ và tên";
     }
-    if (!data.password) {
-      newErr.password = "Mật khẩu không được để trống";
-    } else if (data.password.length < 6) {
-      newErr.password = "Mật khẩu phải có ít nhất 6 ký tự";
-    } else if (data.password !== cfPass) {
-      newErr.password = "Mật khẩu không khớp";
+
+    if (touched.email) {
+      if (!data.email.trim()) {
+        newErrors.email = "Vui lòng nhập địa chỉ email";
+      } else if (!/^\S+@\S+\.\S+$/.test(data.email)) {
+        newErrors.email = "Địa chỉ email không hợp lệ";
+      }
     }
-    if (!data.name) {
-      newErr.name = "Tên không được để trống";
+
+    if (touched.phone) {
+      if (!data.phone.trim()) {
+        newErrors.phone = "Vui lòng nhập số điện thoại";
+      } else if (!/^\d{10,}$/.test(data.phone)) {
+        newErrors.phone = "Số điện thoại phải có ít nhất 10 chữ số";
+      }
     }
-    if (!data.phone) {
-      newErr.phone = "Số điện thoại không được để trống";
-    } else if (data.phone.length < 10) {
-      newErr.phone = "Số điện thoại phải có ít nhất 10 ký tự";
+
+    if (touched.password) {
+      if (!data.password) {
+        newErrors.password = "Vui lòng nhập mật khẩu";
+      } else if (data.password.length < 6) {
+        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      }
     }
-    if (!agreeTerms) {
-      newErr.agreeTerms = "Bạn cần đồng ý với điều khoản dịch vụ";
+
+    if (touched.cfPass || (touched.password && cfPass)) {
+      if (data.password && cfPass && data.password !== cfPass) {
+        newErrors.cfPass = "Mật khẩu không khớp";
+      }
     }
-    setErrors(newErr);
-    return Object.keys(newErr).length === 0;
+
+    if (touched.agreeTerms && !agreeTerms) {
+      newErrors.agreeTerms = "Vui lòng đồng ý với điều khoản dịch vụ";
+    }
+
+    setErrors(newErrors);
+  }, [data, cfPass, agreeTerms, touched]);
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+
+    // Mark all fields as touched to show all possible errors
+    setTouched({
+      name: true,
+      email: true,
+      phone: true,
+      password: true,
+      cfPass: true,
+      agreeTerms: true,
+    });
+
+    // Check if there are any errors
+    const hasErrors = Object.keys(errors).length > 0;
+    if (hasErrors) return;
+
+    setIsSubmitting(true);
     try {
       await axios.post("http://127.0.0.1:8000/api/register", {
         ...data,
         subscribe,
       });
-      router.push("/dang-nhap");
-    } catch (e) {
-      console.log(`Lỗi: ${e}`);
+
+      // Show success notification
+      setShowSuccess(true);
+
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        router.push("/dang-nhap");
+      }, 3000);
+    } catch (error) {
+      console.error("Lỗi đăng ký:", error);
+      // Handle API errors (like duplicate email)
+      if (axios.isAxiosError(error) && error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setErrors({
+          submit: "Đăng ký không thành công. Vui lòng thử lại sau.",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-amber-50">
+      {/* Success Notification */}
+      {showSuccess && (
+        <NotificationPopup
+          message="Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập..."
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
+
       {/* Main Content */}
       <div className="container mx-auto py-[60px] px-4 md:px-12">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
@@ -95,6 +159,12 @@ export default function RegisterPage() {
                     Điền thông tin để đăng ký tài khoản
                   </p>
                 </div>
+
+                {errors.submit && (
+                  <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {errors.submit}
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
@@ -130,15 +200,15 @@ export default function RegisterPage() {
                             : "border-red-200"
                         }`}
                         placeholder="Nguyễn Văn A"
+                        value={data.name}
                         onChange={(e) =>
                           setData({ ...data, name: e.target.value })
                         }
+                        onBlur={() => handleBlur("name")}
                       />
                     </div>
                     {errors.name && (
-                      <p className="mt-1 text-sm text-[#AF763E]">
-                        {errors.name}
-                      </p>
+                      <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                     )}
                   </div>
 
@@ -175,13 +245,15 @@ export default function RegisterPage() {
                             : "border-red-200"
                         }`}
                         placeholder="email@example.com"
+                        value={data.email}
                         onChange={(e) =>
                           setData({ ...data, email: e.target.value })
                         }
+                        onBlur={() => handleBlur("email")}
                       />
                     </div>
                     {errors.email && (
-                      <p className="mt-1 text-sm text-[#AF763E]">
+                      <p className="mt-1 text-sm text-red-600">
                         {errors.email}
                       </p>
                     )}
@@ -220,13 +292,15 @@ export default function RegisterPage() {
                             : "border-red-200"
                         }`}
                         placeholder="0987654321"
+                        value={data.phone}
                         onChange={(e) =>
                           setData({ ...data, phone: e.target.value })
                         }
+                        onBlur={() => handleBlur("phone")}
                       />
                     </div>
                     {errors.phone && (
-                      <p className="mt-1 text-sm text-[#AF763E]">
+                      <p className="mt-1 text-sm text-red-600">
                         {errors.phone}
                       </p>
                     )}
@@ -265,19 +339,22 @@ export default function RegisterPage() {
                             : "border-red-200"
                         }`}
                         placeholder="••••••••"
+                        value={data.password}
                         onChange={(e) =>
                           setData({ ...data, password: e.target.value })
                         }
+                        onBlur={() => handleBlur("password")}
                       />
                     </div>
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-[#AF763E]">
+                    {errors.password ? (
+                      <p className="mt-1 text-sm text-red-600">
                         {errors.password}
                       </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Mật khẩu phải có ít nhất 6 ký tự
+                      </p>
                     )}
-                    <p className="mt-1 text-xs text-red-500">
-                      Mật khẩu phải có ít nhất 6 ký tự
-                    </p>
                   </div>
 
                   <div>
@@ -308,14 +385,21 @@ export default function RegisterPage() {
                         type="password"
                         id="confirmPassword"
                         className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent ${
-                          errors.password
+                          errors.cfPass
                             ? "border-red-300 bg-red-50"
                             : "border-red-200"
                         }`}
                         placeholder="••••••••"
+                        value={cfPass}
                         onChange={(e) => setCfPass(e.target.value)}
+                        onBlur={() => handleBlur("cfPass")}
                       />
                     </div>
+                    {errors.cfPass && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.cfPass}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-start pt-2">
@@ -325,7 +409,10 @@ export default function RegisterPage() {
                         type="checkbox"
                         className="h-4 w-4 text-[#AF763E] focus:ring-red-500 border-red-300 rounded"
                         checked={agreeTerms}
-                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        onChange={(e) => {
+                          setAgreeTerms(e.target.checked);
+                          handleBlur("agreeTerms");
+                        }}
                       />
                     </div>
                     <div className="ml-3 text-sm">
@@ -346,7 +433,7 @@ export default function RegisterPage() {
                         </a>
                       </label>
                       {errors.agreeTerms && (
-                        <p className="mt-1 text-sm text-[#AF763E]">
+                        <p className="mt-1 text-sm text-red-600">
                           {errors.agreeTerms}
                         </p>
                       )}
@@ -374,9 +461,12 @@ export default function RegisterPage() {
                   <div className="pt-4">
                     <button
                       type="submit"
-                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#AF763E] hover:bg-[#BD944A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
+                      disabled={isSubmitting}
+                      className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#AF763E] hover:bg-[#BD944A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all ${
+                        isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                      }`}
                     >
-                      Đăng ký
+                      {isSubmitting ? "Đang xử lý..." : "Đăng ký"}
                     </button>
                   </div>
                 </form>

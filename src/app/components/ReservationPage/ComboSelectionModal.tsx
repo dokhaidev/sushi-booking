@@ -7,53 +7,16 @@ import {
   FiMinus,
   FiShoppingCart,
   FiSearch,
-  FiEye,
   FiClock,
   FiUsers,
-  FiStar,
   FiPackage,
-  FiChevronRight,
 } from "react-icons/fi";
 import { useState, useEffect, useMemo } from "react";
-
-interface FoodItem {
-  food_id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string | null;
-  description?: string;
-}
-
-interface ComboItem {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  image?: string | null;
-  items: FoodItem[];
-  serving_size?: number;
-  preparation_time?: number;
-  rating?: number;
-  review_count?: number;
-}
-
-interface SelectedComboItem extends ComboItem {
-  combo_id: number;
-  quantity: number;
-}
-
-interface ComboSelectionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  combos: ComboItem[];
-  selectedCombos: SelectedComboItem[];
-  onAddCombo: (combo: ComboItem) => void;
-  onRemoveCombo: (comboId: number) => void;
-  onQuantityChange: (comboId: number, quantity: number) => void;
-  totalPrice: number;
-  isLoading: boolean;
-}
+import Image from "next/image";
+import type {
+  ComboItem,
+  ComboSelectionModalProps,
+} from "../../types/Booking/ComboSelectionModal.types";
 
 export default function ComboSelectionModal({
   isOpen,
@@ -115,14 +78,15 @@ export default function ComboSelectionModal({
 
   const renderImage = (src?: string, alt?: string, className = "") => {
     return src ? (
-      <img
-        src={src}
-        alt={alt}
-        className={`object-cover ${className}`}
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "/placeholder-food.jpg";
-        }}
-      />
+      <div className={`relative ${className}`}>
+        <Image
+          src={src}
+          alt={alt || "Combo image"}
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+      </div>
     ) : (
       <div
         className={`bg-gray-100 flex items-center justify-center ${className}`}
@@ -139,7 +103,7 @@ export default function ComboSelectionModal({
       className="bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer border border-gray-100"
       onClick={() => openDetailModal(combo)}
     >
-      <div className="h-48 relative">
+      <div className="relative h-48">
         {renderImage(combo.image ?? undefined, combo.name, "w-full h-full")}
         <div className="absolute top-3 left-3 bg-[#4CAF50] text-white text-xs px-3 py-1 rounded-full flex items-center">
           <FiPackage size={12} className="mr-1" />
@@ -159,9 +123,10 @@ export default function ComboSelectionModal({
               e.stopPropagation();
               onAddCombo(combo);
             }}
-            className="bg-[#4CAF50] hover:bg-[#3d8b40] text-white p-2 rounded-lg"
+            className="flex items-center gap-2 bg-[#4CAF50] hover:bg-[#3d8b40] text-white px-4 py-2 rounded-md text-sm font-semibold shadow transition duration-200"
           >
-            <FiPlus size={16} />
+            <FiPlus size={18} />
+            <span>Thêm</span>
           </button>
         </div>
       </div>
@@ -185,14 +150,18 @@ export default function ComboSelectionModal({
             className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header với hình ảnh combo */}
-            <div className="relative h-72 w-full overflow-hidden">
+            {/* Header combo */}
+            <div className="relative h-72 w-full">
               {selectedCombo.image ? (
-                <img
-                  src={selectedCombo.image}
-                  alt={selectedCombo.name}
-                  className="w-full h-full object-cover"
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={selectedCombo.image}
+                    alt={selectedCombo.name}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full bg-gradient-to-r from-amber-50 to-orange-100 flex items-center justify-center">
                   <FiPackage className="text-gray-400" size={80} />
@@ -221,9 +190,8 @@ export default function ComboSelectionModal({
               </button>
             </div>
 
-            {/* Nội dung chi tiết */}
+            {/* Nội dung combo */}
             <div className="flex-1 overflow-y-auto p-8">
-              {/* Mô tả combo */}
               {selectedCombo.description && (
                 <div className="mb-8 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
                   <p className="text-gray-700 italic">
@@ -231,73 +199,58 @@ export default function ComboSelectionModal({
                   </p>
                 </div>
               )}
-
-              {/* Danh sách món ăn trong combo với hình ảnh thực tế */}
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <FiPackage className="mr-3 text-amber-600" />
-                  <span>Các món trong combo</span>
-                </h3>
-
-                <div className="space-y-6">
-                  {selectedCombo.items.map((item) => (
-                    <motion.div
-                      key={`combo-item-${item.food_id}`}
-                      whileHover={{ scale: 1.02 }}
-                      className="flex flex-col sm:flex-row gap-6 p-6 bg-white rounded-xl border border-gray-200 shadow-sm"
-                    >
-                      {/* Hình ảnh món ăn - Hiển thị ảnh thực từ dữ liệu */}
-                      <div className="w-full sm:w-1/3 h-48 rounded-lg overflow-hidden">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                            <FiImage className="text-gray-400" size={40} />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Thông tin chi tiết món */}
-                      <div className="flex-1 flex flex-col">
-                        <h4 className="text-xl font-bold text-gray-800 mb-2">
-                          {item.name}
-                        </h4>
-                        {item.description && (
-                          <p className="text-gray-600 mb-4">
-                            {item.description}
+              <div className="space-y-6">
+                {selectedCombo.items.map((item) => (
+                  <div
+                    key={`combo-item-${item.food_id}`}
+                    className="flex flex-col sm:flex-row gap-6 p-6 bg-white rounded-xl border border-gray-200 shadow-sm"
+                  >
+                    <div className="relative w-full sm:w-1/3 h-48 rounded-lg overflow-hidden">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="100vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <FiImage className="text-gray-400" size={40} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <h4 className="text-xl font-bold text-gray-800 mb-2">
+                        {item.name}
+                      </h4>
+                      {item.description && (
+                        <p className="text-gray-600 mb-4">{item.description}</p>
+                      )}
+                      <div className="mt-auto grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Đơn giá</p>
+                          <p className="font-medium">
+                            {formatCurrency(item.price)}
                           </p>
-                        )}
-
-                        <div className="mt-auto grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Đơn giá</p>
-                            <p className="font-medium">
-                              {formatCurrency(item.price)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Số lượng</p>
-                            <p className="font-medium">{item.quantity}</p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-sm text-gray-500">Thành tiền</p>
-                            <p className="text-lg font-bold text-amber-600">
-                              {formatCurrency(item.price * item.quantity)}
-                            </p>
-                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Số lượng</p>
+                          <p className="font-medium">{item.quantity}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-sm text-gray-500">Thành tiền</p>
+                          <p className="text-lg font-bold text-amber-600">
+                            {formatCurrency(item.price * item.quantity)}
+                          </p>
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Tổng giá trị */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mt-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                   <div>
                     <h4 className="text-xl font-bold text-gray-800 mb-1">
@@ -308,7 +261,6 @@ export default function ComboSelectionModal({
                       {formatCurrency(calculateDiscount(selectedCombo))}
                     </p>
                   </div>
-
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-gray-500 line-through">
@@ -318,7 +270,6 @@ export default function ComboSelectionModal({
                         {formatCurrency(selectedCombo.price)}
                       </p>
                     </div>
-
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.98 }}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface SashimiItem {
   id: number;
@@ -13,6 +14,21 @@ interface SashimiItem {
   pieces?: string;
   desc?: string;
   image?: string | null;
+}
+
+interface RawGroup {
+  group_id: number;
+  group_name: string;
+  foods: unknown[];
+}
+
+interface RawFood {
+  id: number;
+  name: string;
+  jpName?: string;
+  price: string | number;
+  description?: string;
+  image?: string;
 }
 
 interface SashimiGroup {
@@ -25,7 +41,6 @@ export default function SashimiSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Hàm định dạng giá tiền VND
   const formatPriceVND = (value: number) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -39,20 +54,29 @@ export default function SashimiSection() {
         const resp = await axios.get(
           "http://127.0.0.1:8000/api/foods/category/2/groups"
         );
-        const raw = Array.isArray(resp.data.data) ? resp.data.data : [];
 
-        const mapped: SashimiGroup[] = raw.map((group: any) => ({
+        const raw: RawGroup[] = Array.isArray(resp.data.data)
+          ? resp.data.data
+          : [];
+
+        const mapped: SashimiGroup[] = raw.map((group) => ({
           name: group.group_name,
           items: Array.isArray(group.foods)
-            ? group.foods.map((f: any) => ({
-                id: f.id,
-                name: f.name,
-                jpName: f.jpName,
-                price: parseFloat(f.price),
-                pieces: group.group_id === 1 ? f.description : undefined,
-                desc: group.group_id !== 1 ? f.description : undefined,
-                image: f.image,
-              }))
+            ? group.foods.map((f) => {
+                const food = f as RawFood;
+                return {
+                  id: food.id,
+                  name: food.name,
+                  jpName: food.jpName,
+                  price:
+                    typeof food.price === "string"
+                      ? parseFloat(food.price)
+                      : food.price,
+                  pieces: group.group_id === 1 ? food.description : undefined,
+                  desc: group.group_id !== 1 ? food.description : undefined,
+                  image: food.image ?? null,
+                };
+              })
             : [],
         }));
 
@@ -64,14 +88,12 @@ export default function SashimiSection() {
         setLoading(false);
       }
     };
+
     fetchGroups();
   }, []);
 
   return (
-    <section
-      id="sashimi"
-      className="py-16 px-6 md:px-16 lg:px-24 bg-gradient-to-br from-[#FAF4EC] via-[#F8F1E9] to-[#F5EDE3]"
-    >
+    <section id="sashimi" className="py-16 px-6 md:px-16 lg:px-24 bg-white">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -147,11 +169,14 @@ export default function SashimiSection() {
                         key={item.id}
                         className="flex bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
                       >
-                        <img
-                          src={item.image || "/placeholder.svg"}
-                          alt={item.name}
-                          className="w-1/3 h-40 object-cover"
-                        />
+                        <div className="w-1/3 h-40 relative">
+                          <Image
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div>
                             <h4 className="text-lg font-medium text-[#333]">

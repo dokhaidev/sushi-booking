@@ -1,12 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { FiDollarSign } from "react-icons/fi";
-import type { BookingFormData } from "../../types/booking";
-
-interface PaymentNotesFormProps {
-  formData: BookingFormData;
-  setFormData: (data: BookingFormData) => void;
-}
+import type { PaymentNotesFormProps } from "../../types/Booking/PaymentNotesForm.types";
 
 export default function PaymentNotesForm({
   formData,

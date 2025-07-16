@@ -3,90 +3,73 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslation } from "@/src/app/lib/i18n/client";
 
 export default function CallToAction() {
+  const { t } = useTranslation("callToAction");
+
   return (
     <section
       id="order"
-      className="relative py-20 px-4 sm:px-12 md:px-20 bg-gradient-to-b from-[#FFF5E0] to-[#FFF9F0] overflow-hidden"
+      className="relative py-20 px-6 sm:px-16 bg-[#F8F1E9] overflow-hidden"
     >
-      {/* Background blur decor */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-[#FFEEDB] rounded-full opacity-30 blur-2xl"></div>
-        <div className="absolute bottom-[-120px] right-[-80px] w-[240px] h-[240px] bg-[#FCE8D5] rounded-full opacity-20 blur-2xl"></div>
-      </div>
-
-      <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between relative z-10 gap-10">
-        {/* Text content */}
-        <div className="text-center lg:text-left max-w-xl">
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            viewport={{ once: true }}
-          >
-            <span className="inline-block bg-[#A68345] text-white text-xs font-semibold uppercase px-3 py-1 rounded-full mb-4">
-              🍣 Best Seller
+      <div className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center justify-between relative z-10 gap-16">
+        {/* Text Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true }}
+          className="w-full lg:w-1/2 text-center lg:text-left"
+        >
+          <p className="text-sm uppercase tracking-widest text-[#A68345] mb-4">
+            {t("label")}
+          </p>
+          <h2 className="text-4xl sm:text-5xl font-semibold text-[#2D2D2D] leading-snug mb-6">
+            {t("heading.before")} <br />
+            {t("heading.middle")}{" "}
+            <span className="text-[#A68345] font-bold">
+              {t("heading.highlight")}
             </span>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#333] leading-tight mb-4">
-              Hãy dành những khoảnh khắc đặc biệt <br />
-              tại <span className="text-[#A68345]">Sushi Takumi</span>
-            </h2>
-          </motion.div>
+          </h2>
+          <p className="text-[#4A4A4A] text-lg leading-relaxed mb-10">
+            {t("description")}
+          </p>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="text-[#555] text-lg mb-8"
-          >
-            Trải nghiệm hương vị Nhật Bản chính hiệu – từ bàn ăn tại nhà đến
-            không gian tinh tế tại nhà hàng. Đặt bàn hoặc gọi món ngay!
-          </motion.p>
-
-          {/* Buttons */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-          >
+          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
             <Link
               href="/dat-mon"
-              className="bg-gradient-to-r from-[#A68345] to-[#6B5E3C] text-white px-8 py-4 rounded-xl text-base font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition duration-300"
+              className="bg-[#A68345] text-white px-6 py-3 rounded-full text-base font-medium hover:bg-[#8C6D3C] transition-colors"
             >
-              🍣 Đặt món ngay
+              🍣 {t("actions.order")}
             </Link>
             <Link
               href="/dat-ban"
-              className="border border-[#6B5E3C] text-[#6B5E3C] px-8 py-4 rounded-xl text-base font-semibold transition-all duration-300 hover:bg-[#6B5E3C] hover:text-white shadow hover:shadow-md hover:scale-105"
+              className="border border-[#A68345] text-[#A68345] px-6 py-3 rounded-full text-base font-medium hover:bg-[#A68345] hover:text-white transition-colors"
             >
-              📅 Đặt bàn tại đây
+              📅 {t("actions.reserve")}
             </Link>
-          </motion.div>
+          </div>
 
-          <p className="text-sm text-[#888] mt-4">
-            *Chúng tôi phục vụ từ 10h đến 22h hàng ngày
-          </p>
-        </div>
+          <p className="text-sm text-[#888] mt-6">{t("footer")}</p>
+        </motion.div>
 
-        {/* Sushi Image Illustration */}
+        {/* Image Section */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
           viewport={{ once: true }}
-          className="w-full max-w-sm"
+          className="w-full lg:w-1/2 flex justify-center"
         >
-          <Image
-            src="https://pastaxi-manager.onepas.vn/content/uploads/articles/2amthuc/nhahang/604/sushi-nhat-ban-9.jpg"
-            alt="Sushi ngon tuyệt"
-            width={500}
-            height={500}
-            className="rounded-3xl shadow-xl"
-          />
+          <div className="relative w-full aspect-[4/5] h-[500px]">
+            <Image
+              src="https://www.elledecoration.vn/wp-content/uploads/2024/06/omakase2.jpg"
+              alt="Sushi Takumi"
+              fill
+              className="rounded-3xl object-cover shadow-sm"
+            />
+          </div>
         </motion.div>
       </div>
     </section>

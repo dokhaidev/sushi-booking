@@ -2,21 +2,21 @@
 
 import { useContext, useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { AuthContext } from "../../context/authContext";
-import { usePathname } from "next/navigation";
 import { FiMenu, FiX, FiUser, FiLogOut, FiHome } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "../../lib/i18n/client";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const Header = () => {
   const { t, lang } = useTranslation("header");
-  const router = useRouter();
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
   const logout = authContext?.logout;
   const isLoading = authContext?.isLoading;
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -64,42 +64,47 @@ const Header = () => {
     };
   }, [userMenuOpen, languageMenuOpen]);
 
+  // 🌐 Tạo navLinks có prefix lang
   const navLinks = [
     {
-      href: `/`,
+      href: `/${lang}`,
       label: t("nav.home"),
       shortLabel: t("nav.home"),
       icon: <FiHome size={18} className="lg:hidden" />,
     },
     {
-      href: `/thuc-don`,
+      href: `/${lang}/thuc-don`,
       label: t("nav.menu"),
       shortLabel: t("nav.menu"),
     },
     {
-      href: `/ve-chung-toi`,
+      href: `/${lang}/ve-chung-toi`,
       label: t("nav.about"),
       shortLabel: t("nav.about"),
     },
     {
-      href: `/lien-he`,
+      href: `/${lang}/lien-he`,
       label: t("nav.contact"),
       shortLabel: t("nav.contact"),
     },
     {
-      href: `/dat-ban`,
+      href: `/${lang}/dat-ban`,
       label: t("nav.reservation"),
       shortLabel: t("nav.reservation"),
       highlight: true,
     },
   ];
 
+  // 🌐 Switch language giữ nguyên path
   const switchLanguage = (newLang: string) => {
-    localStorage.setItem("language", newLang);
-    window.location.reload();
+    const segments = pathname.split("/");
+    segments[1] = newLang;
+    const newPath = segments.join("/") || "/";
+    router.push(newPath);
     setLanguageMenuOpen(false);
   };
 
+  // 🌐 Hỗ trợ loading skeleton
   const UserActionsSkeleton = () => (
     <div className="hidden lg:flex items-center space-x-3">
       <div className="flex items-center space-x-2 animate-pulse">
@@ -137,7 +142,7 @@ const Header = () => {
             className="flex items-center flex-shrink-0"
           >
             <Link
-              href={`/`}
+              href={`/${lang}`}
               className="flex items-center space-x-2"
               aria-label={t("aria.home_link")}
             >
@@ -146,9 +151,11 @@ const Header = () => {
                   scrolled ? "bg-[#AF763E]" : "bg-[#AF763E]"
                 }`}
               >
-                <img
+                <Image
                   src="https://cdn-icons-png.flaticon.com/512/2252/2252075.png"
                   alt="Sushi Logo"
+                  width={24}
+                  height={24}
                   className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
                 />
               </div>
@@ -203,7 +210,7 @@ const Header = () => {
 
           {/* Language Switcher & User Actions */}
           <div className="hidden lg:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
-            {/* Compact Language Switcher */}
+            {/* Language Switcher */}
             <div className="relative" ref={languageMenuRef}>
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -336,7 +343,7 @@ const Header = () => {
                           </div>
 
                           <Link
-                            href={`/thong-tin-ca-nhan`}
+                            href={`/${lang}/thong-tin-ca-nhan`}
                             onClick={() => setUserMenuOpen(false)}
                             className="flex items-center px-4 py-3 text-sm text-[#594545] hover:bg-[#F8F1E6] transition-colors"
                           >
@@ -362,7 +369,7 @@ const Header = () => {
                 ) : (
                   <div className="flex items-center space-x-2 xl:space-x-3">
                     <Link
-                      href={`/dang-nhap`}
+                      href={`/${lang}/dang-nhap`}
                       className={`transition-colors text-xs xl:text-sm font-medium px-2 xl:px-3 py-1.5 whitespace-nowrap ${
                         scrolled
                           ? "text-[#333333] hover:text-[#666666]"
@@ -376,7 +383,7 @@ const Header = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Link
-                        href={`/dang-ky`}
+                        href={`/${lang}/dang-ky`}
                         className={`px-3 xl:px-4 py-2 rounded-lg transition-all shadow hover:shadow-md text-xs xl:text-sm font-medium block whitespace-nowrap ${
                           scrolled
                             ? "bg-gradient-to-r from-[#AF763E] to-[#6B5E3C] text-white"
@@ -488,7 +495,7 @@ const Header = () => {
                           }}
                         >
                           <Link
-                            href={`/thong-tin-ca-nhan`}
+                            href={`/${lang}/thong-tin-ca-nhan`}
                             className="flex items-center px-4 py-2 text-[#815B5B] hover:bg-[#F8F1E6] rounded-md"
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -577,7 +584,7 @@ const Header = () => {
                           }}
                         >
                           <Link
-                            href={`/dang-nhap`}
+                            href={`/${lang}/dang-nhap`}
                             className="flex items-center px-4 py-2 text-[#333333] hover:bg-[#F8F1E6] rounded-md"
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -594,7 +601,7 @@ const Header = () => {
                           }}
                         >
                           <Link
-                            href={`/dang-ky`}
+                            href={`/${lang}/dang-ky`}
                             className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-[#AF763E] to-[#6B5E3C] text-white rounded-md"
                             onClick={() => setMobileMenuOpen(false)}
                           >

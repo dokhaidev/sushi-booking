@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface FoodItem {
   id: number;
@@ -56,10 +57,7 @@ export default function RiceNoodlesSection() {
   }, []);
 
   return (
-    <section
-      id="rice"
-      className="py-16 px-6 md:px-16 lg:px-24 bg-gradient-to-br from-[#FAF4EC] via-[#F8F1E9] to-[#F5EDE3]"
-    >
+    <section id="rice" className="py-16 px-6 md:px-16 lg:px-24 bg-white">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -101,7 +99,7 @@ export default function RiceNoodlesSection() {
                       key={item.id}
                       className="flex bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
                     >
-                      <img
+                      <Image
                         src={item.image || "/placeholder.svg"}
                         alt={item.name}
                         className="w-1/3 h-40 object-cover"

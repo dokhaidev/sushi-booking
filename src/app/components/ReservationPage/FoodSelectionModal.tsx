@@ -1,4 +1,5 @@
 "use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiX,
@@ -7,40 +8,37 @@ import {
   FiMinus,
   FiShoppingCart,
   FiSearch,
-  FiEye,
   FiClock,
   FiUsers,
   FiStar,
 } from "react-icons/fi";
 import { useState, useEffect, useMemo } from "react";
+import { FoodItem } from "../../types/booking";
+import type { FoodSelectionModalProps } from "../../types/Booking/FoodSelectionModal.types";
+import Image from "next/image";
 
-interface FoodItem {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  image?: string;
-  category?: string | { id: number; name: string };
-}
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
 
-interface SelectedFoodItem extends FoodItem {
-  id: number;
-  quantity: number;
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
-interface FoodSelectionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  foods: FoodItem[];
-  selectedFoods: SelectedFoodItem[];
-  activeFoodCategory: string;
-  setActiveFoodCategory: (category: string) => void;
-  onAddFood: (food: FoodItem) => void;
-  onRemoveFood: (foodId: number) => void;
-  onQuantityChange: (foodId: number, quantity: number) => void;
-  totalPrice: number;
-  isLoading: boolean;
-}
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    minimumFractionDigits: 0,
+  }).format(value);
+
+const generateKey = (prefix: string, ...args: (string | number)[]) =>
+  `${prefix}-${args.join("-")}`;
 
 export default function FoodSelectionModal({
   isOpen,
@@ -54,100 +52,90 @@ export default function FoodSelectionModal({
   onQuantityChange,
   totalPrice,
   isLoading,
+  categories = [],
 }: FoodSelectionModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen || isDetailModalOpen) {
       const scrollY = window.scrollY;
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
 
       return () => {
         document.body.style.position = "";
         document.body.style.top = "";
-        document.body.style.width = "";
         document.body.style.overflow = "";
         window.scrollTo(0, scrollY);
       };
     }
   }, [isOpen, isDetailModalOpen]);
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      minimumFractionDigits: 0,
-    }).format(value);
-
-  const getSafeCategory = (category: any): string => {
-    if (!category) return "other";
-    if (typeof category === "string") return category;
-    if (typeof category === "object" && category.name) return category.name;
-    if (typeof category === "object" && category.id)
-      return `cat-${category.id}`;
-    return "other";
-  };
-
-  // Enhanced category list with counts
   const foodCategories = useMemo(() => {
-    const categories = [{ id: "all", name: "Tất cả", count: foods.length }];
+    const categoriesWithAll = [
+      {
+        id: "all",
+        name: "Tất cả",
+        count: foods.length,
+      },
+    ];
 
-    // Add food categories
-    const foodCategoriesMap = new Map<string, number>();
-    foods.forEach((food) => {
-      const category = getSafeCategory(food.category);
-      foodCategoriesMap.set(
-        category,
-        (foodCategoriesMap.get(category) || 0) + 1
-      );
+    categories.forEach((category) => {
+      const count = foods.filter(
+        (food) =>
+          food.category_id === category.id || food.category?.id === category.id
+      ).length;
+
+      if (count > 0) {
+        categoriesWithAll.push({
+          id: category.id.toString(),
+          name: category.name,
+          count,
+        });
+      }
     });
 
-    foodCategoriesMap.forEach((count, category) => {
-      categories.push({ id: category, name: category, count });
-    });
+    const uncategorizedCount = foods.filter(
+      (food) => !food.category_id && !food.category?.id
+    ).length;
 
-    return categories;
-  }, [foods]);
+    if (uncategorizedCount > 0) {
+      categoriesWithAll.push({
+        id: "other",
+        name: "Khác",
+        count: uncategorizedCount,
+      });
+    }
 
-  // Filtering logic
+    return categoriesWithAll;
+  }, [foods, categories]);
+
   const filteredItems = useMemo(() => {
-    if (activeFoodCategory === "all") {
-      return foods.filter((item) =>
+    let filtered = foods;
+
+    if (activeFoodCategory !== "all" && activeFoodCategory !== "other") {
+      filtered = filtered.filter(
+        (food) =>
+          food.category_id?.toString() === activeFoodCategory ||
+          food.category?.id.toString() === activeFoodCategory
+      );
+    } else if (activeFoodCategory === "other") {
+      filtered = filtered.filter(
+        (food) => !food.category_id && !food.category?.id
+      );
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter((item) =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    return foods.filter(
-      (food) =>
-        getSafeCategory(food.category) === activeFoodCategory &&
-        food.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return filtered;
   }, [activeFoodCategory, searchTerm, foods]);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
-  const generateKey = (prefix: string, ...args: (string | number)[]) => {
-    return `${prefix}-${args.join("-")}`;
-  };
 
   const openDetailModal = (item: FoodItem) => {
     setSelectedItem(item);
@@ -162,12 +150,15 @@ export default function FoodSelectionModal({
   const renderItemImage = (item: FoodItem) => {
     if (item.image) {
       return (
-        <img
+        <Image
           src={item.image}
           alt={item.name}
           className="w-full h-full object-cover"
+          width={300}
+          height={200}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/placeholder.svg";
+            const imgElement = e.currentTarget as HTMLImageElement;
+            imgElement.src = "/placeholder.svg";
           }}
         />
       );
@@ -179,73 +170,55 @@ export default function FoodSelectionModal({
     );
   };
 
-  const renderItemCard = (item: FoodItem) => {
-    return (
-      <motion.div
-        key={generateKey("food", item.id)}
-        variants={itemVariants}
-        whileHover={{
-          scale: 1.02,
-          boxShadow: "0 15px 25px -5px rgba(0, 0, 0, 0.15)",
-        }}
-        className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all cursor-pointer"
-        onClick={() => openDetailModal(item)}
-      >
-        <div className="h-48 bg-gray-100 relative">
-          {renderItemImage(item)}
-          {item.category && (
-            <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full">
-              {getSafeCategory(item.category)}
-            </div>
+  const renderItemCard = (item: FoodItem) => (
+    <motion.div
+      key={generateKey("food", item.id)}
+      variants={itemVariants}
+      whileHover={{
+        scale: 1.02,
+        boxShadow: "0 15px 25px -5px rgba(0, 0, 0, 0.15)",
+      }}
+      className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all cursor-pointer"
+      onClick={() => openDetailModal(item)}
+    >
+      <div className="h-48 bg-gray-100 relative">{renderItemImage(item)}</div>
+      <div className="p-5">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-2">
+            {item.name}
+          </h3>
+          {item.description && (
+            <p className="text-sm text-gray-500 line-clamp-3">
+              {item.description}
+            </p>
           )}
-          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button className="bg-white/90 backdrop-blur-sm text-[#AF763E] p-2 rounded-full hover:bg-white transition-colors">
-              <FiEye size={18} />
-            </button>
-          </div>
         </div>
-        <div className="p-5">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-2">
-              {item.name}
-            </h3>
-            {item.description && (
-              <p className="text-sm text-gray-500 line-clamp-3">
-                {item.description}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-[#AF763E]">
-              {formatCurrency(item.price)}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddFood(item);
-              }}
-              className="bg-[#AF763E] hover:bg-[#8E5F32] text-white px-4 py-2 rounded-lg text-sm flex items-center transition-colors"
-            >
-              <FiPlus size={16} className="mr-2" />
-              Thêm
-            </button>
-          </div>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-[#AF763E]">
+            {formatCurrency(Number(item.price))}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddFood(item);
+            }}
+            className="bg-[#AF763E] hover:bg-[#8E5F32] text-white px-4 py-2 rounded-lg text-sm flex items-center transition-colors"
+          >
+            <FiPlus size={16} className="mr-2" />
+            Thêm
+          </button>
         </div>
-      </motion.div>
-    );
-  };
-
-  const renderEmptyState = () => {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-12">
-        <FiImage size={64} className="mb-6 opacity-30" />
-        <p className="text-xl font-medium">Không tìm thấy món ăn nào</p>
-        <p className="text-base">
-          Vui lòng thử tìm kiếm hoặc chọn danh mục khác
-        </p>
       </div>
-    );
-  };
+    </motion.div>
+  );
+
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-full text-gray-500 py-12">
+      <FiImage size={64} className="mb-6 opacity-30" />
+      <p className="text-xl font-medium">Không tìm thấy món ăn nào</p>
+      <p className="text-base">Vui lòng thử tìm kiếm hoặc chọn danh mục khác</p>
+    </div>
+  );
 
   return (
     <>
@@ -263,7 +236,6 @@ export default function FoodSelectionModal({
               exit={{ scale: 0.95, y: 30 }}
               className="bg-white rounded-3xl shadow-2xl w-full max-w-[85vw] max-h-[85vh] overflow-hidden flex flex-col"
             >
-              {/* Header */}
               <div className="flex items-center justify-between p-8 border-b">
                 <div className="flex items-center gap-4">
                   <div className="bg-[#AF763E]/10 p-3 rounded-full">
@@ -281,11 +253,8 @@ export default function FoodSelectionModal({
                 </button>
               </div>
 
-              {/* Content */}
               <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-0">
-                {/* Left Panel - Categories and Items */}
                 <div className="lg:col-span-2 flex flex-col overflow-hidden border-r">
-                  {/* Search and Category Tabs */}
                   <div className="p-6 border-b">
                     <div className="relative mb-6">
                       <input
@@ -301,7 +270,6 @@ export default function FoodSelectionModal({
                       />
                     </div>
 
-                    {/* Category Tabs */}
                     <div className="flex overflow-x-auto space-x-3 pb-2 scrollbar-hide">
                       {foodCategories.map((category) => (
                         <button
@@ -322,7 +290,6 @@ export default function FoodSelectionModal({
                     </div>
                   </div>
 
-                  {/* Items List */}
                   <div className="overflow-y-auto p-6 flex-1 bg-gray-50">
                     {isLoading ? (
                       <div className="flex items-center justify-center h-full">
@@ -337,13 +304,12 @@ export default function FoodSelectionModal({
                         animate="visible"
                         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
                       >
-                        {filteredItems.map((item) => renderItemCard(item))}
+                        {filteredItems.map(renderItemCard)}
                       </motion.div>
                     )}
                   </div>
                 </div>
 
-                {/* Right Panel - Selected Items */}
                 <div className="flex flex-col h-full bg-white overflow-hidden">
                   <div className="p-6 border-b">
                     <div className="flex items-center justify-between">
@@ -355,11 +321,11 @@ export default function FoodSelectionModal({
                       </h3>
                       {selectedFoods.length > 0 && (
                         <button
-                          onClick={() =>
+                          onClick={() => {
                             selectedFoods.forEach((food) =>
                               onRemoveFood(food.id)
-                            )
-                          }
+                            );
+                          }}
                           className="text-sm text-red-500 hover:text-red-700"
                         >
                           Xóa tất cả
@@ -389,13 +355,16 @@ export default function FoodSelectionModal({
                           >
                             <div className="flex items-center">
                               {food.image ? (
-                                <img
-                                  src={food.image || "/placeholder.svg"}
+                                <Image
+                                  src={food.image}
                                   alt={food.name}
                                   className="w-16 h-16 object-cover rounded-lg mr-4 flex-shrink-0"
+                                  width={64}
+                                  height={64}
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src =
-                                      "/placeholder.svg";
+                                    const imgElement =
+                                      e.currentTarget as HTMLImageElement;
+                                    imgElement.src = "/placeholder.svg";
                                   }}
                                 />
                               ) : (
@@ -418,14 +387,12 @@ export default function FoodSelectionModal({
                             <div className="flex items-center gap-3 flex-shrink-0">
                               <button
                                 onClick={() => {
-                                  if (food.quantity <= 1) {
-                                    onRemoveFood(food.id); // Xóa khi số lượng <= 1
-                                  } else {
-                                    onQuantityChange(
-                                      food.id,
-                                      food.quantity - 1
-                                    ); // Giảm số lượng
-                                  }
+                                  food.quantity <= 1
+                                    ? onRemoveFood(food.id)
+                                    : onQuantityChange(
+                                        food.id,
+                                        food.quantity - 1
+                                      );
                                 }}
                                 className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 transition-colors"
                               >
@@ -449,7 +416,6 @@ export default function FoodSelectionModal({
                     )}
                   </div>
 
-                  {/* Total */}
                   <div className="p-6 border-t">
                     <div className="flex justify-between items-center mb-6">
                       <span className="text-lg text-gray-600">Tổng cộng:</span>
@@ -474,7 +440,6 @@ export default function FoodSelectionModal({
         )}
       </AnimatePresence>
 
-      {/* Item Detail Modal */}
       <AnimatePresence>
         {isDetailModalOpen && selectedItem && (
           <motion.div
@@ -491,16 +456,20 @@ export default function FoodSelectionModal({
               className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header */}
               <div className="relative h-80 overflow-hidden">
-                <img
+                <Image
                   src={selectedItem.image || "/placeholder.svg"}
                   alt={selectedItem.name}
                   className="w-full h-full object-cover"
+                  width={800}
+                  height={400}
+                  onError={(e) => {
+                    const imgElement = e.currentTarget as HTMLImageElement;
+                    imgElement.src = "/placeholder.svg";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                {/* Close Button */}
                 <button
                   onClick={closeDetailModal}
                   className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-white/30 transition-colors"
@@ -508,21 +477,19 @@ export default function FoodSelectionModal({
                   <FiX size={24} />
                 </button>
 
-                {/* Category Badge */}
                 {selectedItem.category && (
                   <div className="absolute top-4 left-4 bg-[#AF763E] text-white px-4 py-2 rounded-full text-sm font-medium">
-                    {getSafeCategory(selectedItem.category)}
+                    {selectedItem.category.name}
                   </div>
                 )}
 
-                {/* Title Overlay */}
                 <div className="absolute bottom-6 left-6 text-white">
                   <h2 className="text-3xl font-bold mb-2">
                     {selectedItem.name}
                   </h2>
                   <div className="flex items-center gap-4">
                     <span className="text-2xl font-bold text-yellow-400">
-                      {formatCurrency(selectedItem.price)}
+                      {formatCurrency(Number(selectedItem.price))}
                     </span>
                     <div className="flex items-center gap-1">
                       <FiStar className="w-5 h-5 fill-yellow-400 text-yellow-400" />
@@ -532,10 +499,8 @@ export default function FoodSelectionModal({
                 </div>
               </div>
 
-              {/* Modal Content */}
               <div className="p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Left Column */}
                   <div>
                     <h3 className="text-xl font-bold text-gray-800 mb-4">
                       Mô tả món ăn
@@ -545,7 +510,6 @@ export default function FoodSelectionModal({
                         "Món ăn được chế biến từ những nguyên liệu tươi ngon nhất, mang đến hương vị đặc trưng và trải nghiệm ẩm thực tuyệt vời."}
                     </p>
 
-                    {/* Additional Info */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <FiClock className="w-5 h-5 text-gray-500" />
@@ -562,7 +526,6 @@ export default function FoodSelectionModal({
                     </div>
                   </div>
 
-                  {/* Right Column */}
                   <div>
                     <div className="bg-gray-50 rounded-2xl p-6">
                       <h3 className="text-xl font-bold text-gray-800 mb-6">
@@ -573,7 +536,7 @@ export default function FoodSelectionModal({
                         <div className="flex items-center justify-between">
                           <span className="text-gray-600">Giá:</span>
                           <span className="text-xl font-bold text-[#AF763E]">
-                            {formatCurrency(selectedItem.price)}
+                            {formatCurrency(Number(selectedItem.price))}
                           </span>
                         </div>
 
