@@ -9,6 +9,8 @@ interface InputFieldProps {
   value?: string;
   className?: string;
   min?: string;
+  max?: string;
+  step?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   disabled?: boolean;
@@ -22,6 +24,8 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   className,
   min,
+  max,
+  step,
   onChange,
   required = false,
   disabled = false,
@@ -41,6 +45,8 @@ const InputField: React.FC<InputFieldProps> = ({
         placeholder={placeholder}
         value={value}
         min={min}
+        max={max}
+        step={step}
         onChange={onChange}
         required={required}
         disabled={disabled}

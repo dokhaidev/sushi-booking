@@ -4,7 +4,17 @@
 
 import type React from "react"
 import { useState, useMemo } from "react"
-import { FaPlus, FaEye, FaEyeSlash, FaGift, FaCheckCircle, FaTimesCircle, FaFilter, FaTimes } from "react-icons/fa"
+import {
+  FaPlus,
+  FaEye,
+  FaEyeSlash,
+  FaGift,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaFilter,
+  FaTimes,
+  FaEdit,
+} from "react-icons/fa"
 import TitleDesc from "@/src/app/components/ui/titleDesc"
 import { Button } from "@/src/app/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/src/app/components/ui/Card"
@@ -16,13 +26,16 @@ import PopupNotification from "@/src/app/components/ui/PopupNotification"
 import { useFetch } from "@/src/app/hooks/useFetch"
 import type { Voucher, VoucherAdd } from "@/src/app/types/voucher"
 import { addVoucher } from "@/src/app/hooks/useAdd"
+import axios from "axios"
 
 export default function QuanLyKhuyenMai() {
   const { vouchers } = useFetch()
   const [searchText, setSearchText] = useState("")
   const [voucherPage, setVoucherPage] = useState(1)
   const [openAddPopup, setOpenAddPopup] = useState(false)
+  const [openEditPopup, setOpenEditPopup] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null)
 
   // Notification states
   const [popupOpen, setPopupOpen] = useState(false)
@@ -55,43 +68,68 @@ export default function QuanLyKhuyenMai() {
     describe: "",
   })
 
+  // Edit voucher state
+  const [editVoucher, setEditVoucher] = useState<VoucherAdd>({
+    code: "",
+    discount_value: 0,
+    start_date: "",
+    end_date: "",
+    status: "active",
+    usage_limit: 1,
+    used: 0,
+    required_points: 0,
+    required_total: 0,
+    is_personal: false,
+    describe: "",
+  })
+
   // Form validation
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [editErrors, setEditErrors] = useState<{ [key: string]: string }>({})
 
-  const validateForm = () => {
+  const validateForm = (isEdit = false) => {
+    const currentVoucher = isEdit ? editVoucher : newVoucher
     const newErrors: { [key: string]: string } = {}
 
-    if (!newVoucher.code.trim()) {
+    if (!currentVoucher.code.trim()) {
       newErrors.code = "Mã khuyến mãi không được để trống"
-    } else if (newVoucher.code.length < 3) {
+    } else if (currentVoucher.code.length < 3) {
       newErrors.code = "Mã khuyến mãi phải có ít nhất 3 ký tự"
-    } else {
-      // Check if voucher code already exists
-      const existingVoucher = vouchers.find((v) => v.code.toLowerCase() === newVoucher.code.toLowerCase())
+    } else if (!isEdit) {
+      // Only check for duplicates when adding new voucher
+      const existingVoucher = vouchers.find((v) => v.code.toLowerCase() === currentVoucher.code.toLowerCase())
+      if (existingVoucher) {
+        newErrors.code = "Mã voucher đã tồn tại trong hệ thống"
+      }
+    } else if (isEdit && editingVoucher) {
+      // When editing, check if code exists but exclude current voucher
+      const existingVoucher = vouchers.find(
+        (v) => v.code.toLowerCase() === currentVoucher.code.toLowerCase() && v.id !== editingVoucher.id,
+      )
       if (existingVoucher) {
         newErrors.code = "Mã voucher đã tồn tại trong hệ thống"
       }
     }
 
-    if (!newVoucher.discount_value || newVoucher.discount_value <= 0) {
+    if (!currentVoucher.discount_value || currentVoucher.discount_value <= 0) {
       newErrors.discount_value = "Giá trị khuyến mãi phải lớn hơn 0"
     }
 
-    if (!newVoucher.start_date) {
+    if (!currentVoucher.start_date) {
       newErrors.start_date = "Ngày bắt đầu không được để trống"
     }
 
-    if (!newVoucher.end_date) {
+    if (!currentVoucher.end_date) {
       newErrors.end_date = "Ngày kết thúc không được để trống"
     }
 
-    if (newVoucher.start_date && newVoucher.end_date) {
-      const startDate = new Date(newVoucher.start_date)
-      const endDate = new Date(newVoucher.end_date)
+    if (currentVoucher.start_date && currentVoucher.end_date) {
+      const startDate = new Date(currentVoucher.start_date)
+      const endDate = new Date(currentVoucher.end_date)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      if (startDate < today) {
+      if (!isEdit && startDate < today) {
         newErrors.start_date = "Ngày bắt đầu không được nhỏ hơn ngày hiện tại"
       }
 
@@ -100,19 +138,24 @@ export default function QuanLyKhuyenMai() {
       }
     }
 
-    if (!newVoucher.usage_limit || newVoucher.usage_limit <= 0) {
+    if (!currentVoucher.usage_limit || currentVoucher.usage_limit <= 0) {
       newErrors.usage_limit = "Số lượng sử dụng phải lớn hơn 0"
     }
 
-    if (newVoucher.required_points && newVoucher.required_points < 0) {
+    if (currentVoucher.required_points && currentVoucher.required_points < 0) {
       newErrors.required_points = "Điểm yêu cầu không được âm"
     }
 
-    if (newVoucher.required_total && newVoucher.required_total < 0) {
+    if (currentVoucher.required_total && currentVoucher.required_total < 0) {
       newErrors.required_total = "Tổng tiền yêu cầu không được âm"
     }
 
-    setErrors(newErrors)
+    if (isEdit) {
+      setEditErrors(newErrors)
+    } else {
+      setErrors(newErrors)
+    }
+
     return Object.keys(newErrors).length === 0
   }
 
@@ -129,7 +172,6 @@ export default function QuanLyKhuyenMai() {
         const matchesCode = voucher.code?.toLowerCase().includes(searchLower) || false
         const matchesId = voucher.id.toString().includes(searchLower)
         const matchesValue = voucher.discount_value.toString().includes(searchLower)
-
         if (!matchesCode && !matchesId && !matchesValue) {
           return false
         }
@@ -146,7 +188,6 @@ export default function QuanLyKhuyenMai() {
       if (filters.timeRange && filters.timeRange !== "all") {
         const voucherDate = new Date(voucher.start_date)
         const today = new Date()
-
         switch (filters.timeRange) {
           case "today":
             const todayStr = new Date().toISOString().slice(0, 10)
@@ -191,7 +232,6 @@ export default function QuanLyKhuyenMai() {
   }, [vouchers, searchText, filters])
 
   const paginate = <T,>(data: T[], page: number) => data.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-
   const currentVouchers = paginate(filteredVouchers, voucherPage)
 
   // Handle filter changes
@@ -232,15 +272,52 @@ export default function QuanLyKhuyenMai() {
     setErrors({})
   }
 
+  // Reset edit form
+  const resetEditForm = () => {
+    setEditVoucher({
+      code: "",
+      discount_value: 0,
+      start_date: "",
+      end_date: "",
+      status: "active",
+      usage_limit: 1,
+      used: 0,
+      required_points: 0,
+      required_total: 0,
+      is_personal: false,
+      describe: "",
+    })
+    setEditErrors({})
+    setEditingVoucher(null)
+  }
+
+  // Handle edit voucher
+  const handleEditVoucher = (voucher: Voucher) => {
+    setEditingVoucher(voucher)
+    setEditVoucher({
+      code: voucher.code,
+      discount_value: voucher.discount_value,
+      start_date: voucher.start_date.split("T")[0], // Format date for input
+      end_date: voucher.end_date.split("T")[0], // Format date for input
+      status: voucher.status,
+      usage_limit: voucher.usage_limit,
+      used: voucher.used,
+      required_points: voucher.required_points || 0,
+      required_total: voucher.required_total || 0,
+      is_personal: voucher.is_personal || false,
+      describe: voucher.describe || "",
+    })
+    setEditErrors({})
+    setOpenEditPopup(true)
+  }
+
   const handleAddVoucher = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!validateForm()) {
       return
     }
 
     setIsSubmitting(true)
-
     try {
       // Clean up data before sending
       const voucherData = {
@@ -256,27 +333,97 @@ export default function QuanLyKhuyenMai() {
       }
 
       await addVoucher(voucherData)
-
       setOpenAddPopup(false)
       resetForm()
-
       setPopupContent({
         title: "Thành công",
         message: "Thêm voucher mới thành công! Trang sẽ được tải lại để cập nhật dữ liệu.",
         type: "success",
       })
       setPopupOpen(true)
-
       // Refresh the page after a short delay to show success message
       setTimeout(() => {
         window.location.reload()
       }, 2000)
     } catch (error: any) {
       console.error("Thêm voucher thất bại:", error)
-
       let errorMessage = "Có lỗi xảy ra khi thêm voucher"
-
       // Check for duplicate code error from API
+      if (
+        error.response?.status === 409 ||
+        error.response?.data?.message?.includes("duplicate") ||
+        error.response?.data?.message?.includes("đã tồn tại") ||
+        error.response?.data?.message?.includes("exists") ||
+        error.response?.data?.error?.includes("duplicate") ||
+        error.response?.data?.error?.includes("đã tồn tại") ||
+        error.response?.data?.error?.includes("exists")
+      ) {
+        errorMessage = "Mã voucher đã tồn tại trong hệ thống"
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      }
+
+      setPopupContent({
+        title: "Lỗi",
+        message: errorMessage,
+        type: "error",
+      })
+      setPopupOpen(true)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Hàm cập nhật voucher
+  const updateVoucherAPI = async (id: number, voucherData: VoucherAdd) => {
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/api/voucher/${id}`, voucherData)
+      return response.data
+    } catch (error) {
+      console.error("Lỗi khi cập nhật voucher:", error)
+      throw error
+    }
+  }
+
+  const handleUpdateVoucher = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validateForm(true) || !editingVoucher) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Clean up data before sending
+      const voucherData = {
+        ...editVoucher,
+        // Ensure numbers are properly set
+        discount_value: Number(editVoucher.discount_value) || 0,
+        usage_limit: Number(editVoucher.usage_limit) || 1,
+        // Remove empty optional fields
+        required_points: editVoucher.required_points || undefined,
+        required_total: editVoucher.required_total || undefined,
+        describe: editVoucher.describe?.trim() || undefined,
+      }
+
+      await updateVoucherAPI(editingVoucher.id, voucherData)
+      setOpenEditPopup(false)
+      resetEditForm()
+      setPopupContent({
+        title: "Thành công",
+        message: "Cập nhật voucher thành công! Trang sẽ được tải lại để cập nhật dữ liệu.",
+        type: "success",
+      })
+      setPopupOpen(true)
+      // Refresh the page after a short delay to show success message
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (error: any) {
+      console.error("Cập nhật voucher thất bại:", error)
+      let errorMessage = "Có lỗi xảy ra khi cập nhật voucher"
+
       if (
         error.response?.status === 409 ||
         error.response?.data?.message?.includes("duplicate") ||
@@ -375,7 +522,6 @@ export default function QuanLyKhuyenMai() {
                   <option value="expired">Đã hết hạn</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-2">Thời gian</label>
                 <select
@@ -389,7 +535,6 @@ export default function QuanLyKhuyenMai() {
                   <option value="month">Tháng này</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-2">Giá trị khuyến mãi</label>
                 <select
@@ -403,7 +548,6 @@ export default function QuanLyKhuyenMai() {
                   <option value="over500">Trên 500k</option>
                 </select>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={() => setVoucherPage(1)}
@@ -413,7 +557,6 @@ export default function QuanLyKhuyenMai() {
                   Lọc khuyến mãi
                 </button>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={handleClearFilters}
@@ -424,7 +567,6 @@ export default function QuanLyKhuyenMai() {
                 </button>
               </div>
             </div>
-
             {/* Filter Summary */}
             {(filters.status || filters.timeRange || filters.discountRange || searchText) && (
               <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
@@ -555,12 +697,21 @@ export default function QuanLyKhuyenMai() {
                         <td className="px-4 py-2">{Math.max(0, (voucher.usage_limit || 0) - (voucher.used || 0))}</td>
                         <td className="px-4 py-2">{voucher.used || 0}</td>
                         <td className="px-4 py-2">
-                          <button className="px-2 py-1 flex items-center gap-1 text-red-700 border border-red-700 rounded hover:bg-red-100 transition-colors">
-                            {voucher.status === "active" ? <FaEyeSlash /> : <FaEye />}
-                            <span className="text-xs font-semibold">
-                              {voucher.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
-                            </span>
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditVoucher(voucher)}
+                              className="px-2 py-1 flex items-center gap-1 text-blue-700 border border-blue-700 rounded hover:bg-blue-100 transition-colors"
+                            >
+                              <FaEdit />
+                              <span className="text-xs font-semibold">Sửa</span>
+                            </button>
+                            <button className="px-2 py-1 flex items-center gap-1 text-red-700 border border-red-700 rounded hover:bg-red-100 transition-colors">
+                              {voucher.status === "active" ? <FaEyeSlash /> : <FaEye />}
+                              <span className="text-xs font-semibold">
+                                {voucher.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
+                              </span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -575,7 +726,6 @@ export default function QuanLyKhuyenMai() {
                   )}
                 </tbody>
               </table>
-
               <Pagination
                 currentPage={voucherPage}
                 totalItems={filteredVouchers.length}
@@ -610,10 +760,8 @@ export default function QuanLyKhuyenMai() {
                   onChange={(e) => {
                     const newCode = e.target.value.toUpperCase()
                     setNewVoucher({ ...newVoucher, code: newCode })
-
                     // Clear existing error
                     if (errors.code) setErrors({ ...errors, code: "" })
-
                     // Check for duplicate in real-time
                     if (newCode.length >= 3) {
                       const existingVoucher = vouchers.find((v) => v.code.toLowerCase() === newCode.toLowerCase())
@@ -627,7 +775,6 @@ export default function QuanLyKhuyenMai() {
                 />
                 {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code}</p>}
               </div>
-
               <div>
                 <InputField
                   label="Giá trị khuyến mãi (VNĐ) *"
@@ -644,7 +791,6 @@ export default function QuanLyKhuyenMai() {
                 />
                 {errors.discount_value && <p className="text-red-500 text-xs mt-1">{errors.discount_value}</p>}
               </div>
-
               <div>
                 <InputField
                   label="Số lượng sử dụng *"
@@ -660,7 +806,6 @@ export default function QuanLyKhuyenMai() {
                 />
                 {errors.usage_limit && <p className="text-red-500 text-xs mt-1">{errors.usage_limit}</p>}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái *</label>
                 <select
@@ -700,7 +845,6 @@ export default function QuanLyKhuyenMai() {
                 />
                 {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
               </div>
-
               <div>
                 <InputField
                   label="Ngày kết thúc *"
@@ -739,7 +883,6 @@ export default function QuanLyKhuyenMai() {
                 {errors.required_points && <p className="text-red-500 text-xs mt-1">{errors.required_points}</p>}
                 <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu điểm</p>
               </div>
-
               <div>
                 <InputField
                   label="Tổng tiền yêu cầu (VNĐ)"
@@ -757,7 +900,6 @@ export default function QuanLyKhuyenMai() {
                 <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu tổng tiền tối thiểu</p>
               </div>
             </div>
-
             <div className="mt-4">
               <label className="flex items-center space-x-2">
                 <input
@@ -802,6 +944,221 @@ export default function QuanLyKhuyenMai() {
               disabled={isSubmitting}
             >
               {isSubmitting ? "Đang thêm..." : "Thêm voucher"}
+            </Button>
+          </div>
+        </form>
+      </Popup>
+
+      {/* Edit Voucher Popup */}
+      <Popup
+        isOpen={openEditPopup}
+        onClose={() => {
+          setOpenEditPopup(false)
+          resetEditForm()
+        }}
+        title="Chỉnh sửa Voucher"
+        width="w-full md:w-[800px] lg:w-[900px]"
+      >
+        <form onSubmit={handleUpdateVoucher} className="space-y-6">
+          {/* Basic Information */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin cơ bản</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Mã khuyến mãi *"
+                  name="code"
+                  value={editVoucher.code}
+                  onChange={(e) => {
+                    const newCode = e.target.value.toUpperCase()
+                    setEditVoucher({ ...editVoucher, code: newCode })
+                    // Clear existing error
+                    if (editErrors.code) setEditErrors({ ...editErrors, code: "" })
+                    // Check for duplicate in real-time (excluding current voucher)
+                    if (newCode.length >= 3 && editingVoucher) {
+                      const existingVoucher = vouchers.find(
+                        (v) => v.code.toLowerCase() === newCode.toLowerCase() && v.id !== editingVoucher.id,
+                      )
+                      if (existingVoucher) {
+                        setEditErrors({ ...editErrors, code: "Mã voucher đã tồn tại trong hệ thống" })
+                      }
+                    }
+                  }}
+                  placeholder="VD: SUMMER2024"
+                  required
+                />
+                {editErrors.code && <p className="text-red-500 text-xs mt-1">{editErrors.code}</p>}
+              </div>
+              <div>
+                <InputField
+                  label="Giá trị khuyến mãi (VNĐ) *"
+                  name="discount_value"
+                  type="number"
+                  value={String(editVoucher.discount_value)}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, discount_value: Number.parseFloat(e.target.value) || 0 })
+                    if (editErrors.discount_value) setEditErrors({ ...editErrors, discount_value: "" })
+                  }}
+                  placeholder="50000"
+                  min="1"
+                  required
+                />
+                {editErrors.discount_value && <p className="text-red-500 text-xs mt-1">{editErrors.discount_value}</p>}
+              </div>
+              <div>
+                <InputField
+                  label="Số lượng sử dụng *"
+                  name="usage_limit"
+                  type="number"
+                  value={String(editVoucher.usage_limit)}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, usage_limit: Number.parseInt(e.target.value) || 1 })
+                    if (editErrors.usage_limit) setEditErrors({ ...editErrors, usage_limit: "" })
+                  }}
+                  min="1"
+                  required
+                />
+                {editErrors.usage_limit && <p className="text-red-500 text-xs mt-1">{editErrors.usage_limit}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái *</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  value={editVoucher.status}
+                  onChange={(e) =>
+                    setEditVoucher({
+                      ...editVoucher,
+                      status: e.target.value as "active" | "expired" | "disabled",
+                    })
+                  }
+                >
+                  <option value="active">Đang hoạt động</option>
+                  <option value="disabled">Vô hiệu hóa</option>
+                  <option value="expired">Hết hạn</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Date Range */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Thời gian áp dụng</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Ngày bắt đầu *"
+                  name="start_date"
+                  type="date"
+                  value={editVoucher.start_date}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, start_date: e.target.value })
+                    if (editErrors.start_date) setEditErrors({ ...editErrors, start_date: "" })
+                  }}
+                  required
+                />
+                {editErrors.start_date && <p className="text-red-500 text-xs mt-1">{editErrors.start_date}</p>}
+              </div>
+              <div>
+                <InputField
+                  label="Ngày kết thúc *"
+                  name="end_date"
+                  type="date"
+                  value={editVoucher.end_date}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, end_date: e.target.value })
+                    if (editErrors.end_date) setEditErrors({ ...editErrors, end_date: "" })
+                  }}
+                  min={editVoucher.start_date}
+                  required
+                />
+                {editErrors.end_date && <p className="text-red-500 text-xs mt-1">{editErrors.end_date}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Requirements */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Điều kiện áp dụng</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <InputField
+                  label="Điểm yêu cầu"
+                  name="required_points"
+                  type="number"
+                  value={String(editVoucher.required_points || "")}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, required_points: Number.parseInt(e.target.value) || 0 })
+                    if (editErrors.required_points) setEditErrors({ ...editErrors, required_points: "" })
+                  }}
+                  placeholder="0"
+                  min="0"
+                />
+                {editErrors.required_points && (
+                  <p className="text-red-500 text-xs mt-1">{editErrors.required_points}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu điểm</p>
+              </div>
+              <div>
+                <InputField
+                  label="Tổng tiền yêu cầu (VNĐ)"
+                  name="required_total"
+                  type="number"
+                  value={String(editVoucher.required_total || "")}
+                  onChange={(e) => {
+                    setEditVoucher({ ...editVoucher, required_total: Number.parseFloat(e.target.value) || 0 })
+                    if (editErrors.required_total) setEditErrors({ ...editErrors, required_total: "" })
+                  }}
+                  placeholder="0"
+                  min="0"
+                />
+                {editErrors.required_total && <p className="text-red-500 text-xs mt-1">{editErrors.required_total}</p>}
+                <p className="text-xs text-gray-500 mt-1">Để trống nếu không yêu cầu tổng tiền tối thiểu</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={editVoucher.is_personal || false}
+                  onChange={(e) => setEditVoucher({ ...editVoucher, is_personal: e.target.checked })}
+                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Voucher cá nhân</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">Chỉ áp dụng cho khách hàng cụ thể</p>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              rows={3}
+              value={editVoucher.describe || ""}
+              onChange={(e) => setEditVoucher({ ...editVoucher, describe: e.target.value })}
+              placeholder="Mô tả chi tiết về voucher..."
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              onClick={() => {
+                setOpenEditPopup(false)
+                resetEditForm()
+              }}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Đang cập nhật..." : "Cập nhật voucher"}
             </Button>
           </div>
         </form>

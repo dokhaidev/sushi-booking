@@ -7,6 +7,10 @@ export interface Voucher {
   status: string;
   usage_limit: number;
   used: number;
+  required_points?: number;
+  required_total?: number;
+  is_personal?: boolean;
+  describe?: string;
 }
 
 export interface VoucherAdd {
@@ -16,7 +20,7 @@ export interface VoucherAdd {
   discount_value: number;
   start_date: string;
   end_date: string;
-  status: "active" | "expired" | "disabled";
+  status: string;
   required_points?: number;
   required_total?: number;
   is_personal?: boolean;
