@@ -144,29 +144,69 @@ export default function LoginPage() {
   };
 
   // Show loading while checking auth state
+  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-amber-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-pulse">
-            <svg
-              className="w-20 h-20 mx-auto text-red-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
+        <div className="text-center p-8 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-red-100 max-w-md w-full mx-4">
+          {/* Decorative top border */}
+          <div className="h-1 bg-gradient-to-r from-red-500 to-amber-500 mb-6"></div>
+
+          <div className="flex flex-col items-center justify-center space-y-4">
+            {/* Animated spinner with sushi theme */}
+            <div className="relative w-20 h-20">
+              <svg
+                className="animate-spin w-full h-full text-[#AF763E]"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {/* Sushi icon in the center */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-[#EF4444]"
+                >
+                  <path
+                    d="M12 12C12 14.7614 9.76142 17 7 17C4.23858 17 2 14.7614 2 12C2 9.23858 4.23858 7 7 7C9.76142 7 12 9.23858 12 12Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="text-xl font-bold text-[#333333]">
+              Đang kiểm tra đăng nhập
+            </h2>
+            <p className="text-[#5F3E1B]">Vui lòng chờ trong giây lát...</p>
+
+            {/* Progress bar for better UX */}
+            <div className="w-full bg-red-100 rounded-full h-2.5 mt-4">
+              <div
+                className="bg-gradient-to-r from-[#AF763E] to-[#BD944A] h-2.5 rounded-full animate-pulse"
+                style={{ width: "70%" }}
+              ></div>
+            </div>
           </div>
-          <p className="mt-6 text-[#333333] font-medium">
-            Đang kiểm tra đăng nhập...
-          </p>
+
+          {/* Decorative bottom border */}
+          <div className="h-1 bg-gradient-to-r from-amber-500 to-red-500 mt-6"></div>
         </div>
       </div>
     );

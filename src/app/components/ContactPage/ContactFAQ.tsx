@@ -1,6 +1,6 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle } from "lucide-react";
+import { ChevronDown, HelpCircle, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 export default function ContactFAQ() {
@@ -11,130 +11,75 @@ export default function ContactFAQ() {
       question: "Làm thế nào để đặt bàn tại Sushi Takumi?",
       answer:
         "Bạn có thể đặt bàn qua hotline 0909 123 456, hoặc trực tiếp tại nhà hàng. Chúng tôi khuyến khích đặt bàn trước để đảm bảo có chỗ ngồi tốt nhất.",
+      icon: "📞",
     },
     {
       question: "Nhà hàng có phục vụ món chay không?",
       answer:
         "Có, chúng tôi có nhiều lựa chọn sushi chay và các món Nhật Bản dành cho người ăn chay. Vui lòng thông báo khi đặt bàn để được tư vấn chi tiết.",
+      icon: "🥗",
     },
     {
       question: "Giờ hoạt động của nhà hàng?",
       answer:
         "Sushi Takumi mở cửa từ 11:00 - 14:00 (trưa) và 17:00 - 22:00 (tối) từ thứ 2 đến chủ nhật. Nghỉ thứ 3 hàng tuần.",
+      icon: "⏱️",
     },
     {
       question: "Có dịch vụ giao hàng tận nơi không?",
       answer:
         "Hiện tại chúng tôi chưa có dịch vụ giao hàng, nhưng bạn có thể đặt món và đến lấy tại nhà hàng. Chúng tôi sẽ chuẩn bị sẵn để bạn tiết kiệm thời gian.",
+      icon: "🚗",
     },
     {
       question: "Nhà hàng có chỗ đậu xe không?",
       answer:
         "Có, chúng tôi có bãi đậu xe miễn phí cho khách hàng ngay trước nhà hàng và khu vực lân cận.",
+      icon: "🅿️",
     },
   ];
 
   return (
-    <section className="relative bg-gradient-to-br from-[#F8F1E9] via-[#F8F1E9] to-[#F8F1E9]/90 py-[60px] px-[90px] overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div
-          className="w-full h-full"
-          style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, #AF763E 1px, transparent 1px),
-                              radial-gradient(circle at 75% 75%, #AF763E 1px, transparent 1px)`,
-            backgroundSize: "50px 50px, 30px 30px",
-          }}
-        />
-      </div>
-
-      {/* Floating Elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          className="absolute top-16 right-20 w-8 h-8 rounded-full border-2 border-[#AF763E]/20 bg-[#F8F1E9]"
-          animate={{
-            rotate: [0, 360],
-            y: [0, -15, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          }}
-        >
-          <div className="absolute inset-1.5 bg-[#7FB069] rounded-full" />
-        </motion.div>
-
-        <motion.div
-          className="absolute bottom-20 left-16 w-6 h-6 rounded-full border-2 border-[#AF763E]/15 bg-[#F8F1E9]"
-          animate={{
-            rotate: [360, 0],
-            x: [0, 20, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-            delay: 3,
-          }}
-        >
-          <div className="absolute inset-1 bg-[#FFD23F] rounded-full" />
-        </motion.div>
-      </div>
-
-      <div className="relative z-10 max-w-4xl mx-auto">
+    <section className="bg-white py-20 px-4">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.div
-            className="flex justify-center mb-6"
-            initial={{ opacity: 0, scale: 0 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <div className="p-4 bg-gradient-to-br from-[#AF763E] to-[#8B5A2B] rounded-2xl shadow-lg">
-              <HelpCircle className="w-8 h-8 text-[#F8F1E9]" />
-            </div>
-          </motion.div>
-
-          <h2 className="text-4xl lg:text-5xl font-black text-[#AF763E] mb-4 leading-tight">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 text-[#AF763E] mb-2">
+            <HelpCircle className="w-5 h-5" />
+            <span className="uppercase text-sm tracking-wide font-semibold">
+              Giải đáp
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#4B3B2A]">
             Câu hỏi thường gặp
           </h2>
-          <p className="text-lg text-[#AF763E]/80 max-w-2xl mx-auto">
-            Những thắc mắc phổ biến về dịch vụ tại Sushi Takumi
+          <p className="text-[#6D5F50] mt-3 max-w-xl mx-auto">
+            Những điều bạn nên biết khi đến Sushi Takumi.
           </p>
-        </motion.div>
+        </div>
 
-        {/* FAQ Items */}
+        {/* FAQ List */}
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <motion.div
+            <div
               key={index}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-[#AF763E]/10 overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white border border-[#E7DDD1] rounded-xl p-5 shadow-sm"
             >
-              <motion.button
-                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-[#F8F1E9]/50 transition-colors duration-200"
+              <button
+                className="w-full flex justify-between items-center text-left"
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                whileHover={{ backgroundColor: "rgba(248, 241, 233, 0.3)" }}
               >
-                <span className="text-lg font-semibold text-[#AF763E] pr-4">
-                  {faq.question}
-                </span>
+                <div className="flex gap-3 items-center text-[#AF763E] font-medium">
+                  <span>{faq.icon}</span>
+                  <span>{faq.question}</span>
+                </div>
                 <motion.div
                   animate={{ rotate: openIndex === index ? 180 : 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   <ChevronDown className="w-5 h-5 text-[#AF763E]" />
                 </motion.div>
-              </motion.button>
-
+              </button>
               <AnimatePresence>
                 {openIndex === index && (
                   <motion.div
@@ -142,18 +87,24 @@ export default function ContactFAQ() {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden mt-3 pl-8 pr-2 text-[#5B4A3B]"
                   >
-                    <div className="px-6 pb-5 pt-2">
-                      <p className="text-[#AF763E]/80 leading-relaxed">
-                        {faq.answer}
-                      </p>
-                    </div>
+                    {faq.answer}
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           ))}
+        </div>
+
+        {/* CTA */}
+        <div className="text-center mt-12">
+          <p className="text-[#6D5F50] mb-4">
+            Bạn vẫn còn câu hỏi? Chúng tôi luôn sẵn sàng hỗ trợ!
+          </p>
+          <button className="inline-flex items-center gap-2 px-6 py-2 bg-[#AF763E] text-white rounded-full shadow-md hover:shadow-lg transition">
+            Liên hệ ngay <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </section>

@@ -1,10 +1,9 @@
-// next.config.js hoặc next.config.ts (nếu đang dùng TypeScript)
-
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
     domains: [
+      "cdn-icons-png.flaticon.com",
       "i.pinimg.com",
       "images.unsplash.com",
       "example.com",
@@ -26,11 +25,6 @@ const nextConfig: NextConfig = {
       "example.ca",
       "ussinavietnam.vn",
       "satovietnhat.com.vn",
-      "www.sushiworld.com.vn",
-      "www.sushihouse.com.vn",
-      "www.sushikatsu.com.vn",
-      "www.sushikoi.com.vn",
-      "www.sushimura.com.vn",
       "saigonreview.vn",
       "plus.unsplash.com",
       "wallpapers.com",
@@ -52,6 +46,10 @@ const nextConfig: NextConfig = {
       "tournhatban.net",
       "bioplanet.vn",
       "danviet.ex-cdn.com",
+      "res.klook.com",
+      "thedotmagazine.com",
+      "www.elledecoration.vn",
+      "static.vecteezy.com",
       "127.0.0.1"
     ],
   },

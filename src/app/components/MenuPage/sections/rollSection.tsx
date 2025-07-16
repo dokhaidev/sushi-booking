@@ -10,7 +10,6 @@ export default function RollsSection() {
   const [rolls, setRolls] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cart, setCart] = useState<MenuItem[]>([]);
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -26,11 +25,15 @@ export default function RollsSection() {
         const response = await axios.get(
           "http://127.0.0.1:8000/api/food/category/3"
         );
-        const data = Array.isArray(response.data)
-          ? response.data
-          : response.data?.data || [];
+        const rawData: unknown = response.data;
 
-        const mappedData: MenuItem[] = data.map((item: any) => ({
+        const data: MenuItem[] = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray((rawData as { data?: unknown }).data)
+          ? ((rawData as { data: unknown[] }).data as MenuItem[])
+          : [];
+
+        const mappedData: MenuItem[] = data.map((item) => ({
           id: typeof item.id === "string" ? Number.parseInt(item.id) : item.id,
           name: item.name,
           jpName: item.jpName,
@@ -41,6 +44,7 @@ export default function RollsSection() {
           ),
           description: item.description,
         }));
+
         setRolls(mappedData);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu rolls:", err);
@@ -54,20 +58,15 @@ export default function RollsSection() {
   }, []);
 
   const addToCart = (item: MenuItem) => {
-    setCart((prevCart) => [...prevCart, item]);
     console.log("Đã thêm món vào giỏ:", item.name);
+    // Nếu muốn lưu vào cart hoặc context, bạn có thể xử lý tại đây
   };
 
   return (
     <section
       id="rolls"
-      className="py-[60px] sm:px-6 lg:px-20 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0] relative overflow-hidden"
+      className="py-[60px] sm:px-6 lg:px-20 bg-[#F8F1E9] relative overflow-hidden"
     >
-      {/* Background Decorative Elements */}
-      <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#dfe3d2] rounded-full opacity-20 z-0" />
-      <div className="absolute top-1/2 left-[10%] w-36 h-36 bg-[#dfe3d2] rounded-full opacity-15 z-0" />
-      <div className="absolute bottom-[-80px] right-[-80px] w-[220px] h-[220px] bg-[#dfe3d2] rounded-full opacity-10 z-0" />
-
       <div className="relative z-10 container mx-auto">
         {/* Header Section */}
         <motion.div

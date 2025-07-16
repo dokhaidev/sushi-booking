@@ -14,38 +14,21 @@ export default function BackToTopButton() {
   });
 
   useEffect(() => {
-    const toggleVisibility = () => {
-      setIsVisible(window.scrollY > 300);
-    };
-
-    // Throttle scroll event for better performance
-    let ticking = false;
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          toggleVisibility();
-          ticking = false;
-        });
-        ticking = true;
-      }
+      setIsVisible(window.scrollY > 300);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <>
-      {/* Progress bar */}
+      {/* Progress bar at the top */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-blue-500/20 z-50 origin-left"
+        className="fixed top-0 left-0 right-0 h-[3px] bg-[#d8c09f] z-50 origin-left"
         style={{ scaleX }}
       />
 
@@ -55,34 +38,16 @@ export default function BackToTopButton() {
           <motion.button
             onClick={scrollToTop}
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              transition: {
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-              },
-            }}
-            exit={{
-              opacity: 0,
-              y: 20,
-              scale: 0.8,
-              transition: { duration: 0.2 },
-            }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.8 }}
             whileHover={{
               scale: 1.1,
-              backgroundColor: "#047BA0",
-              boxShadow: "0 5px 15px rgba(4, 123, 160, 0.4)",
+              backgroundColor: "#FF9000",
+              boxShadow: "0 5px 15px",
             }}
-            whileTap={{
-              scale: 0.95,
-              boxShadow: "0 2px 5px rgba(4, 123, 160, 0.4)",
-            }}
-            className="fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-lg
-                      bg-gradient-to-br from-[#0689C4] to-[#047BA0]
-                      text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            whileTap={{ scale: 0.95, boxShadow: "0 2px 5px" }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-lg bg-[#FF9000] text-white focus:outline-none"
             aria-label="Back to top"
           >
             <motion.div

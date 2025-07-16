@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ChefHat, ShoppingCart } from "lucide-react";
+import { ChefHat } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface MenuItem {
@@ -17,12 +17,23 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
+interface SushiItemAPI {
+  name: string;
+  jpName?: string;
+  price: string | number;
+  description?: string;
+}
+
+interface SushiGroupAPI {
+  group_name: string;
+  foods: unknown[];
+}
+
 export default function SushiSection() {
   const [groups, setGroups] = useState<MenuGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Hàm định dạng giá tiền VND
   const formatPriceVND = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -41,17 +52,24 @@ export default function SushiSection() {
           ? resp.data
           : resp.data?.data || [];
 
-        const transformedData: MenuGroup[] = rawData.map((group: any) => ({
-          name: group.group_name || "Không tên",
-          items: Array.isArray(group.foods)
-            ? group.foods.map((food: any) => ({
-                name: food.name,
-                jpName: food.jpName,
-                price: food.price,
-                desc: food.description,
-              }))
-            : [],
-        }));
+        const transformedData: MenuGroup[] = rawData.map(
+          (groupRaw: SushiGroupAPI) => {
+            return {
+              name: groupRaw.group_name || "Không tên",
+              items: Array.isArray(groupRaw.foods)
+                ? groupRaw.foods.map((foodRaw: unknown) => {
+                    const food = foodRaw as SushiItemAPI;
+                    return {
+                      name: food.name,
+                      jpName: food.jpName,
+                      price: food.price,
+                      desc: food.description,
+                    };
+                  })
+                : [],
+            };
+          }
+        );
 
         setGroups(transformedData);
       } catch (err) {
@@ -71,10 +89,7 @@ export default function SushiSection() {
   };
 
   return (
-    <section
-      id="sushi"
-      className="py-16 px-4 sm:px-10 lg:px-24 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0]"
-    >
+    <section id="sushi" className="py-16 px-4 sm:px-10 lg:px-24 bg-[#F8F1E9]">
       <div className="container mx-auto max-w-8xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

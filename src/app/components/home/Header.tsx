@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { FaCircleUser } from "react-icons/fa6";
+import Image from "next/image";
 
 interface User {
   ho_ten: string;
@@ -12,18 +13,20 @@ interface User {
 const Header = () => {
   const [user, setUser] = useState<User | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
-//   const router = useRouter();
+  //   const router = useRouter();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-    } 
+    }
   }, []);
 
-
   return (
-    <header className= "text-black border-b border-gray-200 p-4 flex justify-end items-center relative" style={{backgroundColor: "var(--secondary-color)"}}>
+    <header
+      className="text-black border-b border-gray-200 p-4 flex justify-end items-center relative"
+      style={{ backgroundColor: "var(--secondary-color)" }}
+    >
       <div className="flex items-center space-x-6 ml-6">
         {/* Icon thông báo */}
         <div className="relative cursor-pointer">
@@ -40,8 +43,10 @@ const Header = () => {
             onMouseLeave={() => setShowDropdown(false)}
           >
             <div className="flex items-center space-x-2">
-              <img
+              <Image
                 src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full"
                 alt="Avatar"
               />
@@ -63,7 +68,7 @@ const Header = () => {
             )}
           </div>
         ) : (
-          <FaCircleUser className="w-6 h-6"/>
+          <FaCircleUser className="w-6 h-6" />
         )}
       </div>
     </header>

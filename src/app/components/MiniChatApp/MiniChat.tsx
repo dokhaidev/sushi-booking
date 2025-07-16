@@ -1,132 +1,167 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle, X, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { FiMessageCircle, FiX, FiSend } from "react-icons/fi";
+import axios from "axios";
 
-const questions = [
-  {
-    q: "Giờ làm việc của shop là gì?",
-    a: "Chúng tôi mở cửa từ 8h - 22h mỗi ngày.",
-  },
-  {
-    q: "Làm sao để đặt hàng?",
-    a: "Bạn có thể đặt hàng trực tiếp trên website hoặc gọi hotline: 0123 456 789.",
-  },
-  {
-    q: "Có hỗ trợ giao hàng toàn quốc không?",
-    a: "Có, chúng tôi giao hàng toàn quốc với nhiều đối tác vận chuyển uy tín.",
-  },
-  {
-    q: "Tôi có thể huỷ đơn hàng sau khi đặt không?",
-    a: "Bạn có thể huỷ trong vòng 30 phút sau khi đặt hàng.",
-  },
-];
+const SushiChatWidget = () => {
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>(
+    []
+  );
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-export default function MiniChat() {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [isHovering, setIsHovering] = useState(false);
+  // Tự động scroll xuống tin nhắn mới nhất
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const newMessages = [...messages, { role: "user", text: input }];
+    setMessages(newMessages);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/api/chat", {
+        messages: newMessages,
+        customer_id: 1,
+      });
+      const reply = res.data.reply;
+      setMessages([...newMessages, { role: "model", text: reply }]);
+    } catch (err) {
+      console.error("LỖI:", err);
+      setMessages([
+        ...newMessages,
+        { role: "model", text: "Lỗi khi kết nối đến AI." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      {/* Button mở chat */}
-      <div className="fixed bottom-20 right-6 z-50">
-        {!open ? (
-          <button
-            onClick={() => setOpen(true)}
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-            className="bg-gradient-to-br from-[#00AEEF] to-[#007bbd] text-white p-4 rounded-full shadow-lg transition-all hover:shadow-xl hover:scale-105 relative"
-          >
-            <MessageCircle className="w-6 h-6" />
-            {isHovering && (
-              <div className="absolute -top-10 -left-6 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                Bạn cần hỗ trợ?
+    <div className="fixed bottom-20 right-6 z-50">
+      {/* Nút mở chat - Đã nâng cấp */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="relative bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white p-4 rounded-full shadow-xl transition-all duration-300 ease-in-out flex items-center justify-center group"
+          title="Trò chuyện với Sushi AI"
+          aria-label="Mở chat"
+        >
+          <FiMessageCircle
+            size={24}
+            className="group-hover:scale-110 transition-transform"
+          />
+          <span className="absolute -top-2 -right-2 bg-red-500 text-xs text-white rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+            NEW
+          </span>
+        </button>
+      )}
+
+      {/* Hộp chat - Đã nâng cấp */}
+      {isOpen && (
+        <div className="w-100 h-[500px] bg-white rounded-xl shadow-2xl border border-orange-200 flex flex-col overflow-hidden animate-fade-in-up">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              <span className="font-semibold tracking-wide text-sm">
+                Sushi AI Trợ Lý
+              </span>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="hover:bg-orange-400/30 p-1 rounded-full transition-all duration-200"
+              aria-label="Đóng chat"
+            >
+              <FiX size={18} className="hover:rotate-90 transition-transform" />
+            </button>
+          </div>
+
+          {/* Nội dung chat */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-orange-50 to-white">
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                <div className="bg-orange-100 p-3 rounded-full mb-3">
+                  <FiMessageCircle size={24} className="text-orange-500" />
+                </div>
+                <h3 className="font-medium text-orange-800 mb-1">
+                  Xin chào! Tôi là Sushi AI
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Tôi có thể giúp gì cho bạn hôm nay?
+                </p>
+              </div>
+            ) : (
+              messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`px-4 py-3 rounded-2xl max-w-[80%] text-sm whitespace-pre-line transition-all duration-200 ${
+                      msg.role === "user"
+                        ? "bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md"
+                        : "bg-white border border-orange-100 shadow-sm"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))
+            )}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="px-4 py-3 rounded-2xl bg-white border border-orange-100 shadow-sm text-sm flex space-x-2">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce delay-100"></div>
+                  <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce delay-200"></div>
+                </div>
               </div>
             )}
-          </button>
-        ) : (
-          <div className="bg-white w-96 max-w-[90vw] rounded-lg shadow-2xl overflow-hidden animate-fade-in flex flex-col h-[500px]">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#00AEEF] to-[#007bbd] text-white flex justify-between items-center p-4">
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5" />
-                <span className="font-semibold text-lg">Hỗ trợ khách hàng</span>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="hover:bg-white/20 p-1 rounded-full transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Welcome message */}
-            <div className="bg-blue-50 p-4 border-b">
-              <p className="font-medium text-blue-800">Xin chào! 👋</p>
-              <p className="text-sm text-gray-600 mt-1">
-                Chúng tôi có thể giúp gì cho bạn? Vui lòng chọn câu hỏi bên dưới
-                hoặc liên hệ hotline.
-              </p>
-            </div>
-
-            {/* Chat content */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3">
-              {questions.map((item, index) => (
-                <div key={index} className="rounded-lg overflow-hidden">
-                  <button
-                    onClick={() =>
-                      setSelected(selected === index ? null : index)
-                    }
-                    className="flex justify-between items-center w-full p-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 text-left"
-                  >
-                    <span className="font-medium text-gray-800">{item.q}</span>
-                    {selected === index ? (
-                      <ChevronUp className="w-4 h-4 text-gray-500" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
-                    )}
-                  </button>
-                  {selected === index && (
-                    <div className="bg-white p-3 border-l-4 border-blue-500 text-gray-700 animate-fade-in">
-                      {item.a}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Contact option */}
-            <div className="border-t p-4 bg-gray-50">
-              <p className="text-sm text-gray-600 mb-2">
-                Không tìm thấy câu trả lời? Hãy liên hệ với chúng tôi:
-              </p>
-              <button className="w-full bg-white border border-blue-500 text-blue-600 hover:bg-blue-50 py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center space-x-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                  />
-                </svg>
-                <span>Gọi hỗ trợ: 0367 438 455</span>
-              </button>
-            </div>
-
-            {/* Footer */}
-            <div className="text-xs text-center text-gray-500 p-2 bg-gray-100">
-              Chat tự động – Phục vụ 24/7
-            </div>
+            <div ref={messagesEndRef} />
           </div>
-        )}
-      </div>
-    </>
+
+          {/* Input - Đã nâng cấp */}
+          <div className="p-3 border-t border-orange-100 bg-white">
+            <div className="relative flex gap-2">
+              <input
+                type="text"
+                placeholder="Bạn muốn ăn gì?"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                className="flex-1 px-4 py-2 text-sm border border-orange-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent transition-all"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || loading}
+                className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full ${
+                  input.trim()
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                } transition-all duration-200 shadow-sm`}
+                aria-label="Gửi tin nhắn"
+              >
+                <FiSend size={16} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1 text-center">
+              Sushi AI có thể mắc lỗi. Kiểm tra thông tin quan trọng.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default SushiChatWidget;

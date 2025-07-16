@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { StarIcon, HeartIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { useEffect, useState } from "react";
+import { StarIcon, HeartIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 
 interface CardItem {
@@ -21,7 +21,6 @@ interface CardListProps {
 
 export default function CardList({ data, filterType }: CardListProps) {
   const [filteredItems, setFilteredItems] = useState<CardItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<CardItem | null>(null);
 
   useEffect(() => {
     const filtered =
@@ -31,20 +30,8 @@ export default function CardList({ data, filterType }: CardListProps) {
     setFilteredItems(filtered);
   }, [filterType, data]);
 
-  useEffect(() => {
-    if (selectedItem) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, [selectedItem]);
-
   return (
     <div className="relative">
-      {/* Grid sản phẩm */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
         {filteredItems.map((item) => (
           <div
@@ -55,7 +42,7 @@ export default function CardList({ data, filterType }: CardListProps) {
               <div className="absolute right-5 -top-6 w-50 h-50 rounded-full border-4 border-white shadow-lg overflow-hidden transform transition-transform duration-300 group-hover:scale-105">
                 {item.image && (
                   <Image
-                    src={`${item.image}`}
+                    src={item.image}
                     alt={item.name}
                     width={200}
                     height={200}

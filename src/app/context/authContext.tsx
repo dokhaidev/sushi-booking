@@ -57,15 +57,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/user", {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000,
+        timeout: 10000, // Tăng timeout lên 10 giây
       });
       return response.data;
     } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        console.warn("Token không hợp lệ hoặc đã hết hạn");
-        return null;
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          console.warn("Request timed out");
+          return null;
+        }
+        if (error.response?.status === 401) {
+          console.warn("Token không hợp lệ hoặc đã hết hạn");
+          return null;
+        }
       }
-      throw error;
+      console.error("Lỗi validateToken:", error);
+      return null;
     }
   }, []);
 

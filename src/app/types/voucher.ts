@@ -20,7 +20,7 @@ export interface VoucherAdd {
   discount_value: number;
   start_date: string;
   end_date: string;
-  status: string;
+  status?: string;
   required_points?: number;
   required_total?: number;
   is_personal?: boolean;

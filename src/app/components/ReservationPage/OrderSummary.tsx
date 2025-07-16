@@ -1,36 +1,84 @@
 "use client";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 import {
   FiHome,
   FiClock,
   FiChevronRight,
   FiImage,
   FiPercent,
+  FiChevronDown,
+  FiTag,
 } from "react-icons/fi";
-import type {
-  Table,
-  SelectedFoodItem,
-  BookingFormData,
-  SelectedComboItem,
-} from "../../types/booking";
+
+interface FoodItem {
+  food_id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+}
+
+interface ComboItem {
+  combo_id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string | null;
+  items: {
+    name: string;
+    quantity: number;
+  }[];
+}
+
+interface FormData {
+  guest_count: number;
+  payment_method: "cash" | "online";
+}
+
+interface Table {
+  location?: string;
+}
+
+interface Voucher {
+  id: number;
+  code: string;
+  name: string;
+  discount_amount: number;
+  discount_type: "percent" | "fixed";
+  expiry_date: string;
+  min_order_amount?: number;
+  status: string;
+}
+
+// interface cho dữ liệu từ API
+interface RawVoucher {
+  id: number;
+  code: string;
+  discount_value: number;
+  end_date: string;
+  status: string;
+}
 
 interface OrderSummaryProps {
   selectedTable: Table | null;
   selectedDate: string;
   selectedTime: string;
-  foods: SelectedFoodItem[];
-  combos?: SelectedComboItem[];
-  formData: BookingFormData;
+  foods: FoodItem[];
+  formData: FormData;
   depositAmount: number;
   onAddFood: () => void;
   onAddCombo: () => void;
   onSubmitOrder: () => void;
   isLoading: boolean;
-  getPaymentAmount: () => number;
   voucherCode: string;
-  setVoucherCode: (val: string) => void;
+  setVoucherCode: (code: string) => void;
   discountAmount: number;
   applyVoucherCode: () => void;
+  combos?: ComboItem[];
+  userId?: number;
+  getPaymentAmount: () => number;
 }
 
 export default function OrderSummary({
@@ -44,23 +92,116 @@ export default function OrderSummary({
   onAddCombo,
   onSubmitOrder,
   isLoading,
-  getPaymentAmount,
   voucherCode,
   setVoucherCode,
   discountAmount,
   applyVoucherCode,
   combos = [],
+  userId,
 }: OrderSummaryProps) {
+  const [userVouchers, setUserVouchers] = useState<Voucher[]>([]);
+  const [showVoucherDropdown, setShowVoucherDropdown] = useState(false);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const displayGuestCount = Math.min(formData.guest_count, 10);
   const shouldDeposit = formData.guest_count >= 8;
   const effectiveDeposit = shouldDeposit ? depositAmount : 0;
-  const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+
+  const originalTotal =
+    foods.reduce((sum, food) => sum + food.price * food.quantity, 0) +
+    combos.reduce((sum, combo) => sum + combo.price * combo.quantity, 0);
+
+  const finalTotal = Math.max(originalTotal - discountAmount, 0);
+
   const payNowAmount =
     formData.payment_method === "cash" ? effectiveDeposit : finalTotal;
+
   const remainingCashPayment =
     formData.payment_method === "cash"
       ? Math.max(finalTotal - effectiveDeposit, 0)
       : 0;
+
+  useEffect(() => {
+    const fetchUserVouchers = async () => {
+      if (!userId) return;
+
+      setLoadingVouchers(true);
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/getAllVoucherByUser/${userId}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+
+          if (Array.isArray(data?.data)) {
+            const formattedVouchers: Voucher[] = (
+              data.data as RawVoucher[]
+            ).map((voucher) => ({
+              id: voucher.id,
+              code: voucher.code,
+              name: `Voucher ${voucher.code}`,
+              discount_amount: voucher.discount_value,
+              discount_type: "fixed",
+              expiry_date: voucher.end_date,
+              min_order_amount: 0,
+              status: voucher.status,
+            }));
+
+            const activeUniqueVouchers: Voucher[] = formattedVouchers
+              .filter(
+                (v: Voucher) =>
+                  v.status === "active" && new Date(v.expiry_date) > new Date()
+              )
+              .filter(
+                (v: Voucher, i: number, self: Voucher[]) =>
+                  i ===
+                  self.findIndex(
+                    (t: Voucher) => t.id === v.id && t.code === v.code
+                  )
+              );
+
+            setUserVouchers(activeUniqueVouchers);
+          } else {
+            setUserVouchers([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching vouchers:", error);
+        setUserVouchers([]);
+      } finally {
+        setLoadingVouchers(false);
+      }
+    };
+
+    fetchUserVouchers();
+  }, [userId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowVoucherDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleVoucherSelect = (voucher: Voucher) => {
+    setVoucherCode(voucher.code);
+    setShowVoucherDropdown(false);
+    setTimeout(() => {
+      applyVoucherCode();
+    }, 100);
+  };
+
+  const formatDiscountText = (voucher: Voucher) => {
+    return `Giảm ${voucher.discount_amount.toLocaleString()} VNĐ`;
+  };
 
   return (
     <motion.div
@@ -106,7 +247,7 @@ export default function OrderSummary({
         </div>
       )}
 
-      {/* FOOD */}
+      {/* Món ăn */}
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-medium text-gray-800">Món ăn đã chọn</h3>
         <button
@@ -127,7 +268,7 @@ export default function OrderSummary({
             >
               <div className="flex items-center">
                 {food.image ? (
-                  <img
+                  <Image
                     src={food.image || "/placeholder.svg"}
                     alt={food.name}
                     className="w-10 h-10 rounded-md object-cover mr-3"
@@ -164,7 +305,7 @@ export default function OrderSummary({
         </div>
       )}
 
-      {/* COMBO */}
+      {/* Combo */}
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-medium text-gray-800">Combo đã chọn</h3>
         <button
@@ -185,7 +326,7 @@ export default function OrderSummary({
             >
               <div className="flex items-center">
                 {combo.image ? (
-                  <img
+                  <Image
                     src={combo.image || "/placeholder.svg"}
                     alt={combo.name}
                     className="w-10 h-10 rounded-md object-cover mr-3"
@@ -203,14 +344,19 @@ export default function OrderSummary({
                     {combo.price.toLocaleString()} VNĐ × {combo.quantity}
                   </p>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {combo.items.map((item, index) => (
-                      <span
-                        key={index}
-                        className="text-xs bg-gray-100 px-2 py-0.5 rounded"
-                      >
-                        {item.name} × {item.quantity}
-                      </span>
-                    ))}
+                    {combo.items.map(
+                      (
+                        item: { name: string; quantity: number },
+                        index: number
+                      ) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-gray-100 px-2 py-0.5 rounded"
+                        >
+                          {item.name} × {item.quantity}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -232,27 +378,90 @@ export default function OrderSummary({
         </div>
       )}
 
-      {/* VOUCHER */}
+      {/* Voucher Section */}
       <div className="mt-3 mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Mã giảm giá
         </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={voucherCode}
-            onChange={(e) => setVoucherCode(e.target.value)}
-            placeholder="Nhập mã giảm giá..."
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF763E]"
-          />
-          <button
-            onClick={applyVoucherCode}
-            className="bg-[#AF763E] text-white px-4 py-2 rounded-md text-sm hover:opacity-90"
-            disabled={isLoading}
-          >
-            Áp dụng
-          </button>
+        <div className="relative" ref={dropdownRef}>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+                onFocus={() => setShowVoucherDropdown(true)}
+                placeholder="Nhập mã giảm giá..."
+                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF763E]"
+              />
+              <button
+                onClick={() => setShowVoucherDropdown(!showVoucherDropdown)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <FiChevronDown size={16} />
+              </button>
+            </div>
+            <button
+              onClick={applyVoucherCode}
+              className="bg-[#AF763E] text-white px-4 py-2 rounded-md text-sm hover:opacity-90"
+              disabled={isLoading}
+            >
+              Áp dụng
+            </button>
+          </div>
+
+          {/* Voucher Dropdown */}
+          {showVoucherDropdown && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+              {loadingVouchers ? (
+                <div className="p-3 text-center text-gray-500">
+                  <span className="animate-spin mr-2">↻</span>
+                  Đang tải voucher...
+                </div>
+              ) : userVouchers.length === 0 ? (
+                <div className="p-3 text-center text-gray-500">
+                  Không có voucher khả dụng
+                </div>
+              ) : (
+                userVouchers.map((voucher) => (
+                  <div
+                    key={voucher.id}
+                    onClick={() => handleVoucherSelect(voucher)}
+                    className="p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="bg-orange-100 p-2 rounded-lg">
+                        <FiTag className="text-orange-600" size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">
+                              {voucher.code}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {voucher.name}
+                            </p>
+                          </div>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                            {formatDiscountText(voucher)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          HSD:{" "}
+                          {new Date(voucher.expiry_date).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
+
         {discountAmount > 0 && (
           <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
             <FiPercent className="text-green-500" />
@@ -261,20 +470,22 @@ export default function OrderSummary({
         )}
       </div>
 
-      {/* TÍNH TIỀN */}
+      {/* Tính tiền */}
       <div className="border-t border-gray-200 pt-3">
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">Tạm tính:</span>
           <span className="font-medium">
-            {formData.total_price.toLocaleString()} VNĐ
+            {originalTotal.toLocaleString()} VNĐ
           </span>
         </div>
+
         {discountAmount > 0 && (
           <div className="flex justify-between mb-1 text-green-700">
             <span className="text-sm">Giảm giá:</span>
             <span>-{discountAmount.toLocaleString()} VNĐ</span>
           </div>
         )}
+
         <div className="flex justify-between mb-1">
           <span className="text-gray-600">Tiền cọc:</span>
           <span className="font-medium text-orange-600">
@@ -282,7 +493,6 @@ export default function OrderSummary({
           </span>
         </div>
 
-        {/* PHƯƠNG THỨC THANH TOÁN */}
         {formData.payment_method === "cash" ? (
           <div className="bg-blue-50 rounded-lg p-3 mt-3 mb-3">
             <p className="text-sm text-blue-700 font-medium">

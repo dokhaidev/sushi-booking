@@ -55,10 +55,7 @@ export default function DrinksSection() {
   };
 
   return (
-    <section
-      id="drinks"
-      className="py-16 px-4 sm:px-10 lg:px-24 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0]"
-    >
+    <section id="drinks" className="py-16 px-4 sm:px-10 lg:px-24 bg-[#F8F1E9]">
       <div className="container mx-auto max-w-8xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

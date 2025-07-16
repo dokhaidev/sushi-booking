@@ -12,17 +12,24 @@ import ComboSelectionModal from "../../../components/ReservationPage/ComboSelect
 import { useBooking } from "../../../hooks/useBooking";
 import { useAuth } from "../../../context/authContext";
 import {
-  SelectedFoodItem,
   ComboItem,
   SelectedComboItem,
+  Category,
   FoodItem,
-} from "../../../types/booking";
+  Combo,
+} from "@/src/app/types/booking";
+
+// Extended type for OrderSummary requirements
+interface OrderSummaryComboItem extends ComboItem {
+  combo_id: number;
+  quantity: number;
+}
 
 export default function DatBanPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, isInitialized } = useAuth();
+
   const {
-    // State
     selectedDate,
     setSelectedDate,
     availableSlots,
@@ -34,34 +41,24 @@ export default function DatBanPage() {
     combos,
     foodsData,
     combosData,
-    orderId,
     showFoodModal,
     setShowFoodModal,
     showComboModal,
     setShowComboModal,
     activeFoodCategory,
     setActiveFoodCategory,
-    activeComboCategory,
-    setActiveComboCategory,
-    depositAmount,
-    showPaymentModal,
-    setShowPaymentModal,
-    paymentQRCode,
-    paymentCompleted,
     notification,
     setNotification,
     today,
     voucherCode,
     setVoucherCode,
     discountAmount,
-
-    // Functions
+    fetchUserVouchers,
     fetchAvailableSlots,
     fetchFoods,
     fetchCombos,
     handleSelectTime,
     submitOrder,
-    handlePaymentComplete,
     handleAddFood,
     handleRemoveFood,
     handleFoodQuantityChange,
@@ -72,13 +69,21 @@ export default function DatBanPage() {
     applyVoucherCode,
   } = useBooking();
 
-  // Redirect if not authenticated
+  const currentUserId = user?.id || user?.user_id || null;
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchUserVouchers(Number(currentUserId));
+    }
+  }, [currentUserId, fetchUserVouchers]);
+
   useEffect(() => {
     if (isInitialized && !user && !authLoading) {
       router.replace(`/dang-nhap?returnUrl=${encodeURIComponent("/dat-ban")}`);
     }
   }, [user, authLoading, isInitialized, router]);
 
+  // Loading state
   if (!isInitialized || authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -87,42 +92,92 @@ export default function DatBanPage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // Fix: Handle null/undefined image values and normalize combo data structure
+  // Normalize foods data
+  const normalizedFoodsData: FoodItem[] = foodsData.map((food) => {
+    let category: Category | undefined;
+
+    if (food.category && typeof food.category === "object") {
+      category = {
+        id: Number(food.category.id),
+        name: food.category.name,
+        description: food.category.description || "",
+        status: food.category.status || 1,
+        created_at: food.category.created_at || new Date().toISOString(),
+        updated_at: food.category.updated_at || new Date().toISOString(),
+      };
+    }
+
+    return {
+      id: food.id,
+      name: food.name,
+      description: food.description || "",
+      price:
+        typeof food.price === "string" ? parseFloat(food.price) : food.price,
+      image: food.image || undefined,
+      category,
+      category_id: food.category_id || 0,
+      group_id: food.group_id || 0,
+      jpName: food.jpName || "",
+      status: food.status || 1,
+      created_at: food.created_at || new Date().toISOString(),
+      updated_at: food.updated_at || new Date().toISOString(),
+    };
+  });
+
+  const normalizedSelectedFoods = foods.map((food) => ({
+    id: food.food_id,
+    name: food.name,
+    price: typeof food.price === "string" ? parseFloat(food.price) : food.price,
+    quantity: food.quantity,
+    image: food.image || undefined,
+    description: food.description || "",
+    food_id: food.food_id,
+  }));
+
+  // Normalize combos data for display
   const normalizedCombosData: ComboItem[] = combosData.map((combo) => ({
     id: combo.id,
     name: combo.name,
-    description: combo.description,
-    price: parseFloat(combo.price), // Convert string to number
-    image: combo.image ?? undefined, // Convert null to undefined
+    description: combo.description || "",
+    price: parseFloat(combo.price),
+    image: combo.image || undefined,
     items: combo.combo_items.map((item) => ({
       food_id: item.food_id,
       name: item.food.name,
-      price: item.food.price,
+      price: parseFloat(item.food.price),
       quantity: item.quantity,
     })),
   }));
 
-  // Chuyển đổi foods sang SelectedFoodItem (thêm id property)
-  const normalizedFoods: SelectedFoodItem[] = foods.map((food) => ({
-    id: food.food_id, // Add missing id property
-    food_id: food.food_id,
-    name: food.name,
-    price: food.price,
-    quantity: food.quantity,
-    image: food.image,
-  }));
+  // Convert to OrderSummary specific type
+  const combosForOrderSummary: OrderSummaryComboItem[] = combos.map(
+    (combo) => ({
+      id: combo.id,
+      combo_id: combo.combo_id,
+      name: combo.name,
+      description: combo.description || "",
+      price:
+        typeof combo.price === "string" ? parseFloat(combo.price) : combo.price,
+      image: combo.image || undefined,
+      quantity: combo.quantity,
+      items: combo.items.map((item) => ({
+        food_id: item.food_id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    })
+  );
 
-  // Fix: Handle null/undefined image values in combos
+  // For combo selection modal
   const normalizedCombos: SelectedComboItem[] = combos.map((combo) => ({
     combo_id: combo.combo_id,
     id: combo.id,
     name: combo.name,
     price:
-      typeof combo.price === "string" ? parseFloat(combo.price) : combo.price, // Ensure number type
+      typeof combo.price === "string" ? parseFloat(combo.price) : combo.price,
     quantity: combo.quantity,
     items: combo.items.map((item) => ({
       food_id: item.food_id,
@@ -130,54 +185,50 @@ export default function DatBanPage() {
       price: item.price,
       quantity: item.quantity,
     })),
-    image: combo.image ?? undefined, // Convert null to undefined
-    description: combo.description,
+    image: combo.image || undefined,
+    description: combo.description || "",
   }));
 
-  // Wrapper function để xử lý type mismatch cho FoodItem
   const handleAddFoodWrapper = (food: FoodItem) => {
-    // Chuyển đổi FoodItem từ component sang format mà hook expect
-    const normalizedFood: FoodItem = {
+    const category_id = food.category?.id || food.category_id || 0;
+
+    handleAddFood({
       ...food,
-      category:
-        typeof food.category === "object" && food.category !== null
-          ? food.category.name
-          : food.category,
-    };
-    handleAddFood(normalizedFood);
+      price: food.price.toString(),
+      description: food.description || null,
+      image: food.image || null,
+      category_id,
+      group_id: food.group_id || 0,
+      jpName: food.jpName || "",
+      status: food.status || 1,
+      created_at: food.created_at,
+      updated_at: food.updated_at,
+    });
   };
 
-  // Fix: Create a proper wrapper that matches the expected ComboItem type from the modal
   const handleAddComboWrapper = (combo: ComboItem) => {
-    // Create a proper Combo object that matches the hook's expected structure
-    const normalizedCombo = {
+    handleAddCombo({
       id: combo.id,
       name: combo.name,
-      image: combo.image ?? null, // Handle undefined by converting to null
+      image: combo.image || null,
       description: combo.description || "",
-      price: combo.price.toString(), // Convert number back to string for hook
-      status: 1, // Default active status
+      price: combo.price.toString(),
+      status: 1,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       combo_items: combo.items.map((item) => ({
-        id: 0, // Placeholder id
+        id: 0,
         combo_id: combo.id,
         food_id: item.food_id,
         quantity: item.quantity,
         food: {
           id: item.food_id,
           name: item.name,
-          price: item.price,
+          price: item.price.toString(),
         },
       })),
-    };
-    handleAddCombo(normalizedCombo);
+    });
   };
-
-  const remainingCashPayment = Math.max(
-    (formData.total_price || 0) - depositAmount,
-    0
-  );
 
   return (
     <div className="container mx-auto py-[60px] sm:px-16 lg:px-24">
@@ -185,9 +236,7 @@ export default function DatBanPage() {
         {notification.show && (
           <NotificationPopup
             message={notification.message}
-            onClose={() =>
-              setNotification((prev) => ({ ...prev, show: false }))
-            }
+            onClose={() => setNotification({ ...notification, show: false })}
           />
         )}
       </AnimatePresence>
@@ -227,13 +276,18 @@ export default function DatBanPage() {
 
         <div className="space-y-6">
           <OrderSummary
+            userId={currentUserId}
             selectedTable={selectedTable}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            foods={normalizedFoods}
-            combos={normalizedCombos}
-            formData={formData}
-            depositAmount={depositAmount}
+            foods={normalizedSelectedFoods}
+            combos={combosForOrderSummary}
+            formData={{
+              ...formData,
+              payment_method:
+                formData.payment_method === "online" ? "online" : "cash",
+            }}
+            depositAmount={0}
             onAddFood={() => {
               setShowFoodModal(true);
               fetchFoods();
@@ -256,18 +310,27 @@ export default function DatBanPage() {
       <FoodSelectionModal
         isOpen={showFoodModal}
         onClose={() => setShowFoodModal(false)}
-        foods={foodsData}
-        selectedFoods={normalizedFoods}
+        foods={normalizedFoodsData}
+        selectedFoods={normalizedSelectedFoods}
         activeFoodCategory={activeFoodCategory}
         setActiveFoodCategory={setActiveFoodCategory}
-        onAddFood={handleAddFoodWrapper} // Use wrapper function
+        onAddFood={handleAddFoodWrapper}
         onRemoveFood={handleRemoveFood}
         onQuantityChange={handleFoodQuantityChange}
-        totalPrice={normalizedFoods.reduce(
+        totalPrice={normalizedSelectedFoods.reduce(
           (sum, food) => sum + food.price * food.quantity,
           0
         )}
         isLoading={authLoading}
+        categories={
+          Array.from(
+            new Map(
+              foodsData
+                .filter((food) => food.category)
+                .map((food) => [food.category?.id, food.category])
+            ).values()
+          ).filter(Boolean) as Category[]
+        }
       />
 
       <ComboSelectionModal
@@ -275,7 +338,7 @@ export default function DatBanPage() {
         onClose={() => setShowComboModal(false)}
         combos={normalizedCombosData}
         selectedCombos={normalizedCombos}
-        onAddCombo={handleAddComboWrapper} // Use wrapper function
+        onAddCombo={handleAddComboWrapper}
         onRemoveCombo={handleRemoveCombo}
         onQuantityChange={handleComboQuantityChange}
         totalPrice={normalizedCombos.reduce(

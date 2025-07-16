@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import Banner from "@/src/app/components/MenuPage/Banner";
-import MenuHeader from "../../../components/MenuPage/MenuHeader";
 import AppetizersSection from "../../../components/MenuPage/sections/appertizerSection";
 import SushiSection from "../../../components/MenuPage/sections/sushiSection";
 import SashimiSection from "../../../components/MenuPage/sections/sashimiSection";
@@ -89,21 +88,16 @@ export default function MenuPage() {
   } as const;
 
   return (
-    <div className="min-h-screen bg-[#FFF9F0]">
+    <div className="min-h-screen">
       <Banner />
       {/* Combo Slider */}
       <ComboSlider />
 
       {/* Enhanced Menu Header */}
-      <div className="relative py-8 bg-gradient-to-br from-[#FEFCF8] to-[#F8F5F0]">
+      <div className="relative py-15 bg-[#F8F1E9]">
         <div className="container mx-auto px-4">
-          {/* Title with decorative elements */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-8"
-          >
+          {/* Title */}
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-white px-6 py-2 rounded-full shadow-sm mb-4">
               <ChefHat className="text-[#A68345]" size={18} />
               <span className="text-[#A68345] font-medium tracking-wider">
@@ -121,42 +115,28 @@ export default function MenuPage() {
               Khám phá các món ăn đặc biệt được chế biến từ nguyên liệu tươi
               ngon nhất
             </p>
-          </motion.div>
+          </div>
 
-          {/* Enhanced Category Navigation */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "0px 0px -50px 0px" }}
-            className="flex flex-wrap justify-center gap-3 mt-6"
-          >
+          {/* Category Navigation (đơn giản, đẹp, hiệu năng cao) */}
+          <div className="flex flex-wrap justify-center gap-4">
             {categories.map((cate) => (
-              <motion.button
+              <button
                 key={cate.id}
-                variants={tabVariants}
-                whileHover="hover"
                 onClick={() => handleScrollToSection(cate.id)}
-                className={`group relative px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                className={`px-7 py-3 rounded-full border text-base font-medium transition-all duration-200 ${
                   selectedCategoryId === cate.id
-                    ? "bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white shadow-lg"
-                    : "bg-white text-[#333] border border-[#e0e0e0] hover:border-[#A68345]/50 hover:shadow-md"
+                    ? "bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white shadow-md"
+                    : "bg-white border-[#A68345]/20 text-gray-800 hover:border-[#A68345]"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">
-                    {categoryIcons[cate.name] || "🍽️"}
-                  </span>
-                  <span className="whitespace-nowrap">{cate.name}</span>
-                </div>
-              </motion.button>
+                <span className="mr-2">{categoryIcons[cate.name] || "🍽️"}</span>
+                {cate.name}
+              </button>
             ))}
-          </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* Menu Header */}
-      <MenuHeader />
       {/* Menu Sections */}
       <div ref={sectionRefs[1]}>
         <AppetizersSection />

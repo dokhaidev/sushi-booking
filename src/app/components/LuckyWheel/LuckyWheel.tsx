@@ -1,30 +1,29 @@
 "use client";
+
 import { useEffect, useState, useRef } from "react";
-import { X, CheckCircle } from "lucide-react";
-import axios from "axios";
+import { X } from "lucide-react";
+import axios, { AxiosError } from "axios";
 import confetti from "canvas-confetti";
 import Confetti from "react-confetti";
 import { useAuth } from "../../context/authContext";
+import NotificationPopup from "../layout/NotificationPopup";
 
 interface Voucher {
   id: number;
   code: string;
   discount_value: number;
-  status: string;
+  status?: string;
 }
 
 export default function LuckyWheel() {
   const { user } = useAuth();
-  const [rotation, setRotation] = useState(0);
   const [open, setOpen] = useState(false);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [displayVouchers, setDisplayVouchers] = useState<string[]>([]);
   const [result, setResult] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinCount, setSpinCount] = useState(0);
-  const [savedResults, setSavedResults] = useState<
-    { label: string; saved: boolean }[]
-  >([]);
+  const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
 
   const wheelRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -46,29 +45,19 @@ export default function LuckyWheel() {
     "#F43F5E",
   ];
 
-  const sushiIcons = ["🍣", "🍤", "🍱", "🍙", "🍘", "🍥", "🍢", "🍡"];
-
   useEffect(() => {
     const fetchVouchers = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/voucher");
-        const activeVouchers = res.data.filter(
-          (v: Voucher) => v.status === "active"
+        const res = await axios.get(
+          "http://127.0.0.1:8000/api/voucherForCustomer"
         );
-        setVouchers(activeVouchers);
-
-        const formatted: string[] = activeVouchers.map(
+        setVouchers(res.data);
+        const formatted = res.data.map(
           (v: Voucher) =>
             `Giảm ${v.discount_value.toLocaleString("vi-VN")}đ | ${v.code}`
         );
-
-        setDisplayVouchers([
-          ...formatted,
-          "Chúc bạn may mắn lần sau",
-          "Thử lại lần sau",
-        ]);
-      } catch (err) {
-        console.error("Lỗi API:", err);
+        setDisplayVouchers([...formatted, "Chúc bạn may mắn lần sau"]);
+      } catch {
         setDisplayVouchers(["Chúc bạn may mắn lần sau", "Thử lại lần sau"]);
       }
     };
@@ -82,37 +71,26 @@ export default function LuckyWheel() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
   const isVoucher = (text: string) =>
     !text.includes("may mắn") && !text.includes("Thử lại");
 
-  const handleSaveVoucher = async (voucherText: string, index: number) => {
-    const matchedVoucher = vouchers.find((v) => voucherText.includes(v.code));
-    if (matchedVoucher && user) {
-      try {
-        const res = await axios.post(
-          "http://127.0.0.1:8000/api/themVoucherWheel",
-          {
-            customer_id: user.id,
-            voucher_id: matchedVoucher.id,
-          }
-        );
-        alert(res.data.message || "🎉 Voucher đã được lưu!");
-        setSavedResults((prev) => {
-          const updated = [...prev];
-          updated[index].saved = true;
-          return updated;
-        });
-      } catch (err: any) {
-        alert(
-          err?.response?.data?.message ||
-            "❌ Đã xảy ra lỗi khi lưu voucher. Vui lòng thử lại."
-        );
-      }
-    }
-  };
-
   const spinWheel = async () => {
-    if (spinning || displayVouchers.length === 0 || spinCount <= 0) return;
+    if (spinning || displayVouchers.length === 0 || spinCount <= 0 || !user)
+      return;
 
     setSpinning(true);
     setResult(null);
@@ -120,46 +98,72 @@ export default function LuckyWheel() {
     const rewardCount = displayVouchers.length;
     const randomIndex = Math.floor(Math.random() * rewardCount);
     const degreePerItem = 360 / rewardCount;
-    const rotation =
-      360 * SPIN_CONFIG.spinCount + (rewardCount - randomIndex) * degreePerItem;
+    const newRotation =
+      360 * SPIN_CONFIG.spinCount +
+      randomIndex * degreePerItem +
+      degreePerItem / 2;
 
     if (wheelRef.current) {
       wheelRef.current.style.transition = `transform ${SPIN_CONFIG.duration}ms ${SPIN_CONFIG.easing}`;
-      wheelRef.current.style.transform = `rotate(${rotation}deg)`;
+      wheelRef.current.style.transform = `rotate(${newRotation}deg)`;
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const selectedReward = displayVouchers[randomIndex];
       setResult(selectedReward);
       setSpinning(false);
       setSpinCount((prev) => prev - 1);
 
-      if (isVoucher(selectedReward)) {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        setSavedResults((prev) => [
-          { label: selectedReward, saved: false },
-          ...prev,
-        ]);
+      const matchedVoucher = vouchers.find((v) =>
+        selectedReward.includes(v.code)
+      );
+
+      try {
+        const res = await axios.post(
+          "http://127.0.0.1:8000/api/themVoucherWheel",
+          {
+            customer_id: Number(user.id),
+            voucher_id: matchedVoucher ? matchedVoucher.id : null,
+          }
+        );
+
+        if (matchedVoucher) {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+
+        setNotifyMessage(
+          res.data.message || "🎉 Bạn đã nhận được phần thưởng!"
+        );
+      } catch (err: unknown) {
+        const error = err as AxiosError<{ message?: string }>;
+        setNotifyMessage(
+          error?.response?.data?.message || "❌ Có lỗi xảy ra khi quay thưởng."
+        );
       }
     }, SPIN_CONFIG.duration);
   };
 
   return (
     <>
-      <div className="fixed bottom-24 right-6 z-50">
+      {/* Nút quay */}
+      <div className="fixed bottom-36 right-6 z-50">
         <button
           onClick={() => setOpen(true)}
-          className="bg-gradient-to-br from-amber-800 to-amber-600 text-white p-5 rounded-full shadow-xl hover:scale-105 transition-transform"
+          className="relative p-5 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 shadow-xl hover:scale-110 transition-transform text-white font-bold text-xl"
         >
-          🎯 Quay
+          🎯
+          <span className="absolute -top-2 -right-2 bg-white text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full shadow">
+            {spinCount}
+          </span>
         </button>
       </div>
 
+      {/* Popup vòng quay */}
       {open && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
           <div
             ref={popupRef}
-            className="relative bg-white rounded-3xl p-6 max-w-md w-full text-center shadow-2xl border"
+            className="relative bg-white rounded-3xl p-6 max-w-lg w-full text-center shadow-2xl border"
           >
             <button
               onClick={() => setOpen(false)}
@@ -175,11 +179,11 @@ export default function LuckyWheel() {
               Bạn còn <strong>{spinCount}</strong> lượt quay
             </p>
 
-            <div className="w-64 h-64 mx-auto mb-6">
+            {/* Vòng quay */}
+            <div className="relative w-96 h-96 mx-auto mb-6">
               <div
                 ref={wheelRef}
                 className="rounded-full w-full h-full bg-gray-100 border-4 border-amber-300 flex items-center justify-center transition-transform"
-                style={{ transform: `rotate(${rotation}deg)` }}
               >
                 <svg className="w-full h-full" viewBox="0 0 200 200">
                   {displayVouchers.map((_, index) => {
@@ -223,7 +227,7 @@ export default function LuckyWheel() {
             <button
               onClick={spinWheel}
               disabled={spinning || spinCount <= 0}
-              className={`w-full py-3 font-semibold rounded-lg text-white ${
+              className={`w-full py-3 font-semibold rounded-lg text-white transition-colors ${
                 spinning || spinCount <= 0
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-amber-600 hover:bg-amber-700"
@@ -232,6 +236,7 @@ export default function LuckyWheel() {
               {spinning ? "Đang quay..." : "Quay ngay"}
             </button>
 
+            {/* Kết quả quay */}
             {result && !spinning && (
               <div className="mt-4 p-4 rounded-xl bg-white border-2 shadow">
                 <h3 className="font-bold text-lg mb-1">
@@ -240,46 +245,21 @@ export default function LuckyWheel() {
                     : "Chúc bạn may mắn lần sau!"}
                 </h3>
                 <p>{result}</p>
-
                 {isVoucher(result) && (
                   <Confetti width={300} height={150} recycle={false} />
                 )}
               </div>
             )}
-
-            {/* Danh sách voucher đã trúng */}
-            {savedResults.length > 0 && (
-              <div className="mt-6 text-left">
-                <h4 className="font-bold mb-2 text-amber-700">
-                  🎁 Voucher bạn đã trúng:
-                </h4>
-                <ul className="space-y-2 max-h-40 overflow-auto pr-1">
-                  {savedResults.map((item, index) => (
-                    <li
-                      key={index}
-                      className="flex items-center justify-between bg-yellow-50 p-3 rounded-md border"
-                    >
-                      <span className="text-sm">{item.label}</span>
-                      {item.saved ? (
-                        <span className="text-green-600 text-xs font-semibold flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Đã lưu
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleSaveVoucher(item.label, index)}
-                          className="text-white text-xs bg-amber-600 hover:bg-amber-700 px-3 py-1 rounded-md"
-                        >
-                          Lưu voucher
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
+      )}
+
+      {/* Popup thông báo */}
+      {notifyMessage && (
+        <NotificationPopup
+          message={notifyMessage}
+          onClose={() => setNotifyMessage(null)}
+        />
       )}
     </>
   );
