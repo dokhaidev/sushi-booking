@@ -13,7 +13,22 @@ export type Namespace =
   | "menu"
   | "myStory"
   | "favourite"
-  | "callToAction";
+  | "callToAction"
+  | "product"
+  | "aboutHero"
+  | "introduction"
+  | "history"
+  | "philosophy"
+  | "chefs"
+  | "restaurant"
+  | "core"
+  | "contactHero"
+  | "contactInfo"
+  | "contactFAQ"
+  | "contactTestimonials"
+  | "contactMap"
+  | "loginPage"
+  | "register";
 
 export type NamespacedTranslations = Record<Namespace, Translations>;
 

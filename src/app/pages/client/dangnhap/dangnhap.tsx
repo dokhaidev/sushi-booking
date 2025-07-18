@@ -7,6 +7,7 @@ import axios from "axios";
 import Link from "next/link";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "../../../lib/i18n/client";
 
 interface Errors {
   email?: string;
@@ -24,6 +25,7 @@ interface LoginResponse {
 }
 
 export default function LoginPage() {
+  const { t, lang } = useTranslation("loginPage");
   const { login, logout, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState<string>("");
@@ -144,7 +146,6 @@ export default function LoginPage() {
   };
 
   // Show loading while checking auth state
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-amber-50 flex items-center justify-center">
@@ -191,9 +192,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-[#333333]">
-              Đang kiểm tra đăng nhập
-            </h2>
+            <h2 className="text-xl font-bold text-[#333333]">{t("title")}</h2>
             <p className="text-[#5F3E1B]">Vui lòng chờ trong giây lát...</p>
 
             {/* Progress bar for better UX */}
@@ -263,11 +262,9 @@ export default function LoginPage() {
           {/* Logo Sushi */}
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold text-[#333333] mb-2">
-              Đăng nhập
+              {t("title")}
             </h1>
-            <p className="text-[#333333]">
-              Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục
-            </p>
+            <p className="text-[#333333]">{t("description")}</p>
           </div>
 
           {/* Login Card */}
@@ -288,7 +285,7 @@ export default function LoginPage() {
                     htmlFor="email"
                     className="block text-sm font-medium text-[#333333] mb-1"
                   >
-                    Email
+                    {t("email")}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -334,13 +331,13 @@ export default function LoginPage() {
                       htmlFor="password"
                       className="block text-sm font-medium text-[#333333]"
                     >
-                      Mật khẩu
+                      {t("password")}
                     </label>
                     <Link
                       href="/quen-mat-khau"
                       className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
                     >
-                      Quên mật khẩu?
+                      {t("forgot")}
                     </Link>
                   </div>
                   <div className="relative">
@@ -394,7 +391,7 @@ export default function LoginPage() {
                     htmlFor="remember"
                     className="ml-2 block text-sm text-red-800"
                   >
-                    Ghi nhớ đăng nhập
+                    {t("remember")}
                   </label>
                 </div>
 
@@ -430,7 +427,7 @@ export default function LoginPage() {
                         Đang đăng nhập...
                       </span>
                     ) : (
-                      "Đăng nhập"
+                      t("loginButton")
                     )}
                   </button>
                 </div>
@@ -443,7 +440,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-red-800">
-                      Hoặc tiếp tục với
+                      {t("or")}
                     </span>
                   </div>
                 </div>
@@ -462,7 +459,7 @@ export default function LoginPage() {
                     >
                       <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
                     </svg>
-                    Đăng nhập với Google
+                    <span>{t("google")}</span>
                   </button>
                 </div>
               </div>
@@ -470,12 +467,12 @@ export default function LoginPage() {
 
             <div className="px-8 py-4 bg-red-50 text-center">
               <p className="text-sm text-red-800">
-                Chưa có tài khoản?{" "}
+                {t("dontHaveAccount")}
                 <Link
-                  href="/dang-ky"
+                  href={`/${lang}/dang-ky`}
                   className="font-medium text-amber-700 hover:text-amber-800"
                 >
-                  Đăng ký ngay
+                  {t("register")}
                 </Link>
               </p>
             </div>

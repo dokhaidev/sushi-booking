@@ -1,23 +1,26 @@
 "use client";
 import { motion } from "framer-motion";
 import { Mail, MapPin, Phone, ChevronRight } from "lucide-react";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function ContactInfo() {
+  const { t } = useTranslation("contactInfo"); // namespace: contact
+
   const contacts = [
     {
-      title: "Địa chỉ nhà hàng",
+      title: t("addressTitle"),
       icon: <MapPin className="w-6 h-6 text-[#AF763E]" />,
-      content: "123 Đường Nhật Bản, Quận 1, TP.HCM",
+      content: t("addressContent"),
     },
     {
-      title: "Hotline đặt bàn",
+      title: t("hotlineTitle"),
       icon: <Phone className="w-6 h-6 text-[#AF763E]" />,
-      content: "0909 123 456",
+      content: t("hotlineContent"),
     },
     {
-      title: "Email liên hệ",
+      title: t("emailTitle"),
       icon: <Mail className="w-6 h-6 text-[#AF763E]" />,
-      content: "contact@sushitakumi.vn",
+      content: t("emailContent"),
     },
   ];
 
@@ -27,14 +30,14 @@ export default function ContactInfo() {
         <div className="inline-flex items-center gap-2 text-[#AF763E] mb-2">
           <MapPin className="w-5 h-5" />
           <span className="uppercase text-sm tracking-wide font-semibold">
-            Liên hệ
+            {t("sectionLabel")}
           </span>
         </div>
         <h2 className="text-3xl md:text-4xl font-bold text-[#4B3B2A]">
-          Thông tin liên hệ
+          {t("heading")}
         </h2>
         <p className="text-[#6D5F50] mt-3 max-w-xl mx-auto">
-          Chúng tôi luôn sẵn sàng hỗ trợ và phục vụ bạn tốt nhất có thể.
+          {t("description")}
         </p>
       </div>
 
@@ -56,7 +59,7 @@ export default function ContactInfo() {
             </div>
             <p className="text-[#5B4A3B] mb-6">{contact.content}</p>
             <button className="mt-auto inline-flex items-center gap-2 px-4 py-2 bg-[#AF763E] text-white rounded-full text-sm hover:shadow-md transition">
-              Liên hệ ngay <ChevronRight className="w-4 h-4" />
+              {t("contactNow")} <ChevronRight className="w-4 h-4" />
             </button>
           </motion.div>
         ))}
@@ -64,11 +67,10 @@ export default function ContactInfo() {
 
       <div className="max-w-4xl mx-auto mt-16 text-center">
         <blockquote className="text-lg italic text-[#AF763E]/80 leading-relaxed mb-4">
-          &quot;Sushi Takumi luôn lắng nghe và đồng hành cùng bạn trong từng
-          trải nghiệm.&quot;
+          &quot;{t("quote")}&quot;
         </blockquote>
         <cite className="text-sm font-semibold text-[#AF763E] not-italic">
-          — Đội ngũ Sushi Takumi
+          — {t("quoteAuthor")}
         </cite>
       </div>
     </section>

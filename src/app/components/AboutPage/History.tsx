@@ -1,19 +1,49 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { Clock, Award, Users, Heart } from "lucide-react";
 import Image from "next/image";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function History() {
+  const { t } = useTranslation("history");
+
+  const milestones = [
+    {
+      year: "1995",
+      location: t("milestones.1995.location"),
+      title: t("milestones.1995.title"),
+      description: t("milestones.1995.description"),
+    },
+    {
+      year: "2015",
+      location: t("milestones.2015.location"),
+      title: t("milestones.2015.title"),
+      description: t("milestones.2015.description"),
+    },
+    {
+      year: "2024",
+      location: t("milestones.2024.location"),
+      title: t("milestones.2024.title"),
+      description: t("milestones.2024.description"),
+    },
+  ];
+
+  const stats = [
+    { icon: Award, num: "15+", label: t("stats.awards") },
+    { icon: Users, num: "10K+", label: t("stats.customers") },
+    { icon: Heart, num: "4.9★", label: t("stats.rating") },
+  ];
+
   return (
     <section className="bg-white py-[60px] px-6 lg:px-20 relative overflow-hidden">
-      {/* Subtle Background Elements */}
+      {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute top-20 right-20 w-20 h-4 bg-gradient-to-r from-[#AF763E]/20 to-[#8B5A2B]/20 rounded-full"
           animate={{ scaleX: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
-
         <motion.div
           className="absolute bottom-32 left-16 w-8 h-8 border-2 border-[#AF763E]/20 rounded-full bg-white/50"
           animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
@@ -29,7 +59,7 @@ export default function History() {
       </div>
 
       <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center relative z-10">
-        {/* Image Section */}
+        {/* Image */}
         <motion.div
           className="relative"
           initial={{ opacity: 0, x: -50 }}
@@ -44,7 +74,7 @@ export default function History() {
           >
             <Image
               src="/img/history.jpg"
-              alt="Sushi Takumi History - From Tokyo to Saigon"
+              alt={t("imageAlt")}
               width={600}
               height={500}
               className="w-full h-[500px] object-cover group-hover:scale-105 transition-transform duration-700"
@@ -55,8 +85,8 @@ export default function History() {
               initial={{ y: 20 }}
               whileHover={{ y: 0 }}
             >
-              <p className="font-semibold text-base">Hành trình 30 năm</p>
-              <p className="text-xs opacity-90">Từ Tokyo đến Sài Gòn</p>
+              <p className="font-semibold text-base">{t("badge.title")}</p>
+              <p className="text-xs opacity-90">{t("badge.subtitle")}</p>
             </motion.div>
             <div className="absolute inset-0 border-4 border-[#AF763E]/30 rounded-3xl group-hover:border-[#AF763E]/60 transition-colors duration-500" />
           </motion.div>
@@ -70,7 +100,7 @@ export default function History() {
           >
             <div className="text-center">
               <div className="text-xl font-bold">30+</div>
-              <div className="text-xs opacity-90">Năm kinh nghiệm</div>
+              <div className="text-xs opacity-90">{t("experience")}</div>
             </div>
           </motion.div>
 
@@ -83,12 +113,12 @@ export default function History() {
           >
             <div className="text-center">
               <div className="text-xl font-bold text-[#AF763E]">2</div>
-              <div className="text-xs text-[#AF763E]/70">Quốc gia</div>
+              <div className="text-xs text-[#AF763E]/70">{t("countries")}</div>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Text Content */}
+        {/* Text */}
         <motion.div
           className="space-y-10"
           initial={{ opacity: 0, x: 50 }}
@@ -110,18 +140,16 @@ export default function History() {
                 }}
                 style={{ backgroundSize: "200% 200%" }}
               >
-                Lịch Sử Hình Thành
+                {t("title")}
               </motion.span>
             </h3>
             <p className="text-[#AF763E]/80 leading-relaxed text-base sm:text-lg max-w-2xl">
-              Hành trình từ một cửa hàng nhỏ tại Tokyo đến chuỗi nhà hàng danh
-              tiếng tại Việt Nam là kết tinh của đam mê, truyền thống và sáng
-              tạo không ngừng nghỉ.
+              {t("description")}
             </p>
           </div>
 
           <div className="space-y-10">
-            {["1995", "2015", "2024"].map((year, i) => (
+            {milestones.map((item, i) => (
               <motion.div
                 key={i}
                 className="group relative"
@@ -137,26 +165,18 @@ export default function History() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">
                       <span className="text-xl font-bold bg-gradient-to-r from-[#AF763E] to-[#8B5A2B] bg-clip-text text-transparent">
-                        {year}
+                        {item.year}
                       </span>
                       <span className="text-[#AF763E]/60 text-base">—</span>
                       <span className="text-base text-[#AF763E]/80 font-medium">
-                        {i === 0 ? "Tokyo" : i === 1 ? "Sài Gòn" : "Hiện tại"}
+                        {item.location}
                       </span>
                     </div>
                     <h4 className="text-lg font-bold text-[#AF763E] group-hover:text-[#8B5A2B] transition-colors duration-300">
-                      {i === 0
-                        ? "Khởi Nguồn Đam Mê"
-                        : i === 1
-                        ? "Mở Rộng Tầm Nhìn"
-                        : "Thành Tựu Vượt Trội"}
+                      {item.title}
                     </h4>
                     <p className="text-[#AF763E]/70 leading-relaxed group-hover:text-[#AF763E]/90 transition-colors duration-300">
-                      {i === 0
-                        ? "Đầu bếp trưởng Takumi Yamamoto mở nhà hàng đầu tiên, mang phong cách sushi thủ công độc đáo với triết lý 'mỗi miếng sushi là một tác phẩm nghệ thuật'."
-                        : i === 1
-                        ? "Sushi Takumi khai trương tại Việt Nam, kết nối tinh hoa Nhật Bản với văn hóa ẩm thực địa phương, tạo nên sự hòa quyện độc đáo."
-                        : "Trở thành điểm đến yêu thích cho thực khách yêu mến sự tinh tế của ẩm thực Nhật Bản, với hơn 10,000 khách hàng thân thiết."}
+                      {item.description}
                     </p>
                   </div>
                 </div>
@@ -164,17 +184,14 @@ export default function History() {
             ))}
           </div>
 
+          {/* Stats */}
           <motion.div
             className="grid grid-cols-3 gap-6 pt-6 border-t border-[#AF763E]/20"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.2 }}
           >
-            {[
-              { icon: Award, num: "15+", label: "Giải thưởng" },
-              { icon: Users, num: "10K+", label: "Khách hàng" },
-              { icon: Heart, num: "4.9★", label: "Đánh giá" },
-            ].map((item, i) => (
+            {stats.map((item, i) => (
               <div key={i} className="text-center group">
                 <div className="flex justify-center mb-2">
                   <div className="p-2 bg-gradient-to-br from-[#AF763E]/20 to-[#8B5A2B]/20 rounded-lg">

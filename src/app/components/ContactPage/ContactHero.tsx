@@ -1,9 +1,12 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function ContactHero() {
+  const { t } = useTranslation("contactHero");
   const MotionLink = motion(Link);
+
   return (
     <section className="relative bg-[url('/img/contact.jpg')] bg-cover bg-center min-h-[60vh] flex items-center justify-center text-center px-6">
       <div className="absolute inset-0 bg-black/60" />
@@ -15,7 +18,7 @@ export default function ContactHero() {
           className="inline-flex items-center gap-2 px-4 py-1 rounded-full text-sm bg-[#AF763E]/20 text-white border border-[#AF763E]/40"
         >
           <span className="w-2 h-2 bg-[#AF763E] rounded-full animate-pulse"></span>
-          Authentic Japanese Cuisine
+          {t("label")}
         </motion.div>
 
         <motion.h1
@@ -24,7 +27,7 @@ export default function ContactHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
         >
-          Liên hệ <span className="text-[#FFD23F]">Sushi Takumi</span>
+          {t("title")} <span className="text-[#FFD23F]">Sushi Takumi</span>
         </motion.h1>
 
         <motion.p
@@ -33,7 +36,7 @@ export default function ContactHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          Đặt bàn để trải nghiệm nghệ thuật sushi đích thực từ đầu bếp Takumi.
+          {t("description")}
         </motion.p>
 
         <motion.div
@@ -47,7 +50,7 @@ export default function ContactHero() {
             whileTap={{ scale: 0.95 }}
             className="inline-block px-6 py-3 text-white bg-[#AF763E] rounded-full font-semibold shadow hover:bg-[#8B5A2B] transition"
           >
-            Đặt bàn ngay
+            {t("button")}
           </MotionLink>
         </motion.div>
 
@@ -59,12 +62,12 @@ export default function ContactHero() {
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">📞</span>
-            <span className="text-white">+84 123 456 789</span>
+            <span className="text-white">{t("phone")}</span>
           </div>
           <div className="w-1 h-1 bg-[#FFD23F] rounded-full"></div>
           <div className="flex items-center gap-2">
             <span className="text-lg">📍</span>
-            <span className="text-white">Quận 1, TP.HCM</span>
+            <span className="text-white">{t("address")}</span>
           </div>
         </motion.div>
       </div>
