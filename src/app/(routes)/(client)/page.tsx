@@ -1,12 +1,12 @@
 "use client";
 
-import HeroSection from "../../components/HomePage/HeroSection";
-import FeaturedMenu from "../../components/HomePage/FeaturedMenu";
-import AboutSection from "../../components/HomePage/AboutSection";
-import CallToAction from "../../components/HomePage/CallToAction";
-import MyStory from "../../components/HomePage/MyStory";
-import Menus from "../../components/HomePage/Menus";
-import FavoriteSushiSection from "../../components/HomePage/FavoriteSushiSection";
+import HeroSection from "@/src/app/components/HomePage/HeroSection";
+import FeaturedMenu from "@/src/app/components/HomePage/FeaturedMenu";
+import AboutSection from "@/src/app/components/HomePage/AboutSection";
+import CallToAction from "@/src/app/components/HomePage/CallToAction";
+import MyStory from "@/src/app/components/HomePage/MyStory";
+import Menus from "@/src/app/components/HomePage/Menus";
+import FavoriteSushiSection from "@/src/app/components/HomePage/FavoriteSushiSection";
 
 export default function SushiPage() {
   return (
