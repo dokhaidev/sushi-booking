@@ -5,17 +5,19 @@ import { Card, CardContent, CardHeader } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/button";
 import Calendar from "../../../components/ui/Calendar";
 import { Plus, FileText, BarChart2 } from "lucide-react";
+import Link from "next/link";
 
 export default function TongQuan() {
   return (
-    <div className="grid grid-cols-12 gap-4 bg-[#fff8f0]">
+    <div className="grid grid-cols-12 gap-4">
       {/* Header */}
-      <TitleDesc 
-        title="Tổng quan" 
+      <TitleDesc
+        title="Tổng quan"
         description="Chào mừng trở lại, Admin Takumi"
-        className="col-span-12" />
+        className="col-span-12"
+      />
 
-        {/* Stats */}
+      {/* Stats */}
       <div className="col-span-12 grid grid-cols-12 gap-4">
         {[
           { label: "Đơn hàng hôm nay", value: "24" },
@@ -32,10 +34,22 @@ export default function TongQuan() {
         ))}
       </div>
 
-        {/* Orders and Bookings */}
+      {/* Orders and Bookings */}
       <div className="col-span-8 grid grid-cols-1 gap-4">
         <Card>
-          <CardHeader header="Đơn hàng gần đây" />
+          <CardHeader
+            header="Đơn hàng gần đây"
+            className="flex justify-between items-center"
+          >
+            <div className="flex gap-2">
+              <Link
+                href={`/quan-tri/quan-ly/dat-ban`}
+                className="font-medium text-sm"
+              >
+                Xem tất cả
+              </Link>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
@@ -98,7 +112,19 @@ export default function TongQuan() {
         </Card>
 
         <Card>
-          <CardHeader header="Đặt bàn gần đây" />
+          <CardHeader
+            header="Đặt bàn gần đây"
+            className="flex justify-between items-center"
+          >
+            <div className="flex gap-2">
+              <Link
+                href={`/quan-tri/quan-ly/dat-ban`}
+                className="font-medium text-sm"
+              >
+                Xem tất cả
+              </Link>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="overflow-auto">
               <table className="min-w-full text-sm text-left">
@@ -161,31 +187,40 @@ export default function TongQuan() {
             </div>
           </CardContent>
         </Card>
-
       </div>
 
       {/* Right Panel */}
       <div className="col-span-4 grid gap-4">
         {/* Notifications */}
         <Card>
-          <CardHeader header="Thông báo"/>
+          <CardHeader header="Thông báo" />
           <CardContent>
             <ul>
-                <li><strong>Hệ thống:</strong> Có 2 đơn chưa được xử lý.</li>
-                <li><strong>Đặt bàn mới:</strong> Có khách hàng vừa đặt bàn lúc 9:35.</li>
-                <li><strong>Nhắc sinh nhật:</strong> Nguyễn Văn A sẽ được nhắc nhở vào 10/6.</li>
-                <li><strong>Cập nhật hệ thống:</strong> Hệ thống sẽ bảo trì lúc 23:00 tối nay.</li>
-          </ul>
+              <li>
+                <strong>Hệ thống:</strong> Có 2 đơn chưa được xử lý.
+              </li>
+              <li>
+                <strong>Đặt bàn mới:</strong> Có khách hàng vừa đặt bàn lúc
+                9:35.
+              </li>
+              <li>
+                <strong>Cập nhật hệ thống:</strong> Hệ thống sẽ bảo trì lúc
+                23:00 tối nay.
+              </li>
+            </ul>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <Card>
-          <CardHeader header="Thao tác nhanh">
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2" content="Chưa có dữ liệu">
+          <CardHeader header="Thao tác nhanh"></CardHeader>
+          <CardContent
+            className="grid grid-cols-2 gap-2"
+            content="Chưa có dữ liệu"
+          >
             <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />Thêm món
+              <Plus className="w-4 h-4" />
+              Thêm món
             </Button>
             <Button className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4" /> Báo cáo
@@ -198,8 +233,7 @@ export default function TongQuan() {
 
         {/* Calendar */}
         <Card>
-          <CardHeader header="Lịch">
-          </CardHeader>
+          <CardHeader header="Lịch"></CardHeader>
           <CardContent>
             <Calendar />
           </CardContent>

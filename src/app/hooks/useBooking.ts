@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { AuthContext } from "../context/authContext";
+import { useAuth } from "../context/authContext";
 import type {
   Table,
   TimeSlot,
@@ -11,11 +11,14 @@ import type {
   SelectedFoodItem,
   BookingFormData,
   NotificationState,
+  Combo,
+  SelectedComboItem,
+  Category,
 } from "../types/booking";
 
 export function useBooking() {
   const router = useRouter();
-  const { user, loading } = useContext(AuthContext);
+  const { user, isLoading: authLoading, isInitialized } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -32,53 +35,130 @@ export function useBooking() {
     customer_name: "",
     customer_phone: "",
   });
+
   const [foods, setFoods] = useState<SelectedFoodItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [combos, setCombos] = useState<SelectedComboItem[]>([]);
   const [foodsData, setFoodsData] = useState<FoodItem[]>([]);
+  const [combosData, setCombosData] = useState<Combo[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [voucherId, setVoucherId] = useState<number | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showFoodModal, setShowFoodModal] = useState(false);
-  const [activeFoodCategory, setActiveFoodCategory] = useState<string>("all");
-  const [depositAmount] = useState(200000);
+  const [showComboModal, setShowComboModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentQRCode, setPaymentQRCode] = useState("");
+  const [paymentQRCode, setPaymentQRCode] = useState<string>("");
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [activeFoodCategory, setActiveFoodCategory] = useState("all");
+  const [activeComboCategory, setActiveComboCategory] = useState("all");
+  const [userVouchers, setUserVouchers] = useState<string[]>([]);
   const [notification, setNotification] = useState<NotificationState>({
     message: "",
     type: "info",
     show: false,
   });
 
+  const [voucherCode, setVoucherCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+
   const today = new Date().toISOString().split("T")[0];
+
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("auth");
+      const res = await axios.get("http://127.0.0.1:8000/api/category", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategories(res.data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUserVouchers = async (userId: number) => {
+    try {
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/getAllVoucherByUser/${userId}`
+      );
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+      if (Array.isArray(data)) {
+        setUserVouchers(data);
+      } else {
+        console.error("Voucher response is not an array:", res.data);
+        setUserVouchers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching vouchers:", error);
+      setUserVouchers([]);
+    }
+  };
+
+  let notificationQueue: {
+    message: string;
+    type: "success" | "error" | "info";
+  }[] = [];
+  let isShowingNotification = false;
 
   const showNotification = (
     message: string,
     type: "success" | "error" | "info" = "info"
   ) => {
-    setNotification({ message, type, show: true });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, show: false }));
-    }, 3000);
+    notificationQueue.push({ message, type });
+
+    const displayNextNotification = () => {
+      if (isShowingNotification || notificationQueue.length === 0) return;
+
+      const next = notificationQueue.shift();
+      if (!next) return;
+
+      setNotification({ message: next.message, type: next.type, show: true });
+      isShowingNotification = true;
+
+      setTimeout(() => {
+        setNotification((prev) => ({ ...prev, show: false }));
+        setTimeout(() => {
+          isShowingNotification = false;
+          displayNextNotification();
+        }, 500); // delay trước khi hiện cái tiếp theo
+      }, 3000); // thời gian hiển thị 1 thông báo
+    };
+
+    displayNextNotification();
+  };
+
+  const calculateDepositAmount = () => {
+    return formData.guest_count > 12 ? 200000 : 0;
+  };
+
+  const depositAmount = calculateDepositAmount();
+
+  const handlePaymentComplete = async () => {
+    setPaymentCompleted(true);
+    setShowPaymentModal(false);
+    showNotification("Thanh toán thành công!", "success");
   };
 
   const fetchAvailableSlots = async () => {
     if (!selectedDate) {
-      showNotification("Vui lòng chọn ngày đặt bàn", "error");
+      showNotification("Vui lòng chọn bàn", "error");
       return;
     }
 
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("auth");
-      const response = await axios.post<{ available_slots: TimeSlot[] }>(
+      const response = await axios.post(
         "http://127.0.0.1:8000/api/tables/DateTime",
         { reservation_date: selectedDate },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAvailableSlots(response.data.available_slots || []);
-    } catch (error) {
-      console.error("Error fetching slots:", error);
-      showNotification("Lỗi khi kiểm tra bàn trống", "error");
+    } catch {
+      showNotification("Lỗi khi kiểm tra bàn", "error");
     } finally {
       setIsLoading(false);
     }
@@ -88,13 +168,184 @@ export function useBooking() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("auth");
-      const response = await axios.get("http://127.0.0.1:8000/api/foods", {
+      const res = await axios.get("http://127.0.0.1:8000/api/foods", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFoodsData(response.data.data || []);
-    } catch (error) {
-      console.error("Error fetching foods:", error);
+
+      // Map category data to each food item
+      const foodsWithCategories = res.data.data.map((food: FoodItem) => {
+        const category = categories.find(
+          (cat) => cat.id === food.category_id // Now both are numbers
+        );
+        return {
+          ...food,
+          category: category || null,
+          price:
+            typeof food.price === "string"
+              ? parseFloat(food.price)
+              : food.price || 0, // Convert string price to number
+        };
+      });
+
+      setFoodsData(foodsWithCategories || []);
+    } catch {
       showNotification("Lỗi khi tải danh sách món ăn", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCombos = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("auth");
+      const res = await axios.get("http://127.0.0.1:8000/api/combos", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCombosData(res.data || []);
+    } catch {
+      showNotification("Lỗi khi tải danh sách combo", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyVoucherCode = async () => {
+    if (!voucherCode) {
+      showNotification("Vui lòng nhập mã giảm giá", "error");
+      return;
+    }
+
+    if (!user) {
+      showNotification("Vui lòng đăng nhập để sử dụng mã giảm giá", "error");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("auth");
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/applyVoucher",
+        {
+          code: voucherCode,
+          customer: user.id,
+          total: formData.total_price,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const { discount, message, new_total, voucher } = res.data;
+
+      if (discount > 0) {
+        setDiscountAmount(discount);
+        setVoucherId(voucher?.id || null);
+        showNotification(
+          message || "Áp dụng mã giảm giá thành công!",
+          "success"
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          total_price: new_total,
+        }));
+      } else {
+        setDiscountAmount(0);
+        setVoucherId(null);
+        showNotification("Mã giảm giá không hợp lệ hoặc đã hết hạn", "error");
+      }
+    } catch (err: any) {
+      console.error("Voucher error:", err);
+      setDiscountAmount(0);
+      showNotification(
+        err?.response?.data?.message || "Lỗi khi áp dụng mã giảm giá",
+        "error"
+      );
+    }
+  };
+
+  const submitOrder = async () => {
+    if (!selectedTable) {
+      showNotification("Vui lòng chọn bàn", "error");
+      return;
+    }
+
+    if (!formData.customer_name || !formData.customer_phone) {
+      showNotification("Please enter contact information", "error");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("auth");
+
+      const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+      const deposit = calculateDepositAmount();
+      const remainingPayment =
+        formData.payment_method === "cash"
+          ? Math.max(finalTotal - deposit, 0)
+          : 0;
+
+      const payAmount =
+        formData.payment_method === "cash" ? deposit : finalTotal + deposit;
+
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/orders/bookTables",
+        {
+          ...formData,
+          total_price: finalTotal,
+          deposit_amount: deposit,
+          remaining_payment: remainingPayment,
+          table_id: selectedTable.table_id,
+          voucher_id: voucherId,
+          foods: foods.map((f) => ({
+            food_id: f.food_id,
+            quantity: f.quantity,
+            price: f.price,
+          })),
+          combos: combos.map((c) => ({
+            combo_id: c.combo_id,
+            quantity: c.quantity,
+            price: c.price,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const order_id = res.data.order_id;
+      setOrderId(order_id);
+
+      const shouldRedirectToVNPAY =
+        formData.payment_method === "vnpay" || formData.guest_count >= 12;
+
+      if (shouldRedirectToVNPAY) {
+        const payRes = await axios.post(
+          "http://127.0.0.1:8000/api/orders/vnpay-url",
+          { order_id, amount: payAmount },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const payUrl = payRes.data?.data;
+        if (payUrl) {
+          window.location.href = payUrl;
+        } else {
+          showNotification("Could not get payment link", "error");
+        }
+      } else {
+        showNotification(
+          "Đặt bàn thành công! Vui lòng thanh toán tại nhà hàng.",
+          "success"
+        );
+        router.push("/");
+      }
+    } catch (err: any) {
+      console.error("Booking error:", err);
+      showNotification(
+        err?.response?.data?.message || "Error making booking",
+        "error"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -102,199 +353,179 @@ export function useBooking() {
 
   const handleSelectTime = (time: string) => {
     setSelectedTime(time);
-    const selectedSlot = availableSlots.find((slot) => slot.time === time);
 
-    if (!selectedSlot || selectedSlot.tables.length === 0) {
-      showNotification("Không có bàn trống trong khung giờ này", "error");
+    const slot = availableSlots.find((s) => s.time === time);
+    if (!slot || slot.tables.length === 0) {
+      showNotification("No available tables for this time slot", "error");
       return;
     }
 
-    const suitableTables = selectedSlot.tables
-      .filter((table) => table.max_guests >= formData.guest_count)
-      .sort((a, b) => a.max_guests - b.max_guests);
+    const guestCount = formData.guest_count;
+    const sortedTables = [...slot.tables].sort(
+      (a, b) => b.max_guests - a.max_guests
+    );
 
-    if (suitableTables.length > 0) {
-      setSelectedTable(suitableTables[0]);
+    if (guestCount <= 12) {
+      const oneTable = sortedTables
+        .filter((t) => t.max_guests >= guestCount)
+        .sort((a, b) => a.max_guests - b.max_guests)[0];
+
+      if (oneTable) {
+        setSelectedTable(oneTable);
+        setFormData((prev) => ({
+          ...prev,
+          reservation_date: selectedDate,
+          reservation_time: time.length === 5 ? `${time}:00` : time,
+        }));
+      } else {
+        showNotification("Không có bàn phù hợp với số lượng khách", "error");
+      }
+      return;
+    }
+
+    let bestPair: Table[] = [];
+    let minWastedSeats = Infinity;
+
+    for (let i = 0; i < sortedTables.length; i++) {
+      for (let j = i + 1; j < sortedTables.length; j++) {
+        const totalGuests =
+          sortedTables[i].max_guests + sortedTables[j].max_guests;
+        if (totalGuests >= guestCount) {
+          const wasted = totalGuests - guestCount;
+          if (wasted < minWastedSeats) {
+            minWastedSeats = wasted;
+            bestPair = [sortedTables[i], sortedTables[j]];
+          }
+        }
+      }
+    }
+
+    if (bestPair.length === 2) {
+      setSelectedTable(bestPair[0]);
+      showNotification(
+        `Guests divided into 2 tables (total seats: ${
+          bestPair[0].max_guests + bestPair[1].max_guests
+        })`,
+        "info"
+      );
       setFormData((prev) => ({
         ...prev,
         reservation_date: selectedDate,
         reservation_time: time.length === 5 ? `${time}:00` : time,
       }));
     } else {
-      showNotification(
-        `Không có bàn phù hợp cho ${formData.guest_count} khách. Vui lòng chọn khung giờ khác hoặc điều chỉnh số lượng khách.`,
-        "error"
-      );
+      showNotification("Không thể chia khách thành 2 bàn", "error");
     }
-  };
-
-  const generateQRCode = (
-    orderId: number,
-    amount: number,
-    paymentType: string
-  ) => {
-    // Tạo QR code với thông tin thanh toán
-    const prefix = paymentType === "cash" ? "COC" : "FULL";
-    const qrImage = `https://api.vietqr.io/image/970422-0367438455-mlaoiwq.jpg?accountName=HUYNH%20PHAN%20DO%20KHAI&amount=${amount}&addInfo=${prefix}%20${orderId}`;
-
-    console.log("QR Code URL:", qrImage);
-    return qrImage;
-  };
-
-  const submitOrder = async () => {
-    if (!selectedTable) {
-      showNotification("Vui lòng chọn bàn trước khi đặt", "error");
-      return;
-    }
-
-    if (!formData.customer_name || !formData.customer_phone) {
-      showNotification("Vui lòng nhập đầy đủ thông tin liên hệ", "error");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const token = localStorage.getItem("auth");
-      const hasFoods = foods.length > 0;
-
-      const payload = {
-        ...formData,
-        table_id: selectedTable?.table_id,
-        deposit_amount: depositAmount,
-        foods: hasFoods
-          ? foods.map((food) => ({
-              food_id: food.food_id,
-              quantity: food.quantity,
-              price: food.price,
-            }))
-          : [],
-      };
-
-      console.log("Sending payload:", payload);
-
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/orders/bookTables",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("API Response:", response.data);
-
-      const { message, order_id } = response.data;
-
-      if (response.status === 200 && order_id) {
-        setOrderId(order_id);
-        console.log("Order ID set:", order_id);
-
-        // Xác định số tiền cần thanh toán dựa trên phương thức
-        let amountToPay = 0;
-        let paymentMessage = "";
-
-        if (formData.payment_method === "cash") {
-          // Tiền mặt: chỉ thanh toán cọc
-          amountToPay = depositAmount;
-          paymentMessage = `Đặt bàn thành công! Vui lòng thanh toán cọc ${amountToPay.toLocaleString()} VNĐ`;
-        } else if (
-          formData.payment_method === "momo" ||
-          formData.payment_method === "bank"
-        ) {
-          // Momo/Bank: thanh toán toàn bộ
-          amountToPay = formData.total_price + depositAmount;
-          paymentMessage = `Đặt bàn thành công! Vui lòng thanh toán toàn bộ ${amountToPay.toLocaleString()} VNĐ`;
-        }
-
-        console.log("Amount to pay:", amountToPay);
-        console.log("Payment method:", formData.payment_method);
-
-        // Tạo QR code và hiển thị modal thanh toán
-        const qrCode = generateQRCode(
-          order_id,
-          amountToPay,
-          formData.payment_method
-        );
-        setPaymentQRCode(qrCode);
-        console.log("Payment QR Code set:", qrCode);
-
-        // Hiển thị modal thanh toán
-        setShowPaymentModal(true);
-        console.log("Payment modal shown");
-
-        // Hiển thị thông báo
-        showNotification(paymentMessage, "success");
-        setShowSuccess(true);
-      } else {
-        showNotification(message || "Đặt bàn không thành công", "error");
-      }
-    } catch (error: any) {
-      console.error("Lỗi khi gửi đơn đặt:", error);
-      showNotification(
-        error?.response?.data?.message || "Lỗi khi gửi yêu cầu đặt bàn",
-        "error"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePaymentComplete = () => {
-    setPaymentCompleted(true);
-    showNotification(
-      "Thanh toán thành công! Chúng tôi đã gửi xác nhận qua SMS",
-      "success"
-    );
-    setTimeout(() => {
-      setShowPaymentModal(false);
-    }, 2000);
   };
 
   const handleAddFood = (food: FoodItem) => {
-    setFoods((prev) => {
+    setFoods((prev: SelectedFoodItem[]) => {
       const existing = prev.find((f) => f.food_id === food.id);
+
+      // Chuẩn hóa category trước khi thêm vào state
+      let normalizedCategory: string | Category | null | undefined;
+
+      if (typeof food.category === "object" && food.category !== null) {
+        normalizedCategory = food.category.name; // Chỉ lấy tên nếu là object
+      } else {
+        normalizedCategory = food.category; // Giữ nguyên nếu là string hoặc null/undefined
+      }
+
       if (existing) {
         return prev.map((f) =>
           f.food_id === food.id ? { ...f, quantity: f.quantity + 1 } : f
         );
       }
+
       return [
         ...prev,
         {
+          id: food.id,
           food_id: food.id,
           name: food.name,
+          price:
+            typeof food.price === "string"
+              ? parseFloat(food.price)
+              : food.price || 0,
           quantity: 1,
-          price: food.price,
-          image: food.image,
+          image: food.image ?? null,
+          category: normalizedCategory, // Sử dụng category đã chuẩn hóa
         },
       ];
     });
   };
 
-  const handleRemoveFood = (foodId: number) => {
-    setFoods((prev) => prev.filter((food) => food.food_id !== foodId));
-  };
+  const handleRemoveFood = (id: number) =>
+    setFoods((prev) => prev.filter((f) => f.food_id !== id));
 
-  const handleFoodQuantityChange = (foodId: number, quantity: number) => {
-    if (quantity < 1) {
-      handleRemoveFood(foodId);
-      return;
-    }
+  const handleFoodQuantityChange = (id: number, quantity: number) => {
+    if (quantity < 1) return handleRemoveFood(id);
     setFoods((prev) =>
-      prev.map((food) =>
-        food.food_id === foodId ? { ...food, quantity } : food
-      )
+      prev.map((f) => (f.food_id === id ? { ...f, quantity } : f))
     );
   };
 
-  // Effects
+  const handleAddCombo = (combo: Combo) => {
+    setCombos((prev) => {
+      const existing = prev.find((c) => c.combo_id === combo.id);
+      if (existing) {
+        return prev.map((c) =>
+          c.combo_id === combo.id ? { ...c, quantity: c.quantity + 1 } : c
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: combo.id,
+          combo_id: combo.id,
+          name: combo.name,
+          quantity: 1,
+          price:
+            typeof combo.price === "string"
+              ? parseFloat(combo.price)
+              : combo.price || 0, // Convert combo price to number
+          image: combo.image,
+          description: combo.description,
+          items: combo.combo_items.map((item) => ({
+            food_id: item.food.id,
+            name: item.food.name,
+            price:
+              typeof item.food.price === "string"
+                ? parseFloat(item.food.price)
+                : item.food.price || 0, // Convert item price to number
+            quantity: item.quantity,
+          })),
+        },
+      ];
+    });
+  };
+  const handleRemoveCombo = (id: number) =>
+    setCombos((prev) => prev.filter((c) => c.combo_id !== id));
+
+  const handleComboQuantityChange = (id: number, quantity: number) => {
+    if (quantity < 1) return handleRemoveCombo(id);
+    setCombos((prev) =>
+      prev.map((c) => (c.combo_id === id ? { ...c, quantity } : c))
+    );
+  };
+
+  const getPaymentAmount = () => {
+    const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+    const deposit = calculateDepositAmount();
+
+    return formData.payment_method === "vnpay" ? finalTotal : deposit;
+  };
+
+  const remainingCashPayment =
+    formData.payment_method === "cash"
+      ? Math.max(formData.total_price - discountAmount - depositAmount, 0)
+      : 0;
+
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        customer_id: user.id,
+        customer_id: +user.id,
         customer_name: user.name || "",
         customer_phone: user.phone || "",
       }));
@@ -302,43 +533,34 @@ export function useBooking() {
   }, [user]);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user && isInitialized) {
       router.push("/dang-nhap");
     }
-  }, [user, loading, router]);
+  }, [authLoading, user, isInitialized]);
 
   useEffect(() => {
-    const total = foods.reduce(
+    const foodTotal = foods.reduce(
       (sum, food) => sum + food.price * food.quantity,
       0
     );
-    setFormData((prev) => ({ ...prev, total_price: total }));
-  }, [foods]);
+    const comboTotal = combos.reduce(
+      (sum, combo) => sum + combo.price * combo.quantity,
+      0
+    );
+    setFormData((prev) => ({ ...prev, total_price: foodTotal + comboTotal }));
+  }, [foods, combos]);
 
-  const getPaymentAmount = () => {
-    if (formData.payment_method === "cash") {
-      return depositAmount; // Chỉ cọc
-    } else {
-      return formData.total_price + depositAmount; // Toàn bộ
+  useEffect(() => {
+    if (user) {
+      fetchCategories().then(() => {
+        fetchFoods();
+        fetchCombos();
+      });
+      fetchUserVouchers(+user.id);
     }
-  };
-
-  // Debug function
-  const debugPayment = () => {
-    console.log("=== DEBUG PAYMENT ===");
-    console.log("Foods:", foods);
-    console.log("Payment method:", formData.payment_method);
-    console.log("Total price:", formData.total_price);
-    console.log("Deposit amount:", depositAmount);
-    console.log("Payment amount:", getPaymentAmount());
-    console.log("Order ID:", orderId);
-    console.log("Payment QR Code:", paymentQRCode);
-    console.log("Show Payment Modal:", showPaymentModal);
-    console.log("====================");
-  };
+  }, [user]);
 
   return {
-    // State
     selectedDate,
     setSelectedDate,
     availableSlots,
@@ -347,14 +569,21 @@ export function useBooking() {
     formData,
     setFormData,
     foods,
-    isLoading,
+    combos,
     foodsData,
+    combosData,
+    categories,
+    voucherId,
+    setVoucherId,
     orderId,
-    showSuccess,
     showFoodModal,
     setShowFoodModal,
+    showComboModal,
+    setShowComboModal,
     activeFoodCategory,
     setActiveFoodCategory,
+    activeComboCategory,
+    setActiveComboCategory,
     depositAmount,
     showPaymentModal,
     setShowPaymentModal,
@@ -364,19 +593,27 @@ export function useBooking() {
     setNotification,
     today,
     user,
-    loading,
-
-    // Functions
-    showNotification,
+    isLoading,
+    isInitialized,
+    voucherCode,
+    setVoucherCode,
+    discountAmount,
+    applyVoucherCode,
+    userVouchers,
+    fetchUserVouchers,
     fetchAvailableSlots,
     fetchFoods,
+    fetchCombos,
     handleSelectTime,
+    getPaymentAmount,
+    remainingCashPayment,
     submitOrder,
     handlePaymentComplete,
     handleAddFood,
     handleRemoveFood,
     handleFoodQuantityChange,
-    getPaymentAmount,
-    debugPayment,
+    handleAddCombo,
+    handleRemoveCombo,
+    handleComboQuantityChange,
   };
 }

@@ -56,7 +56,7 @@ const Pagination: React.FC<PaginationProps> = ({
     <div className="flex items-center justify-between mt-4 text-sm text-gray-700">
       <div>
         Hiển thị {(currentPage - 1) * itemsPerPage + 1}-
-        {Math.min(currentPage * itemsPerPage, totalItems)} của {totalItems} đơn hàng
+        {Math.min(currentPage * itemsPerPage, totalItems)} của {totalItems}
       </div>
 
       <div className="flex items-center space-x-1">

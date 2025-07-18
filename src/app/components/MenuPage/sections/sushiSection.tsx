@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ChefHat } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface MenuItem {
   name: string;
@@ -15,10 +17,29 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
+interface SushiItemAPI {
+  name: string;
+  jpName?: string;
+  price: string | number;
+  description?: string;
+}
+
+interface SushiGroupAPI {
+  group_name: string;
+  foods: unknown[];
+}
+
 export default function SushiSection() {
   const [groups, setGroups] = useState<MenuGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const formatPriceVND = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -31,17 +52,24 @@ export default function SushiSection() {
           ? resp.data
           : resp.data?.data || [];
 
-        const transformedData: MenuGroup[] = rawData.map((group: any) => ({
-          name: group.group_name || "Không tên",
-          items: Array.isArray(group.foods)
-            ? group.foods.map((food: any) => ({
-                name: food.name,
-                jpName: food.jpName,
-                price: food.price,
-                desc: food.description,
-              }))
-            : [],
-        }));
+        const transformedData: MenuGroup[] = rawData.map(
+          (groupRaw: SushiGroupAPI) => {
+            return {
+              name: groupRaw.group_name || "Không tên",
+              items: Array.isArray(groupRaw.foods)
+                ? groupRaw.foods.map((foodRaw: unknown) => {
+                    const food = foodRaw as SushiItemAPI;
+                    return {
+                      name: food.name,
+                      jpName: food.jpName,
+                      price: food.price,
+                      desc: food.description,
+                    };
+                  })
+                : [],
+            };
+          }
+        );
 
         setGroups(transformedData);
       } catch (err) {
@@ -55,54 +83,90 @@ export default function SushiSection() {
     fetchGroups();
   }, []);
 
+  const handleAddToCart = (item: MenuItem) => {
+    console.log("Thêm vào giỏ hàng:", item);
+    // TODO: gọi API hoặc lưu vào context/store
+  };
+
   return (
-    <section id="sushi" className="py-[60px] sm:px-16 lg:px-24 bg-[#B1B6A3]">
-      <div className="container mx-auto">
-        <h2 className="text-3xl font-bold text-[#333333] mb-2 text-center">
-          Sushi
-        </h2>
-        <p className="text-[#666666] text-center mb-3">
-          Mỗi miếng sushi được làm thủ công bởi đầu bếp sushi của chúng tôi
-        </p>
-        <p className="text-[#666666] text-center mb-12 italic">
-          Giá cho 2 miếng (nigiri)
-        </p>
+    <section id="sushi" className="py-16 px-4 sm:px-10 lg:px-24 bg-[#F8F1E9]">
+      <div className="container mx-auto max-w-8xl">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-10"
+        >
+          <div className="flex items-center justify-center gap-3 md:gap-5 mb-2">
+            <div className="h-px w-12 md:w-24 bg-[#555]" />
+            <h2 className="text-xl md:text-3xl font-bold uppercase tracking-wider text-[#444] flex items-center gap-2">
+              <ChefHat className="text-[#A68345]" size={24} />
+              Sushi
+            </h2>
+            <div className="h-px w-12 md:w-24 bg-[#555]" />
+          </div>
+          <p className="text-[#666] text-sm md:text-base mt-2">
+            Mỗi miếng sushi được làm thủ công bởi đầu bếp sushi của chúng tôi
+          </p>
+          <p className="text-[#666] text-sm md:text-base mt-2">
+            Giá cho 2 miếng (nigiri)
+          </p>
+        </motion.div>
 
         {loading ? (
-          <div className="text-center text-[#666666]">Đang tải sushi...</div>
+          <div className="text-center text-[#A68345] animate-pulse">
+            Đang tải sushi...
+          </div>
         ) : error ? (
           <div className="text-center text-red-500">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {groups.map((group) => (
               <div
                 key={group.name}
-                className="bg-white rounded-lg p-6 shadow-md"
+                className="space-y-4 border-b-2 border-dashed border-[#ccc] pb-8"
               >
-                <h3 className="text-xl font-semibold text-[#333333] mb-4 pb-2 border-b border-[#666666]">
+                <h3 className="text-xl font-semibold text-[#333] border-b border-[#999] pb-2 mb-3">
                   {group.name}
                 </h3>
                 <ul className="space-y-4">
                   {group.items.map((item, index) => (
-                    <li key={index} className="flex justify-between">
-                      <div>
-                        <span className="text-[#333333]">{item.name}</span>
+                    <li
+                      key={index}
+                      className="flex justify-between items-start border-b border-dashed border-[#e2e2e2] pb-3"
+                    >
+                      <div className="w-[75%]">
+                        <span className="text-[#333] font-medium">
+                          {item.name}
+                        </span>
                         {item.jpName && (
-                          <span className="text-xs text-[#333333] ml-1 italic">
-                            {item.jpName}
+                          <span className="text-sm text-[#777] ml-2 italic">
+                            ({item.jpName})
                           </span>
                         )}
                         {item.desc && (
-                          <p className="text-[#666666] text-xs italic">
+                          <p className="text-xs text-[#666] italic mt-1">
                             {item.desc}
                           </p>
                         )}
                       </div>
-                      <span className="font-bold text-xl text-[#ff0000]">
-                        {typeof item.price === "number"
-                          ? `¥${item.price}`
-                          : `¥${parseFloat(item.price).toFixed(0)}`}
-                      </span>
+
+                      <div className="flex items-center justify-end gap-2 text-[#A83D3D] font-bold text-base">
+                        <span>
+                          {formatPriceVND(
+                            typeof item.price === "string"
+                              ? parseFloat(item.price)
+                              : item.price
+                          )}
+                        </span>
+                        <button
+                          className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition"
+                          onClick={() => handleAddToCart(item)}
+                        >
+                          +
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

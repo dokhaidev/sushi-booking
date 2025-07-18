@@ -1,12 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { FiDollarSign } from "react-icons/fi";
-import type { BookingFormData } from "../../types/booking";
-
-interface PaymentNotesFormProps {
-  formData: BookingFormData;
-  setFormData: (data: BookingFormData) => void;
-}
+import type { PaymentNotesFormProps } from "../../types/Booking/PaymentNotesForm.types";
 
 export default function PaymentNotesForm({
   formData,
@@ -37,8 +32,7 @@ export default function PaymentNotesForm({
             className="w-full py-2.5 px-3 border border-gray-300 rounded-lg outline-none transition hover:border-[#AF763E] focus:border-[#AF763E] focus:ring-1 focus:ring-[#AF763E]"
           >
             <option value="cash">Tiền mặt khi đến</option>
-            <option value="momo">Thanh toán Momo</option>
-            <option value="bank">Chuyển khoản ngân hàng</option>
+            <option value="vnpay">Thanh toán VNPay</option>
           </select>
         </div>
 

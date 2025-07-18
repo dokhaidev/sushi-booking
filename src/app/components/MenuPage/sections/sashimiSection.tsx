@@ -2,15 +2,33 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ChefHat } from "lucide-react";
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface SashimiItem {
   id: number;
   name: string;
   jpName?: string;
   price: number;
-  pieces?: string; // cho nhóm đơn lẻ
-  desc?: string; // cho bộ sưu tập
+  pieces?: string;
+  desc?: string;
   image?: string | null;
+}
+
+interface RawGroup {
+  group_id: number;
+  group_name: string;
+  foods: unknown[];
+}
+
+interface RawFood {
+  id: number;
+  name: string;
+  jpName?: string;
+  price: string | number;
+  description?: string;
+  image?: string;
 }
 
 interface SashimiGroup {
@@ -23,6 +41,12 @@ export default function SashimiSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const formatPriceVND = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -31,19 +55,28 @@ export default function SashimiSection() {
           "http://127.0.0.1:8000/api/foods/category/2/groups"
         );
 
-        const raw = Array.isArray(resp.data.data) ? resp.data.data : [];
-        const mapped: SashimiGroup[] = raw.map((group: any) => ({
+        const raw: RawGroup[] = Array.isArray(resp.data.data)
+          ? resp.data.data
+          : [];
+
+        const mapped: SashimiGroup[] = raw.map((group) => ({
           name: group.group_name,
           items: Array.isArray(group.foods)
-            ? group.foods.map((f: any) => ({
-                id: f.id,
-                name: f.name,
-                jpName: f.jpName,
-                price: parseFloat(f.price),
-                pieces: group.group_id === 1 ? f.description : undefined,
-                desc: group.group_id !== 1 ? f.description : undefined,
-                image: f.image,
-              }))
+            ? group.foods.map((f) => {
+                const food = f as RawFood;
+                return {
+                  id: food.id,
+                  name: food.name,
+                  jpName: food.jpName,
+                  price:
+                    typeof food.price === "string"
+                      ? parseFloat(food.price)
+                      : food.price,
+                  pieces: group.group_id === 1 ? food.description : undefined,
+                  desc: group.group_id !== 1 ? food.description : undefined,
+                  image: food.image ?? null,
+                };
+              })
             : [],
         }));
 
@@ -55,18 +88,32 @@ export default function SashimiSection() {
         setLoading(false);
       }
     };
+
     fetchGroups();
   }, []);
 
   return (
-    <section id="sashimi" className="py-[60px] sm:px-16 lg:px-24 bg-[#F8F1E9]">
-      <div className="container mx-auto">
-        <h2 className="text-3xl font-bold text-[#333333] mb-2 text-center">
-          Sashimi
-        </h2>
-        <p className="text-[#666666] text-center mb-12">
-          Cá tươi ngon nhất được cắt thành từng lát mỏng
-        </p>
+    <section id="sashimi" className="py-16 px-6 md:px-16 lg:px-24 bg-white">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <div className="h-px w-16 bg-[#999]" />
+            <h2 className="text-2xl md:text-4xl font-semibold tracking-wider text-[#3D3D3D] flex items-center gap-2">
+              <ChefHat className="text-[#A68345]" size={28} />
+              Sashimi
+            </h2>
+            <div className="h-px w-16 bg-[#999]" />
+          </div>
+          <p className="text-[#666] text-base md:text-lg mt-2">
+            Cá tươi ngon được cắt lát mỏng tinh tế, chuẩn phong cách Nhật Bản
+          </p>
+        </motion.div>
 
         {loading ? (
           <p className="text-center text-gray-600">Đang tải sashimi...</p>
@@ -75,42 +122,40 @@ export default function SashimiSection() {
         ) : groups.length === 0 ? (
           <p className="text-center text-gray-500">Không có sashimi nào.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {groups.map((group) => (
               <div key={group.name}>
-                <h3 className="text-xl font-semibold text-[#333333] mb-4 pb-2 border-b border-[#666666]">
+                <h3 className="text-xl md:text-2xl font-semibold text-[#333] mb-4 pb-2 border-b border-[#ccc]">
                   {group.name}
                 </h3>
 
                 {group.name === "Sashimi đơn lẻ" ? (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {group.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex justify-between items-center"
+                        className="flex justify-between items-center border-b border-dashed pb-3"
                       >
                         <div>
-                          <div className="flex items-center">
-                            <span className="text-[#333333] font-medium">
-                              {item.name}
-                            </span>
+                          <div className="text-base font-medium text-[#333] flex items-center gap-1">
+                            {item.name}
                             {item.jpName && (
-                              <span className="text-xs text-[#333333] ml-1 italic">
-                                {item.jpName}
+                              <span className="text-xs italic text-[#666]">
+                                ({item.jpName})
                               </span>
                             )}
                           </div>
                           {item.pieces && (
-                            <span className="text-xs text-[#666666] italic">
+                            <p className="text-sm text-[#888] italic">
                               {item.pieces}
-                            </span>
+                            </p>
                           )}
                         </div>
-                        <div className="flex items-center">
-                          <span className="font-bold text-xl text-[#ff0000] mr-4">
-                            ¥{item.price.toFixed(0)}
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-bold text-[#D64B4B]">
+                            {formatPriceVND(item.price)}
                           </span>
-                          <button className="text-lg bg-[#8E9482] hover:bg-[#815B5B] text-white px-4 py-1 rounded-md transition-colors">
+                          <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-3 py-1 rounded-full transition">
                             +
                           </button>
                         </div>
@@ -118,40 +163,41 @@ export default function SashimiSection() {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {group.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex bg-white rounded-lg overflow-hidden shadow-sm"
+                        className="flex bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
                       >
-                        <img
-                          src={item.image || "/placeholder.svg"}
-                          alt={item.name}
-                          className="w-1/3 h-40 object-cover"
-                        />
+                        <div className="w-1/3 h-40 relative">
+                          <Image
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="flex items-center mb-1">
-                              <h4 className="text-[#333333] font-medium">
-                                {item.name}
-                              </h4>
+                            <h4 className="text-lg font-medium text-[#333]">
+                              {item.name}
                               {item.jpName && (
-                                <span className="text-xs text-[#333333] ml-1">
-                                  {item.jpName}
+                                <span className="ml-1 text-sm text-[#666]">
+                                  ({item.jpName})
                                 </span>
                               )}
-                            </div>
+                            </h4>
                             {item.desc && (
-                              <p className="text-xs text-[#666666] mb-2 italic">
+                              <p className="text-sm text-[#777] mt-1 italic">
                                 {item.desc}
                               </p>
                             )}
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-xl text-[#ff0000]">
-                              ¥{item.price.toFixed(0)}
+                          <div className="flex justify-between items-center mt-4">
+                            <span className="text-lg font-bold text-[#D64B4B]">
+                              {formatPriceVND(item.price)}
                             </span>
-                            <button className="text-sm bg-[#8E9482] hover:bg-[#815B5B] text-white px-4 py-2 rounded-md transition-colors">
+                            <button className="bg-[#A68345] hover:bg-[#8D6B32] text-white text-sm px-4 py-2 rounded-md transition">
                               Đặt món
                             </button>
                           </div>

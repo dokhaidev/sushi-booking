@@ -1,15 +1,17 @@
 import ContactHero from "../../../components/ContactPage/ContactHero";
 import ContactInfo from "../../../components/ContactPage/ContactInfo";
 import ContactMap from "../../../components/ContactPage/ContactMap";
-import UserReviews from "../../../components/ContactPage/UserReviews";
+import ContactFAQ from "../../../components/ContactPage/ContactFAQ";
+import ContactTestimonials from "../../../components/ContactPage/ContactTestimonials";
 
 export default function ContactPage() {
   return (
     <main>
       <ContactHero />
       <ContactInfo />
+      <ContactFAQ />
+      <ContactTestimonials />
       <ContactMap />
-      <UserReviews />
     </main>
   );
 }

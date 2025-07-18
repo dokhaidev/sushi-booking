@@ -1,63 +1,93 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { CalendarDays, Star, Leaf } from "lucide-react";
+import Image from "next/image";
+import { useRef } from "react";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function MyStory() {
+  const ref = useRef(null);
+  const { t } = useTranslation("myStory");
+
+  const stats = [
+    {
+      value: t("stats.experience.value"),
+      label: t("stats.experience.label"),
+      icon: CalendarDays,
+    },
+    {
+      value: t("stats.branches.value"),
+      label: t("stats.branches.label"),
+      icon: Star,
+    },
+    {
+      value: t("stats.ingredients.value"),
+      label: t("stats.ingredients.label"),
+      icon: Leaf,
+    },
+  ];
+
   return (
     <section
+      ref={ref}
       id="about"
-      className="relative py-[60px] px-6 md:px-12 lg:px-24 bg-[#FFF9F0] overflow-hidden"
+      className="relative overflow-hidden py-15 px-6 sm:px-10 md:px-16 xl:px-20 bg-[#F8F1E9] flex items-center"
     >
-      {/* Background Decorative Circles */}
-      <div className="absolute top-[-80px] left-[-80px] w-[180px] h-[180px] bg-[#F9E5C0] rounded-full opacity-20 z-0 blur-sm" />
-      <div className="absolute bottom-[-100px] right-[-80px] w-[220px] h-[220px] bg-[#F5D9AF] rounded-full opacity-25 z-0 blur-sm" />
+      <div className="relative z-10 max-w-7xl mx-auto w-full">
+        <div className="flex flex-col-reverse lg:flex-row items-center gap-16">
+          {/* Text */}
+          <div className="w-full lg:w-1/2 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#A68345]/10 text-[#A68345] text-sm font-semibold mb-6">
+              <div className="w-2 h-2 bg-[#A68345] rounded-full" />
+              {t("badge")}
+            </div>
 
-      <div className="relative z-10 container mx-auto flex flex-col-reverse md:flex-row items-center gap-14">
-        {/* Left - Text */}
-        <motion.div
-          initial={{ opacity: 0, x: -60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9 }}
-          viewport={{ once: true }}
-          className="md:w-1/2 text-center md:text-left"
-        >
-          <h2 className="text-4xl font-bold text-[#A68345] mb-6 leading-tight tracking-tight uppercase">
-            Câu chuyện của chúng tôi
-          </h2>
-          <div className="w-24 h-1 bg-[#C29E75] mb-8 rounded-full mx-auto md:mx-0"></div>
-          <p className="text-[#333333] text-sm md:text-lg mb-5 leading-relaxed tracking-wide">
-            Sushi Takumi được sinh ra từ một gia đình có ba thế hệ đầu bếp
-            sushi, nơi tinh hoa ẩm thực Nhật Bản được gìn giữ và phát triển qua
-            từng thế hệ.
-          </p>
-          <p className="text-[#333333] text-sm md:text-lg mb-8 leading-relaxed tracking-wide">
-            Chúng tôi cam kết chỉ sử dụng nguyên liệu chất lượng cao nhất để tạo
-            nên những món sushi tinh tế, mang lại trải nghiệm vị giác khó quên
-            cho thực khách.
-          </p>
-          <button className="inline-flex items-center gap-2 transition-all duration-300 border border-[#A68345] text-[#A68345] hover:bg-[#A68345] hover:text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:shadow-lg">
-            Tìm hiểu thêm <ChevronRight size={16} />
-          </button>
-        </motion.div>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-tight text-[#2D2D2D] mb-6">
+              {t("title.line1")} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A68345] via-[#BD944A] to-[#D4B04F]">
+                {t("title.highlight")}
+              </span>
+            </h2>
 
-        {/* Right - Image */}
-        <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="md:w-1/2"
-        >
-          <div className="relative w-full h-[400px] md:h-[520px] rounded-3xl overflow-hidden shadow-2xl border-4 border-[#FBE9D0]">
-            <img
-              src="https://i.pinimg.com/736x/5d/80/54/5d80548dfc4bee7bb966b83c568a514b.jpg"
-              alt="Đầu bếp sushi đang làm việc"
-              className="w-full h-full object-cover object-center"
-            />
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[#FFEEDB] rounded-xl z-[-1] shadow-inner" />
+            <p className="text-[#555] text-lg leading-relaxed mb-4">
+              {t("description.1")}
+            </p>
+            <p className="text-[#555] text-lg leading-relaxed mb-8">
+              {t("description.2")}
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              {stats.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-white/80 rounded-xl p-5 border border-[#A68345]/10"
+                >
+                  <div className="flex justify-center mb-3">
+                    <item.icon className="text-[#A68345]" size={24} />
+                  </div>
+                  <div className="text-xl font-bold text-[#2D2D2D]">
+                    {item.value}
+                  </div>
+                  <div className="text-sm text-[#666]">{item.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </motion.div>
+
+          {/* Image */}
+          <div className="w-full lg:w-1/2">
+            <div className="overflow-hidden rounded-3xl shadow-md">
+              <Image
+                src="https://res.klook.com/image/upload/c_fill,w_750,h_750/q_80/w_80,x_15,y_15,g_south_west,l_Klook_water_br_trans_yhcmh3/activities/bdjcugfgoqmozfswf4kd.jpg"
+                alt={t("image_alt")}
+                className="w-full h-auto object-cover"
+                width={750}
+                height={750}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

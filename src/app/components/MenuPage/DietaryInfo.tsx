@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function DietaryInfo() {
   return (
-    <section className="py-[60px] sm:px-16 lg:px-24 bg-[#F8F1E9]">
+    <section className="py-[60px] sm:px-16 lg:px-24 bg-white">
       <div className="container mx-auto max-w-4xl mb-[60px]">
         <h2 className="text-2xl font-bold text-[#333333] mb-6 text-center">
           Thông tin dinh dưỡng

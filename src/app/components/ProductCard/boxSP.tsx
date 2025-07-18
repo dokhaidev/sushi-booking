@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface BoxSPProps {
   name: string;
   jpName: string;
@@ -19,7 +21,7 @@ export default function BoxSP({
 }: BoxSPProps) {
   return (
     <div className="flex bg-white rounded-lg overflow-hidden shadow-sm">
-      <img src={image} alt={name} className="w-1/3 object-cover h-40" />
+      <Image src={image} alt={name} className="w-1/3 object-cover h-40" />
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-center mb-1">

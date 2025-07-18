@@ -37,15 +37,15 @@ const Sidebar = () => {
           href: "/quan-ly/ban",
         },
         {
-          key: "datban",
-          label: "Quản lý đặt bàn",
-          href: "/quan-ly/dat-ban",
+          key: "donhang",
+          label: "Quản lý đơn hàng",
+          href: "/quan-ly/don-hang",
         },
-        {
-          key: "datmon",
-          label: "Quản lý đặt món",
-          href: "/quan-ly/dat-mon",
-        },
+        // {
+        //   key: "datmon",
+        //   label: "Quản lý đặt món",
+        //   href: "/quan-ly/dat-mon",
+        // },
         {
           key: "khuyenmai",
           label: "Quản lý voucher",

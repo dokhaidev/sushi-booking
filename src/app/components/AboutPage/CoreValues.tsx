@@ -1,99 +1,96 @@
 "use client";
 
+import { useTranslation } from "../../lib/i18n/client";
+import { Award, Heart, Lightbulb, Star } from "lucide-react";
+
+const iconMap = {
+  Award: <Award className="w-8 h-8 text-[#AF763E]" />,
+  Heart: <Heart className="w-8 h-8 text-[#AF763E]" />,
+  Lightbulb: <Lightbulb className="w-8 h-8 text-[#AF763E]" />,
+  Star: <Star className="w-5 h-5 text-[#AF763E]" />,
+};
+
 export default function CoreValues() {
-  const values = [
-    {
-      title: "Chất lượng",
-      desc: "Nguyên liệu tươi sống và kỹ thuật chế biến chuẩn Nhật.",
-      detail:
-        "Chúng tôi cam kết sử dụng nguyên liệu tươi ngon, được chọn lọc kỹ càng từ các nhà cung cấp uy tín, kết hợp cùng kỹ thuật chế biến truyền thống Nhật Bản để mang đến trải nghiệm ẩm thực đỉnh cao.",
-      icon: (
-        <svg
-          className="w-16 h-16 mx-auto mb-6 text-[#A68345]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <path d="M12 1v22M5 7l7-6 7 6M5 17l7 6 7-6" />
-        </svg>
-      ),
-    },
-    {
-      title: "Tôn trọng",
-      desc: "Đối xử với khách hàng như thượng khách trong văn hóa Nhật.",
-      detail:
-        "Chúng tôi luôn đặt khách hàng lên hàng đầu, mang đến sự tận tâm, lịch thiệp và không gian phục vụ đúng chuẩn tinh thần hiếu khách Nhật Bản.",
-      icon: (
-        <svg
-          className="w-16 h-16 mx-auto mb-6 text-[#A68345]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" />
-        </svg>
-      ),
-    },
-    {
-      title: "Sáng tạo",
-      desc: "Luôn đổi mới thực đơn nhưng vẫn giữ hồn sushi truyền thống.",
-      detail:
-        "Chúng tôi không ngừng sáng tạo để làm mới thực đơn, kết hợp các nguyên liệu độc đáo, mang đến trải nghiệm ẩm thực đa dạng nhưng vẫn giữ vững giá trị truyền thống.",
-      icon: (
-        <svg
-          className="w-16 h-16 mx-auto mb-6 text-[#A68345]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <path d="M5 12h14M12 5l7 7-7 7" />
-        </svg>
-      ),
-    },
-  ];
+  const { t } = useTranslation("core");
+
+  const values = [0, 1, 2].map((i) => {
+    const value = JSON.parse(t(`values_${i}`));
+    return {
+      ...value,
+      icon: iconMap[value.icon as keyof typeof iconMap],
+    };
+  });
+
+  const stats = [0, 1, 2].map((i) => {
+    const stat = JSON.parse(t(`stats_${i}`));
+    return {
+      ...stat,
+      icon: iconMap[stat.icon as keyof typeof iconMap],
+    };
+  });
 
   return (
-    <section className="bg-[#fff] py-[60px] sm:px-16 lg:px-24">
-      <div className="max-w-6xl mx-auto text-center mb-14 px-4">
-        <h3 className="text-4xl font-bold tracking-tight text-[#A68345] mb-3">
-          Giá Trị Cốt Lõi
+    <section className="bg-white py-[60px] px-[90px]">
+      <div className="max-w-6xl mx-auto text-center mb-16">
+        <h3 className="text-4xl sm:text-5xl font-bold tracking-wide pb-2 mb-4 bg-gradient-to-r from-[#AF763E] via-[#D97706] to-[#8B5A2B] bg-clip-text text-transparent">
+          {t("heading")}
         </h3>
-        <p className="text-lg text-[#666666] max-w-3xl mx-auto">
-          Ba giá trị then chốt tạo nên bản sắc và trải nghiệm đậm chất Nhật Bản
-          trong từng món ăn và dịch vụ của chúng tôi.
+        <p className="text-[#AF763E]/90 text-xl font-light leading-relaxed max-w-5xl mx-auto">
+          {t("subheading")}
         </p>
+        <p className="text-[#AF763E]/70 text-lg max-w-3xl mx-auto mt-2">
+          {t("note")}
+        </p>
+
+        <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mt-12">
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center">
+              <div className="flex justify-center mb-2">
+                <div className="p-2 bg-[#AF763E]/10 rounded-lg">
+                  {stat.icon}
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-[#AF763E]">
+                {stat.number}
+              </div>
+              <div className="text-sm text-[#AF763E]/70">{stat.text}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto px-4">
-        {values.map(({ title, desc, detail, icon }, idx) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {values.map((value, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-center text-center transition-transform hover:scale-105 hover:shadow-2xl duration-300"
+            className="bg-white border border-[#AF763E]/10 rounded-3xl p-8 shadow-md hover:shadow-lg transition-shadow"
           >
-            {icon}
-            <h4 className="text-2xl font-semibold text-[#333333] mb-3">
-              {title}
-            </h4>
-            <p className="text-[#A68345] font-semibold mb-4">{desc}</p>
-            <p className="text-[#666666] mb-6">{detail}</p>
-            <button
-              type="button"
-              className="rounded-full px-7 py-2 bg-[#A68345] text-white font-medium text-sm shadow-md hover:bg-[#B5413D] transition-colors"
-            >
-              Xem thêm
-            </button>
+            <div className="flex justify-center mb-4">{value.icon}</div>
+            <div className="text-center">
+              <h4 className="text-2xl font-bold text-[#AF763E] mb-2">
+                {value.title}
+              </h4>
+              <p className="text-[#AF763E]/80 font-medium mb-2">{value.desc}</p>
+              <p className="text-[#AF763E]/70 leading-relaxed text-sm mb-4">
+                {value.detail}
+              </p>
+              <div className="inline-block bg-[#AF763E]/10 text-[#AF763E] text-sm px-4 py-1 rounded-full">
+                {value.stats} — {value.statsLabel}
+              </div>
+            </div>
           </div>
         ))}
+      </div>
+
+      <div className="max-w-4xl mx-auto mt-16 text-center">
+        <div className="bg-[#AF763E]/5 rounded-2xl p-8 border border-[#AF763E]/10">
+          <blockquote className="text-xl italic text-[#AF763E]/80 leading-relaxed mb-4">
+            &quot;{t("quote")}&quot;
+          </blockquote>
+          <cite className="text-sm font-semibold text-[#AF763E] not-italic">
+            {t("quote_by")}
+          </cite>
+        </div>
       </div>
     </section>
   );

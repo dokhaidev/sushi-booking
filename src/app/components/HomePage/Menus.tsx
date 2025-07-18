@@ -1,27 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
+import { ChefHat, ArrowRight, Search } from "lucide-react";
 import CardList from "../ProductCard/cardList";
 import Link from "next/link";
+import { useTranslation } from "../../lib/i18n/client";
+import { usePathname } from "next/navigation";
 
 interface Category {
   id: number;
   name: string;
   description?: string;
+  icon?: string;
 }
 
 interface Product {
   id: number | string;
   name: string;
   image?: string;
-  tag?: string;
   jpName?: string;
   price: string | number;
   description?: string;
   category?: string;
-  category_id?: number; // Thêm category_id để map với tab
+  category_id?: number;
+  rating?: number;
+  cookTime?: string;
 }
 
 interface CardItem {
@@ -31,186 +35,195 @@ interface CardItem {
   price: number;
   image?: string;
   type: string;
-  category_id?: number; // Thêm category_id cho việc filter
+  category_id?: number;
+  rating?: number;
+  cookTime?: string;
 }
 
 export default function Menus() {
+  const { t, lang } = useTranslation("menu");
+  const pathname = usePathname();
+
+  const categoryIcons: Record<string, string> = {
+    [t("categories.all")]: "🍽️",
+    [t("categories.sushi")]: "🍣",
+    [t("categories.sashimi")]: "🐟",
+    [t("categories.maki")]: "🍱",
+    [t("categories.tempura")]: "🍤",
+    [t("categories.ramen")]: "🍜",
+    [t("categories.dessert")]: "🍮",
+  };
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]); // Lưu tất cả sản phẩm
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(-1); // Đổi thành number thay vì null
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number>(-1);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Lấy danh sách danh mục từ API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get("http://127.0.0.1:8000/api/category");
-        if (Array.isArray(res.data)) {
-          const allTab = { id: -1, name: "Tất cả", description: null };
-          setCategories([allTab, ...res.data]);
-        } else {
-          console.warn("Dữ liệu danh mục không hợp lệ:", res.data);
-        }
-      } catch (err) {
-        console.error("Lỗi khi lấy danh mục:", err);
+  const getLocalizedPath = (path: string) => {
+    return `/${lang}${path}`;
+  };
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/category", {
+        params: { lang },
+      });
+      if (Array.isArray(res.data)) {
+        const allTab: Category = {
+          id: -1,
+          name: t("categories.all"),
+          icon: "🍽️",
+        };
+        const final = res.data.map((cat: Category) => ({
+          ...cat,
+          icon: categoryIcons[cat.name] || "🍽️",
+        }));
+        setCategories([allTab, ...final]);
       }
-    };
-
-    fetchCategories();
-  }, []);
-
-  // Lấy tất cả sản phẩm một lần khi component mount
-  useEffect(() => {
-    const fetchAllProducts = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get("http://127.0.0.1:8000/api/foods");
-        let productsData = [];
-
-        if (Array.isArray(res.data)) {
-          productsData = res.data;
-        } else if (res.data?.data && Array.isArray(res.data.data)) {
-          productsData = res.data.data;
-        } else {
-          console.warn("Dữ liệu món ăn không hợp lệ:", res.data);
-          productsData = [];
-        }
-
-        setAllProducts(productsData);
-        setProducts(productsData); // Hiển thị tất cả sản phẩm ban đầu
-      } catch (err) {
-        console.error("Lỗi khi lấy món ăn:", err);
-        setAllProducts([]);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllProducts();
-  }, []);
-
-  // Filter sản phẩm theo category được chọn
-  useEffect(() => {
-    if (selectedCategoryId === -1) {
-      // Hiển thị tất cả sản phẩm
-      setProducts(allProducts);
-    } else {
-      // Filter theo category_id
-      const filteredProducts = allProducts.filter(
-        (product) => product.category_id === selectedCategoryId
-      );
-      setProducts(filteredProducts);
+    } catch {
+      setCategories([]);
     }
-  }, [selectedCategoryId, allProducts]);
+  }, [t, lang]);
 
-  // Lấy 6 sản phẩm đầu tiên để hiển thị
-  const displayedProducts = products.slice(0, 6);
+  const fetchAllProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://127.0.0.1:8000/api/foods", {
+        params: { lang },
+      });
+      let data: Product[] = [];
+      if (Array.isArray(res.data)) data = res.data;
+      else if (res.data?.data) data = res.data.data;
+      const enriched = data.map((p) => ({
+        ...p,
+        rating: Math.random() * 2 + 3,
+        cookTime: `${Math.floor(Math.random() * 20) + 10} ${t("time.minutes")}`,
+      }));
+      setAllProducts(enriched);
+    } catch {
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [t, lang]);
 
-  // Chuyển đổi dữ liệu cho CardList
+  useEffect(() => {
+    fetchCategories();
+    fetchAllProducts();
+  }, [fetchCategories, fetchAllProducts]);
+
+  const filteredProducts = useMemo(() => {
+    let filtered = allProducts;
+    if (selectedCategoryId !== -1) {
+      filtered = filtered.filter((p) => p.category_id === selectedCategoryId);
+    }
+    if (searchTerm.trim()) {
+      const keyword = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(keyword) ||
+          p.jpName?.toLowerCase().includes(keyword) ||
+          p.description?.toLowerCase().includes(keyword)
+      );
+    }
+    return filtered;
+  }, [allProducts, selectedCategoryId, searchTerm]);
+
+  const displayedProducts = filteredProducts.slice(0, 6);
+
   const cardItems: CardItem[] = displayedProducts.map((item) => ({
-    id: typeof item.id === "string" ? parseInt(item.id) : item.id,
+    id: typeof item.id === "string" ? parseInt(item.id, 10) : item.id,
     name: item.name,
     jpName: item.jpName,
     price: typeof item.price === "string" ? parseFloat(item.price) : item.price,
     image: item.image,
     type: item.category || "special",
     category_id: item.category_id,
+    rating: item.rating,
+    cookTime: item.cookTime,
   }));
 
-  const handleTabClick = (categoryId: number) => {
-    setSelectedCategoryId(categoryId);
-  };
-
   return (
-    <section
-      id="menu"
-      className="relative overflow-hidden py-[60px] sm:px-6 lg:px-18 bg-[#ffffff]"
-    >
-      {/* Decor Circles */}
-      <div className="absolute top-[-80px] left-[-80px] w-[200px] h-[200px] bg-[#dfe3d2] rounded-full opacity-30 z-0" />
-      <div className="absolute top-[-60px] right-[-60px] w-[140px] h-[140px] bg-[#dfe3d2] rounded-full opacity-20 z-0" />
-      <div className="absolute top-[35%] left-[1%] w-[160px] h-[160px] bg-[#dfe3d2] rounded-full opacity-20 z-0" />
-      <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] bg-[#dfe3d2] rounded-full opacity-25 z-0" />
-      <div className="absolute top-[40%] right-[3%] w-[140px] h-[140px] bg-[#dfe3d2] rounded-full opacity-15 z-0" />
-      <div className="absolute bottom-[-80px] left-[-60px] w-[160px] h-[160px] bg-[#dfe3d2] rounded-full opacity-10 z-0" />
-      <div className="absolute bottom-[-100px] right-[-80px] w-[220px] h-[220px] bg-[#dfe3d2] rounded-full opacity-15 z-0" />
-
-      {/* Nội dung chính */}
-      <div className="relative z-10 container mx-auto">
-        {/* Tiêu đề */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-8"
-        >
-          <div className="flex items-center justify-center gap-4 md:gap-6">
-            <div className="h-px w-16 md:w-24 bg-[#333333]"></div>
-            <h2 className="text-xl md:text-3xl font-bold tracking-widest text-[#333333] uppercase">
-              Thực đơn của chúng tôi
-            </h2>
-            <div className="h-px w-16 md:w-24 bg-[#333333]"></div>
+    <section className="py-15 px-6 sm:px-16 bg-white text-base text-gray-800">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 text-[#A68345] font-semibold mb-3 text-base">
+            <ChefHat size={18} />
+            <span>{t("header.subtitle")}</span>
           </div>
-          <p className="text-[#666666] mt-2 text-sm md:text-base">
-            Khám phá các món ăn truyền thống và hiện đại được chế biến từ nguyên
-            liệu tươi ngon nhất
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+            <span className="block text-[1.1em]">
+              {t("header.japanese_title")}
+            </span>
+            <span className="bg-gradient-to-r from-[#A68345] to-[#BD944A] bg-clip-text text-transparent">
+              {t("header.main_title")}
+            </span>
+          </h2>
+          <p className="text-base text-gray-600 max-w-2xl mx-auto mt-4 -mb-5 leading-relaxed">
+            {t("header.description")}
           </p>
-        </motion.div>
+        </div>
 
-        {/* Tabs danh mục */}
-        <div className="flex flex-wrap justify-center gap-8 md:gap-10 mb-10">
+        {/* Search */}
+        <div className="mb-10 max-w-lg mx-auto">
+          <div className="relative">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A68345]"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder={t("search.placeholder")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-2 rounded-xl border border-[#A68345]/20 focus:outline-none focus:border-[#A68345] bg-white text-gray-800 text-base"
+            />
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap justify-center gap-4 mb-10">
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => handleTabClick(cat.id)}
-              className={`px-5 py-2 rounded-full text-sm md:text-base font-medium transition-all duration-300 hover:scale-105
-              ${
+              onClick={() => setSelectedCategoryId(cat.id)}
+              className={`px-7 py-3 rounded-full border text-base font-medium transition-all duration-200 ${
                 selectedCategoryId === cat.id
-                  ? "bg-[#A68345] text-white border-none shadow-lg"
-                  : "bg-[#F8F1E9] text-[#6B5E3C] border border-[#6B5E3C] hover:border-[#A68345] hover:text-[#A68345]"
+                  ? "bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white"
+                  : "bg-white border-[#A68345]/20 text-gray-800 hover:border-[#A68345]"
               }`}
             >
+              <span className="mr-2">{cat.icon}</span>
               {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Loading state */}
-        {loading && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#A68345]"></div>
-          </div>
+        {/* Loading / No Result / Products */}
+        {loading ? (
+          <p className="text-center text-[#A68345] text-base">
+            {t("states.loading")}
+          </p>
+        ) : cardItems.length === 0 ? (
+          <p className="text-center text-gray-500 text-base">
+            {t("states.no_results")}
+          </p>
+        ) : (
+          <CardList data={cardItems} filterType="all" />
         )}
 
-        {/* Danh sách món ăn */}
-        {!loading && (
-          <>
-            <CardList
-              data={cardItems}
-              filterType="all" // Không cần filter ở CardList nữa vì đã filter ở đây
-            />
-
-            {/* Hiển thị thông báo nếu không có sản phẩm */}
-            {cardItems.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-[#666666] text-lg">
-                  Không có món ăn nào trong danh mục này
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Nút xem thêm - chỉ hiển thị khi có nhiều hơn 6 sản phẩm */}
-        {products.length > 6 && (
-          <div className="text-center mt-8">
-            <Link href="/thuc-don">
-              <button className="px-6 py-2 rounded-full bg-[#8E9482] text-white hover:bg-[#7a5e5e] transition-all duration-300 hover:scale-105 shadow-md">
-                Xem thêm ({products.length - 6} món)
-              </button>
+        {/* View All Button */}
+        {filteredProducts.length > 6 && (
+          <div className="text-center mt-10">
+            <Link
+              href={getLocalizedPath("/thuc-don")}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all text-base font-semibold"
+            >
+              <ChefHat size={20} />
+              <span>{t("buttons.view_all")}</span>
+              <ArrowRight size={18} />
             </Link>
           </div>
         )}
