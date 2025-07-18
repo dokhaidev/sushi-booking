@@ -33,14 +33,10 @@ export type Namespace =
   | "contactTestimonials"
   | "contactMap"
   | "loginPage"
-<<<<<<< HEAD
   | "register"
   | "reservation"
   | "orderSummary";
 
-=======
-  | "register";
->>>>>>> 8771f3ca2b021c2908e8bbdc0fb8ed7197c48b72
 
 export type NamespacedTranslations = Record<Namespace, Translations>;
 

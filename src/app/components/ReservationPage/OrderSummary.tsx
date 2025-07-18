@@ -486,7 +486,7 @@ export default function OrderSummary({
 
         {discountAmount > 0 && (
           <div className="flex justify-between mb-1 text-green-700">
-            <span className="text-sm">{t('orderSummary.discount', { amount: discountAmount.toLocaleString() })}</span>
+            <span className="text-sm">{t('orderSummary.discount')}</span>
             <span>-{discountAmount.toLocaleString()} ₫</span>
           </div>
         )}
