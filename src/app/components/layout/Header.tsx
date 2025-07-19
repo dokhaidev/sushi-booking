@@ -203,19 +203,19 @@ const Header = () => {
             </div>
           </nav>
 
-          {/* Language Switcher & User Actions */}
-          <div className="hidden lg:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
-            {/* Language Switcher */}
-            <div className="relative">
+          {/* Right Side - User Actions & Language */}
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
+            {/* Language Switcher - Desktop */}
+            <div className="hidden lg:block relative">
               <button
                 onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
                 className={`
-                    flex items-center gap-2 px-3 py-1 rounded-full 
-                    border border-[#E6DDD4] shadow-sm   
-                    bg-gradient-to-tr from-[#FDF8F3] to-[#F5F0E9] 
-                    hover:shadow-md hover:from-[#FAF4ED] hover:to-[#EFE8E1]
-                    transition-all duration-300
-                     `}
+                  flex items-center gap-2 px-3 py-1 rounded-full 
+                  border border-[#E6DDD4] shadow-sm   
+                  bg-gradient-to-tr from-[#FDF8F3] to-[#F5F0E9] 
+                  hover:shadow-md hover:from-[#FAF4ED] hover:to-[#EFE8E1]
+                  transition-all duration-300
+                `}
                 aria-label={t("aria.language_switcher")}
               >
                 <span className="text-lg">🌐</span>
