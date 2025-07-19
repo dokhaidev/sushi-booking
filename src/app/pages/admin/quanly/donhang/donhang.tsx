@@ -459,12 +459,14 @@ export default function QuanLyDonHang() {
               <table className="min-w-full text-sm text-left">
                 <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                   <tr>
-                    <th className="px-2 sm:px-4 py-2">MÃ ĐƠN</th>
-                    <th className="px-2 sm:px-4 py-2 hidden sm:table-cell">KHÁCH HÀNG</th>
-                    <th className="px-2 sm:px-4 py-2">TỔNG TIỀN</th>
-                    <th className="px-2 sm:px-4 py-2">HÌNH THỨC THANH TOÁN</th>
-                    <th className="px-2 sm:px-4 py-2">TRẠNG THÁI</th>
-                    <th className="px-2 sm:px-4 py-2">THAO TÁC</th>
+                    <th className="px-2 sm:px-4 py-2">Mã đơn</th>
+                    <th className="px-2 sm:px-4 py-2">Mã bàn</th>
+                    <th className="px-2 sm:px-4 py-2 hidden sm:table-cell">Khách hàng</th>
+                    <th className="px-2 sm:px-4 py-2">Tổng tiền</th>
+                    <th className="px-2 sm:px-4 py-2">Hình thức thanh toán</th>
+                    <th className="px-2 sm:px-4 py-2">Giờ đặt</th>
+                    <th className="px-2 sm:px-4 py-2">Trạng thái</th>
+                    <th className="px-2 sm:px-4 py-2">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,6 +474,7 @@ export default function QuanLyDonHang() {
                     paginatedOrders.map((order, idx) => (
                       <tr key={order.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
                         <td className="px-2 sm:px-4 py-2 font-medium">#{order.id}</td>
+                        <td className="px-2 sm:px-4 py-2 font-medium">{order.table?.name || "Không có"}</td>
                         <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">
                           <div className="max-w-[150px] truncate">{order.customer?.name}</div>
                         </td>
@@ -496,6 +499,16 @@ export default function QuanLyDonHang() {
                           </span>
                         </td>
                         <td className="px-2 sm:px-4 py-2">
+                          <div className="text-xs text-gray-600">
+                            {new Date(order.created_at).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                            })}{" "}
+                            <span className="font-medium">({new Date(order.created_at).toLocaleTimeString("vi-VN")})</span>
+                          </div>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2">
                           <span
                             className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${getStatusInfo(order.status).color}`}
                           >
@@ -516,13 +529,11 @@ export default function QuanLyDonHang() {
                                 onClick={() => handleUpdateStatus(order)}
                               >
                                 <FaEdit className="w-3 h-3" />
-                                Sửa
                               </button>
                             )}
                             {order.status === "success" && (
                               <span className="p-2 flex items-center gap-1 text-sm text-gray-400 border border-gray-400 rounded bg-gray-100 font-medium">
                                 <FaEdit className="w-3 h-3" />
-                                Đã hoàn tất
                               </span>
                             )}
                           </div>
