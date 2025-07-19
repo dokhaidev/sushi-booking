@@ -236,7 +236,7 @@ export default function DatBanPage() {
   };
 
   return (
-    <div className="container mx-auto py-[60px] sm:px-16 lg:px-24">
+    <div className="mx-auto py-[60px] sm:px-16 lg:px-24">
       <AnimatePresence>
         {notification.show && (
           <NotificationPopup

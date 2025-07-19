@@ -64,7 +64,6 @@ const Header = () => {
     };
   }, [userMenuOpen, languageMenuOpen]);
 
-  // 🌐 Tạo navLinks có prefix lang
   const navLinks = [
     {
       href: `/${lang}`,
@@ -95,7 +94,6 @@ const Header = () => {
     },
   ];
 
-  // 🌐 Switch language giữ nguyên path
   const switchLanguage = (newLang: string) => {
     const segments = pathname.split("/");
     segments[1] = newLang;
@@ -104,7 +102,6 @@ const Header = () => {
     setLanguageMenuOpen(false);
   };
 
-  // 🌐 Hỗ trợ loading skeleton
   const UserActionsSkeleton = () => (
     <div className="hidden lg:flex items-center space-x-3">
       <div className="flex items-center space-x-2 animate-pulse">
@@ -134,7 +131,7 @@ const Header = () => {
           : "bg-[#F8F1E9] border-b border-[#AF763E]"
       }`}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-16 py-3">
+      <div className="mx-auto px-4 sm:px-6 lg:px-20 xl:px-[90px] 2xl:px-[80px] py-3 max-w-[1920px]">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <motion.div
@@ -169,58 +166,56 @@ const Header = () => {
             </Link>
           </motion.div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2 flex-shrink-0">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-2 xl:px-4 py-2 rounded-lg transition-all whitespace-nowrap text-sm xl:text-base ${
-                  pathname === link.href
-                    ? scrolled
+          {/* Desktop Navigation - Center aligned */}
+          <nav className="hidden lg:flex items-center justify-center flex-1 max-w-2xl mx-4 2xl:mx-8">
+            <div className="flex items-center space-x-1 xl:space-x-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative px-2 xl:px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm xl:text-base ${
+                    pathname === link.href
                       ? "text-[#333333] font-medium"
-                      : "text-[#333333] font-medium"
-                    : scrolled
-                    ? "text-[#333333] hover:text-[#666666]"
-                    : "text-[#333333] hover:text-[#666666]"
-                }`}
-              >
-                <span className="hidden xl:inline">{link.label}</span>
-                <span className="xl:hidden">
-                  {link.shortLabel || link.label}
-                </span>
-                {pathname === link.href && (
-                  <motion.div
-                    layoutId="navUnderline"
-                    className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                      scrolled ? "bg-[#9E7676]" : "bg-[#815B5B]"
-                    }`}
-                    transition={{ type: "spring", bounce: 0.25, duration: 0.6 }}
-                  />
-                )}
-                {link.highlight && !pathname.includes(link.href) && (
-                  <span className="absolute -top-1 -right-1 h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B04242] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#B04242]"></span>
+                      : "text-[#333333] hover:text-[#666666]"
+                  }`}
+                >
+                  <span className="hidden xl:inline">{link.label}</span>
+                  <span className="xl:hidden">
+                    {link.shortLabel || link.label}
                   </span>
-                )}
-              </Link>
-            ))}
+                  {pathname === link.href && (
+                    <motion.div
+                      layoutId="navUnderline"
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                        scrolled ? "bg-[#9E7676]" : "bg-[#815B5B]"
+                      }`}
+                      transition={{ type: "spring", bounce: 0.25, duration: 0.6 }}
+                    />
+                  )}
+                  {link.highlight && !pathname.includes(link.href) && (
+                    <span className="absolute -top-1 -right-1 h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B04242] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#B04242]"></span>
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
           </nav>
 
-          {/* Language Switcher & User Actions */}
-          <div className="hidden lg:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
-            {/* Language Switcher */}
-            <div className="relative">
+          {/* Right Side - User Actions & Language */}
+          <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 flex-shrink-0">
+            {/* Language Switcher - Desktop */}
+            <div className="hidden lg:block relative">
               <button
                 onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
                 className={`
-                    flex items-center gap-2 px-3 py-1 rounded-full 
-                    border border-[#E6DDD4] shadow-sm   
-                    bg-gradient-to-tr from-[#FDF8F3] to-[#F5F0E9] 
-                    hover:shadow-md hover:from-[#FAF4ED] hover:to-[#EFE8E1]
-                    transition-all duration-300
-                     `}
+                  flex items-center gap-2 px-3 py-1 rounded-full 
+                  border border-[#E6DDD4] shadow-sm   
+                  bg-gradient-to-tr from-[#FDF8F3] to-[#F5F0E9] 
+                  hover:shadow-md hover:from-[#FAF4ED] hover:to-[#EFE8E1]
+                  transition-all duration-300
+                `}
                 aria-label={t("aria.language_switcher")}
               >
                 <span className="text-lg">🌐</span>
@@ -301,7 +296,7 @@ const Header = () => {
               <UserActionsSkeleton />
             ) : (
               <div
-                className="flex items-center space-x-2 xl:space-x-3 relative min-w-0"
+                className="flex items-center space-x-2 lg:space-x-3 relative min-w-0"
                 ref={userMenuRef}
               >
                 {user ? (
@@ -387,10 +382,10 @@ const Header = () => {
                     </AnimatePresence>
                   </>
                 ) : (
-                  <div className="flex items-center space-x-2 xl:space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     <Link
                       href={`/${lang}/dang-nhap`}
-                      className={`transition-colors text-xs xl:text-sm font-medium px-2 xl:px-3 py-1.5 whitespace-nowrap ${
+                      className={`transition-colors text-xs sm:text-sm font-medium px-2 sm:px-3 py-1.5 whitespace-nowrap ${
                         scrolled
                           ? "text-[#333333] hover:text-[#666666]"
                           : "text-[#333333] hover:text-[#666666]"
@@ -404,7 +399,7 @@ const Header = () => {
                     >
                       <Link
                         href={`/${lang}/dang-ky`}
-                        className={`px-3 xl:px-4 py-2 rounded-lg transition-all shadow hover:shadow-md text-xs xl:text-sm font-medium block whitespace-nowrap ${
+                        className={`px-3 sm:px-4 py-2 rounded-lg transition-all shadow hover:shadow-md text-xs sm:text-sm font-medium block whitespace-nowrap ${
                           scrolled
                             ? "bg-gradient-to-r from-[#AF763E] to-[#6B5E3C] text-white"
                             : "bg-gradient-to-r from-[#AF763E] to-[#6B5E3C] text-white"
@@ -417,25 +412,25 @@ const Header = () => {
                 )}
               </div>
             )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="lg:hidden p-2 flex-shrink-0"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={t("aria.menu_button")}
-          >
-            {mobileMenuOpen ? (
-              <FiX size={22} className="text-[#333333]" />
-            ) : (
-              <FiMenu
-                size={22}
-                className={scrolled ? "text-[#333333]" : "text-[#666666]"}
-              />
-            )}
-          </motion.button>
+            {/* Mobile Menu Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="lg:hidden p-2 flex-shrink-0"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={t("aria.menu_button")}
+            >
+              {mobileMenuOpen ? (
+                <FiX size={22} className="text-[#333333]" />
+              ) : (
+                <FiMenu
+                  size={22}
+                  className={scrolled ? "text-[#333333]" : "text-[#666666]"}
+                />
+              )}
+            </motion.button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
