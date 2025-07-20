@@ -211,65 +211,85 @@ const Header = () => {
           {/* Language Switcher & User Actions */}
           <div className="hidden lg:flex items-center space-x-2 xl:space-x-3 flex-shrink-0">
             {/* Language Switcher */}
-            <div className="relative" ref={languageMenuRef}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <div className="relative">
+              <button
                 onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-                className={`flex items-center px-2 py-1 rounded-lg transition-all text-sm font-medium ${
-                  languageMenuOpen
-                    ? "bg-[#F8F1E9] text-[#333333]"
-                    : scrolled
-                    ? "text-[#333333] hover:bg-[#F8F1E9]"
-                    : "text-[#333333] hover:bg-[#F8F1E9]"
-                }`}
+                className={`
+                    flex items-center gap-2 px-3 py-1 rounded-full 
+                    border border-[#E6DDD4] shadow-sm   
+                    bg-gradient-to-tr from-[#FDF8F3] to-[#F5F0E9] 
+                    hover:shadow-md hover:from-[#FAF4ED] hover:to-[#EFE8E1]
+                    transition-all duration-300
+                     `}
                 aria-label={t("aria.language_switcher")}
-                aria-haspopup="true"
-                aria-expanded={languageMenuOpen}
               >
-                <span className="w-6 h-6 rounded-full bg-gradient-to-br from-[#AF763E] to-[#6B5E3C] flex items-center justify-center text-white text-xs font-bold">
-                  {lang === "vi" ? "VI" : "EN"}
-                </span>
-              </motion.button>
+                <span className="text-lg">🌐</span>
+                <div className="flex items-center gap-1">
+                  <Image
+                    src={
+                      lang === "vi"
+                        ? "https://cdn.nhandan.vn/images/1ef398c4e2fb4bf07980a2ded785b3efa34a32bf3c30de657ea321a3b2a92b2cd50a2bcbd400315f55c0227a8414ec3e667230b4143f06152d02cab40f71e050/quockyvietnam-copy-7814.jpg"
+                        : "https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg"
+                    }
+                    alt={lang === "vi" ? "Tiếng Việt" : "English"}
+                    width={20}
+                    height={14}
+                    className="rounded-[2px] object-cover shadow-sm"
+                  />
+                  <span className="text-sm text-[#8B6F47] font-medium">
+                    {lang === "vi" ? "VI" : "EN"}
+                  </span>
+                </div>
+              </button>
 
               <AnimatePresence>
                 {languageMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 20,
-                    }}
-                    className="absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-xl border border-[#F0E6D2] overflow-hidden z-50"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-36 bg-white border border-[#E6DDD4] rounded-xl shadow-lg z-50 overflow-hidden"
                   >
                     <button
-                      onClick={() => switchLanguage("vi")}
-                      className={`flex items-center w-full px-3 py-2 text-sm hover:bg-[#F8F1E6] transition-colors ${
+                      onClick={() => {
+                        switchLanguage("vi");
+                        setLanguageMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[#F5F3F0] ${
                         lang === "vi"
-                          ? "bg-[#F8F1E6] text-[#333333] font-medium"
-                          : "text-[#594545]"
+                          ? "bg-[#F8F1E9]/60 font-semibold text-[#AF763E]"
+                          : ""
                       }`}
                     >
-                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#AF763E] to-[#6B5E3C] flex items-center justify-center text-white text-xs font-bold mr-2">
-                        VI
-                      </span>
-                      Tiếng Việt
+                      <Image
+                        src="https://cdn.nhandan.vn/images/1ef398c4e2fb4bf07980a2ded785b3efa34a32bf3c30de657ea321a3b2a92b2cd50a2bcbd400315f55c0227a8414ec3e667230b4143f06152d02cab40f71e050/quockyvietnam-copy-7814.jpg"
+                        alt="Tiếng Việt"
+                        width={20}
+                        height={14}
+                        className="object-cover"
+                      />
+                      <span>Tiếng Việt</span>
                     </button>
                     <button
-                      onClick={() => switchLanguage("en")}
-                      className={`flex items-center w-full px-3 py-2 text-sm hover:bg-[#F8F1E6] transition-colors ${
+                      onClick={() => {
+                        switchLanguage("en");
+                        setLanguageMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[#F5F3F0] ${
                         lang === "en"
-                          ? "bg-[#F8F1E6] text-[#333333] font-medium"
-                          : "text-[#594545]"
+                          ? "bg-[#F8F1E9]/60 font-semibold text-[#AF763E]"
+                          : ""
                       }`}
                     >
-                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#AF763E] to-[#6B5E3C] flex items-center justify-center text-white text-xs font-bold mr-2">
-                        EN
-                      </span>
-                      English
+                      <Image
+                        src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg"
+                        alt="English"
+                        width={20}
+                        height={14}
+                        className="object-cover"
+                      />
+                      <span>English</span>
                     </button>
                   </motion.div>
                 )}

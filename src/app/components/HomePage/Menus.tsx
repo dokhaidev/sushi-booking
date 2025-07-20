@@ -66,7 +66,9 @@ export default function Menus() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/category");
+      const res = await axios.get("http://127.0.0.1:8000/api/category", {
+        params: { lang },
+      });
       if (Array.isArray(res.data)) {
         const allTab: Category = {
           id: -1,
@@ -82,12 +84,14 @@ export default function Menus() {
     } catch {
       setCategories([]);
     }
-  }, [t]);
+  }, [t, lang]);
 
   const fetchAllProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://127.0.0.1:8000/api/foods");
+      const res = await axios.get("http://127.0.0.1:8000/api/foods", {
+        params: { lang },
+      });
       let data: Product[] = [];
       if (Array.isArray(res.data)) data = res.data;
       else if (res.data?.data) data = res.data.data;
@@ -102,7 +106,7 @@ export default function Menus() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, lang]);
 
   useEffect(() => {
     fetchCategories();

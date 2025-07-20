@@ -1,0 +1,19 @@
+{
+  "title": "Thông tin đặt bàn",
+  "date_label": "Ngày đặt bàn",
+  "guest_count_label": "Số lượng khách",
+  "available_slots": "Khung giờ trống",
+
+  "contact_info_title": "Thông tin liên hệ",
+  "full_name_label": "Họ và tên",
+  "full_name_placeholder": "Nhập họ tên",
+  "phone_label": "Số điện thoại",
+  "phone_placeholder": "Nhập số điện thoại",
+
+  "payment_note_title": "Thanh toán & Ghi chú",
+  "payment_method_label": "Hình thức thanh toán",
+  "payment_cash": "Tiền mặt khi đến",
+  "payment_vnpay": "Thanh toán VNPay",
+  "note_label": "Ghi chú",
+  "note_placeholder": "Yêu cầu đặc biệt, dị ứng thức ăn..."
+}

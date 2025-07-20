@@ -2,39 +2,36 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function ContactFAQ() {
+  const { t } = useTranslation("contactFAQ");
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const faqs = [
     {
-      question: "Làm thế nào để đặt bàn tại Sushi Takumi?",
-      answer:
-        "Bạn có thể đặt bàn qua hotline 0909 123 456, hoặc trực tiếp tại nhà hàng. Chúng tôi khuyến khích đặt bàn trước để đảm bảo có chỗ ngồi tốt nhất.",
+      question: t("question1"),
+      answer: t("answer1"),
       icon: "📞",
     },
     {
-      question: "Nhà hàng có phục vụ món chay không?",
-      answer:
-        "Có, chúng tôi có nhiều lựa chọn sushi chay và các món Nhật Bản dành cho người ăn chay. Vui lòng thông báo khi đặt bàn để được tư vấn chi tiết.",
+      question: t("question2"),
+      answer: t("answer2"),
       icon: "🥗",
     },
     {
-      question: "Giờ hoạt động của nhà hàng?",
-      answer:
-        "Sushi Takumi mở cửa từ 11:00 - 14:00 (trưa) và 17:00 - 22:00 (tối) từ thứ 2 đến chủ nhật. Nghỉ thứ 3 hàng tuần.",
+      question: t("question3"),
+      answer: t("answer3"),
       icon: "⏱️",
     },
     {
-      question: "Có dịch vụ giao hàng tận nơi không?",
-      answer:
-        "Hiện tại chúng tôi chưa có dịch vụ giao hàng, nhưng bạn có thể đặt món và đến lấy tại nhà hàng. Chúng tôi sẽ chuẩn bị sẵn để bạn tiết kiệm thời gian.",
+      question: t("question4"),
+      answer: t("answer4"),
       icon: "🚗",
     },
     {
-      question: "Nhà hàng có chỗ đậu xe không?",
-      answer:
-        "Có, chúng tôi có bãi đậu xe miễn phí cho khách hàng ngay trước nhà hàng và khu vực lân cận.",
+      question: t("question5"),
+      answer: t("answer5"),
       icon: "🅿️",
     },
   ];
@@ -47,14 +44,14 @@ export default function ContactFAQ() {
           <div className="inline-flex items-center gap-2 text-[#AF763E] mb-2">
             <HelpCircle className="w-5 h-5" />
             <span className="uppercase text-sm tracking-wide font-semibold">
-              Giải đáp
+              {t("sectionLabel")}
             </span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-[#4B3B2A]">
-            Câu hỏi thường gặp
+            {t("heading")}
           </h2>
           <p className="text-[#6D5F50] mt-3 max-w-xl mx-auto">
-            Những điều bạn nên biết khi đến Sushi Takumi.
+            {t("description")}
           </p>
         </div>
 
@@ -99,11 +96,9 @@ export default function ContactFAQ() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <p className="text-[#6D5F50] mb-4">
-            Bạn vẫn còn câu hỏi? Chúng tôi luôn sẵn sàng hỗ trợ!
-          </p>
+          <p className="text-[#6D5F50] mb-4">{t("ctaText")}</p>
           <button className="inline-flex items-center gap-2 px-6 py-2 bg-[#AF763E] text-white rounded-full shadow-md hover:shadow-lg transition">
-            Liên hệ ngay <ArrowRight className="w-4 h-4" />
+            {t("ctaButton")} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

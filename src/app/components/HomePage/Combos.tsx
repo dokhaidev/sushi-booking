@@ -69,7 +69,12 @@ export default function ComboSlider() {
     const fetchCombos = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://127.0.0.1:8000/api/combos");
+        const res = await axios.get("http://127.0.0.1:8000/api/combos", {
+          params: {
+            lang, // lang là 'vi' hoặc 'en', được lấy từ useTranslation
+          },
+        });
+
         if (!Array.isArray(res.data)) throw new Error("Invalid data");
 
         const data = res.data.map((combo: Combo) => ({

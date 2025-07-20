@@ -11,6 +11,8 @@ import FoodSelectionModal from "../../../components/ReservationPage/FoodSelectio
 import ComboSelectionModal from "../../../components/ReservationPage/ComboSelectionModal";
 import { useBooking } from "../../../hooks/useBooking";
 import { useAuth } from "../../../context/authContext";
+import { useTranslation } from "../../../lib/i18n/client";
+
 import {
   ComboItem,
   SelectedComboItem,
@@ -26,6 +28,7 @@ interface OrderSummaryComboItem extends ComboItem {
 }
 
 export default function DatBanPage() {
+  const { t, lang } = useTranslation("reservation");
   const router = useRouter();
   const { user, isLoading: authLoading, isInitialized } = useAuth();
 
@@ -79,7 +82,9 @@ export default function DatBanPage() {
 
   useEffect(() => {
     if (isInitialized && !user && !authLoading) {
-      router.replace(`/dang-nhap?returnUrl=${encodeURIComponent("/dat-ban")}`);
+      router.replace(
+        `/${lang}/dang-nhap?returnUrl=${encodeURIComponent("/dat-ban")}`
+      );
     }
   }, [user, authLoading, isInitialized, router]);
 
@@ -231,7 +236,7 @@ export default function DatBanPage() {
   };
 
   return (
-    <div className="container mx-auto py-[60px] sm:px-16 lg:px-24">
+    <div className="mx-auto py-[60px] sm:px-16 lg:px-24">
       <AnimatePresence>
         {notification.show && (
           <NotificationPopup

@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import NotificationPopup from "@/src/app/components/layout/NotificationPopup";
+import { useTranslation } from "../../../lib/i18n/client";
 
 export default function RegisterPage() {
+  const { t, lang } = useTranslation("register");
   const [data, setData] = useState({
     name: "",
     phone: "",
@@ -28,41 +30,41 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {};
 
     if (touched.name && !data.name.trim()) {
-      newErrors.name = "Vui lòng nhập họ và tên";
+      newErrors.name = t("register.name_required");
     }
 
     if (touched.email) {
       if (!data.email.trim()) {
-        newErrors.email = "Vui lòng nhập địa chỉ email";
+        newErrors.email = t("register.email_required");
       } else if (!/^\S+@\S+\.\S+$/.test(data.email)) {
-        newErrors.email = "Địa chỉ email không hợp lệ";
+        newErrors.email = t("register.email_invalid");
       }
     }
 
     if (touched.phone) {
       if (!data.phone.trim()) {
-        newErrors.phone = "Vui lòng nhập số điện thoại";
+        newErrors.phone = t("register.phone_required");
       } else if (!/^\d{10,}$/.test(data.phone)) {
-        newErrors.phone = "Số điện thoại phải có ít nhất 10 chữ số";
+        newErrors.phone = t("register.phone_invalid");
       }
     }
 
     if (touched.password) {
       if (!data.password) {
-        newErrors.password = "Vui lòng nhập mật khẩu";
+        newErrors.password = t("register.password_required");
       } else if (data.password.length < 6) {
-        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        newErrors.password = t("register.password_short");
       }
     }
 
     if (touched.cfPass || (touched.password && cfPass)) {
       if (data.password && cfPass && data.password !== cfPass) {
-        newErrors.cfPass = "Mật khẩu không khớp";
+        newErrors.cfPass = t("register.password_mismatch");
       }
     }
 
     if (touched.agreeTerms && !agreeTerms) {
-      newErrors.agreeTerms = "Vui lòng đồng ý với điều khoản dịch vụ";
+      newErrors.agreeTerms = t("register.agree_terms_required");
     }
 
     setErrors(newErrors);
@@ -153,11 +155,9 @@ export default function RegisterPage() {
               <div className="p-8">
                 <div className="text-center mb-6">
                   <h1 className="text-2xl font-bold text-[#AF763E] mb-2">
-                    Tạo tài khoản mới
+                    {t("register.title")}
                   </h1>
-                  <p className="text-[#333333]">
-                    Điền thông tin để đăng ký tài khoản
-                  </p>
+                  <p className="text-[#333333]">{t("register.subtitle")}</p>
                 </div>
 
                 {errors.submit && (
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                       htmlFor="fullName"
                       className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Họ và tên
+                      {t("register.fullName")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                       htmlFor="email"
                       className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Email
+                      {t("register.email")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -264,7 +264,7 @@ export default function RegisterPage() {
                       htmlFor="phone"
                       className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Số điện thoại
+                      {t("register.phone")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -311,7 +311,7 @@ export default function RegisterPage() {
                       htmlFor="password"
                       className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Mật khẩu
+                      {t("register.password")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -352,7 +352,7 @@ export default function RegisterPage() {
                       </p>
                     ) : (
                       <p className="mt-1 text-xs text-gray-500">
-                        Mật khẩu phải có ít nhất 6 ký tự
+                        {t("register.passwordNote")}
                       </p>
                     )}
                   </div>
@@ -362,7 +362,7 @@ export default function RegisterPage() {
                       htmlFor="confirmPassword"
                       className="block text-sm font-medium text-[#333333] mb-1"
                     >
-                      Xác nhận mật khẩu
+                      {t("register.confirmPassword")}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -417,19 +417,19 @@ export default function RegisterPage() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label htmlFor="terms" className="text-[#333333]">
-                        Tôi đồng ý với{" "}
+                        {t("register.agreeTerms")}
                         <a
                           href="#"
                           className="text-amber-700 hover:text-amber-800 underline"
                         >
-                          Điều khoản dịch vụ
+                          {t("register.terms")}
                         </a>{" "}
                         và{" "}
                         <a
                           href="#"
                           className="text-amber-700 hover:text-amber-800 underline"
                         >
-                          Chính sách bảo mật
+                          {t("register.privacy")}
                         </a>
                       </label>
                       {errors.agreeTerms && (
@@ -452,8 +452,7 @@ export default function RegisterPage() {
                     </div>
                     <div className="ml-3 text-sm">
                       <label htmlFor="newsletter" className="text-[#333333]">
-                        Tôi muốn nhận thông tin về ưu đãi và sự kiện đặc biệt
-                        qua email
+                        {t("register.subscribe")}
                       </label>
                     </div>
                   </div>
@@ -466,19 +465,21 @@ export default function RegisterPage() {
                         isSubmitting ? "opacity-70 cursor-not-allowed" : ""
                       }`}
                     >
-                      {isSubmitting ? "Đang xử lý..." : "Đăng ký"}
+                      {isSubmitting
+                        ? t("register.processing")
+                        : t("register.submit")}
                     </button>
                   </div>
                 </form>
 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-[#333333]">
-                    Đã có tài khoản?{" "}
+                    {t("register.alreadyHaveAccount")}{" "}
                     <Link
-                      href="/dang-nhap"
+                      href={`/${lang}/dang-nhap`}
                       className="font-medium text-amber-700 hover:text-amber-800"
                     >
-                      Đăng nhập ngay
+                      {t("register.loginNow")}
                     </Link>
                   </p>
                 </div>
@@ -487,95 +488,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-
-      {/* Benefits Section - Mobile */}
-      <section className="lg:hidden py-12 px-4 bg-gradient-to-r from-red-50 to-amber-50">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-[#333333] mb-8 text-center">
-            Lợi ích khi đăng ký tài khoản
-          </h2>
-
-          <div className="grid grid-cols-1 gap-6">
-            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
-              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[#333333] mb-2">
-                Tích điểm ưu đãi
-              </h3>
-              <p className="text-sm text-[#333333]">
-                Tích điểm với mỗi đơn hàng và đổi điểm để nhận các ưu đãi đặc
-                biệt
-              </p>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
-              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[#333333] mb-2">
-                Đặt hàng nhanh chóng
-              </h3>
-              <p className="text-sm text-[#333333]">
-                Lưu địa chỉ và phương thức thanh toán để đặt hàng nhanh chóng
-                hơn
-              </p>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-sm text-center border border-red-100">
-              <div className="w-16 h-16 bg-[#AF763E] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[#333333] mb-2">
-                Thông báo ưu đãi
-              </h3>
-              <p className="text-sm text-[#333333]">
-                Nhận thông báo về các chương trình khuyến mãi và sự kiện đặc
-                biệt
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

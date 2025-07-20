@@ -1,6 +1,8 @@
 "use client";
+
 import { motion, type Variants } from "framer-motion";
 import { Heart, Award, Users } from "lucide-react";
+import { useTranslation } from "../../lib/i18n/client";
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -12,6 +14,29 @@ const fadeInUp: Variants = {
 };
 
 export default function Introduction() {
+  const { t } = useTranslation("introduction");
+
+  const coreValues = [
+    {
+      icon: <Heart className="w-8 h-8" />,
+      title: t("values.fresh.title"),
+      description: t("values.fresh.description"),
+      delay: 0.4,
+    },
+    {
+      icon: <Award className="w-8 h-8" />,
+      title: t("values.art.title"),
+      description: t("values.art.description"),
+      delay: 0.5,
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: t("values.space.title"),
+      description: t("values.space.description"),
+      delay: 0.6,
+    },
+  ];
+
   return (
     <section className="relative py-[60] px-6 lg:px-20 bg-[#F8F1E9] overflow-hidden">
       {/* Background Pattern */}
@@ -35,7 +60,7 @@ export default function Introduction() {
           variants={fadeInUp}
           custom={0}
         >
-          Về Chúng Tôi
+          {t("title")}
         </motion.h2>
 
         <motion.p
@@ -43,8 +68,7 @@ export default function Introduction() {
           variants={fadeInUp}
           custom={0.2}
         >
-          Sushi Takumi là sự kết hợp giữa nghệ thuật chế biến truyền thống Nhật
-          Bản và tinh thần hiếu khách hiện đại.
+          {t("intro")}
         </motion.p>
 
         <motion.p
@@ -52,35 +76,12 @@ export default function Introduction() {
           variants={fadeInUp}
           custom={0.3}
         >
-          Chúng tôi tự hào mang đến những món sushi thủ công với hương vị tinh
-          tế, đậm đà và nguyên liệu tươi ngon mỗi ngày.
+          {t("description")}
         </motion.p>
 
-        {/* Core Values Grid */}
+        {/* Core Values */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-          {[
-            {
-              icon: <Heart className="w-8 h-8" />,
-              title: "Tươi Mỗi Ngày",
-              description:
-                "Chúng tôi chỉ chọn những nguyên liệu tươi ngon nhất mỗi ngày để đảm bảo chất lượng tối ưu cho từng món ăn.",
-              delay: 0.4,
-            },
-            {
-              icon: <Award className="w-8 h-8" />,
-              title: "Nghệ Thuật Sushi",
-              description:
-                "Mỗi món sushi là một tác phẩm nghệ thuật, được tạo nên bởi đôi bàn tay tài hoa của các đầu bếp Takumi.",
-              delay: 0.5,
-            },
-            {
-              icon: <Users className="w-8 h-8" />,
-              title: "Không Gian Nhật",
-              description:
-                "Thực khách sẽ được trải nghiệm không gian Nhật Bản ấm cúng, tinh tế ngay giữa lòng Sài Gòn.",
-              delay: 0.6,
-            },
-          ].map((item, index) => (
+          {coreValues.map((item, index) => (
             <motion.div
               key={index}
               className="relative bg-white/80 backdrop-blur-sm shadow-md rounded-2xl p-6 border border-[#AF763E]/10"

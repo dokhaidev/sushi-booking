@@ -1,9 +1,31 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { Diamond, Palette, Smile, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function Philosophy() {
+  const { t } = useTranslation("philosophy");
+
+  const principles = [
+    {
+      icon: Diamond,
+      title: t("principles.quality.title"),
+      desc: t("principles.quality.desc"),
+    },
+    {
+      icon: Palette,
+      title: t("principles.aesthetics.title"),
+      desc: t("principles.aesthetics.desc"),
+    },
+    {
+      icon: Smile,
+      title: t("principles.customer.title"),
+      desc: t("principles.customer.desc"),
+    },
+  ];
+
   return (
     <section className="py-[60px] px-6 lg:px-28 bg-gradient-to-br from-[#FFFAF3] via-[#FFF8F0] to-[#FFFAF3] relative overflow-hidden">
       {/* Background Animation */}
@@ -38,35 +60,17 @@ export default function Philosophy() {
         >
           <div className="space-y-6">
             <h3 className="text-4xl lg:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-[#AF763E] via-[#D97706] to-[#8B5A2B] bg-clip-text text-transparent inline-block animate-gradient">
-                Triết Lý Ẩm Thực
+              <span className="pb-2 bg-gradient-to-r from-[#AF763E] via-[#D97706] to-[#8B5A2B] bg-clip-text text-transparent inline-block animate-gradient">
+                {t("title")}
               </span>
             </h3>
             <p className="text-[#AF763E]/90 text-lg leading-relaxed">
-              Mỗi món ăn tại Sushi Takumi là sự kết hợp giữa kỹ thuật truyền
-              thống và tinh thần hiện đại. Từng lát cá được chọn lựa kỹ từ chợ
-              Tsukiji, mang lại trải nghiệm ẩm thực trọn vẹn.
+              {t("description")}
             </p>
           </div>
 
           <div className="space-y-6">
-            {[
-              {
-                icon: Diamond,
-                title: "Chất Lượng Là Hàng Đầu",
-                desc: "Nguyên liệu tươi ngon, nhập khẩu từ Nhật và chế biến theo quy trình nghiêm ngặt.",
-              },
-              {
-                icon: Palette,
-                title: "Thẩm Mỹ Tinh Tế",
-                desc: "Món ăn trình bày nghệ thuật, tôn vinh văn hoá Nhật qua từng đường nét.",
-              },
-              {
-                icon: Smile,
-                title: "Khách Hàng Là Trọng Tâm",
-                desc: "Không gian và dịch vụ khiến khách như được trải nghiệm Nhật Bản thực thụ.",
-              },
-            ].map((item, i) => (
+            {principles.map((item, i) => (
               <motion.div
                 key={i}
                 className="bg-white/60 backdrop-blur rounded-2xl p-6 border border-[#AF763E]/10 shadow-lg group hover:shadow-xl transition"
@@ -98,10 +102,9 @@ export default function Philosophy() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
           >
-            &quot;Sushi không chỉ là món ăn, mà là cầu nối văn hóa và nghệ thuật
-            qua từng lát cá và miếng cơm.&quot;
+            “{t("quote.text")}”
             <cite className="block mt-2 text-sm font-semibold text-[#AF763E] not-italic">
-              — Takumi Yamamoto
+              — {t("quote.author")}
             </cite>
           </motion.blockquote>
         </motion.div>
@@ -121,15 +124,15 @@ export default function Philosophy() {
           >
             <Image
               src="/img/sushi-hokkaido-sachi.jpg"
-              alt="Handmade Sushi"
+              alt={t("imageAlt")}
               width={500}
               height={600}
               className="w-full h-[600px] object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="absolute bottom-6 left-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="text-lg font-semibold">Nghệ thuật sushi thủ công</p>
-              <p className="text-sm opacity-90">Từng chi tiết đều hoàn hảo</p>
+              <p className="text-lg font-semibold">{t("image.caption")}</p>
+              <p className="text-sm opacity-90">{t("image.subcaption")}</p>
             </div>
             <div className="absolute inset-0 border-4 border-[#AF763E]/30 rounded-3xl group-hover:border-[#AF763E]/60 transition" />
           </motion.div>
@@ -157,7 +160,9 @@ export default function Philosophy() {
           >
             <div className="text-center">
               <div className="text-2xl font-bold text-[#AF763E]">30+</div>
-              <div className="text-xs text-[#AF763E]/70">Năm kinh nghiệm</div>
+              <div className="text-xs text-[#AF763E]/70">
+                {t("yearsExperience")}
+              </div>
             </div>
           </motion.div>
         </motion.div>

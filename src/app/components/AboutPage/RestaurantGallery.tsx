@@ -2,74 +2,27 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
-
-const images = [
-  {
-    src: "/img/interior7.jpg",
-    title: "Phòng Ăn Chính",
-    desc: "Không gian rộng rãi, ánh sáng tự nhiên tạo cảm giác ấm cúng và thư thái cho thực khách.",
-    category: "Dining",
-    featured: true,
-  },
-  {
-    src: "/img/interior1.jpg",
-    title: "Góc Riêng Tư",
-    desc: "Phòng riêng yên tĩnh, thích hợp cho các cuộc gặp gỡ quan trọng và bữa ăn riêng tư.",
-    category: "Private",
-    featured: false,
-  },
-  {
-    src: "/img/interior2.jpg",
-    title: "Khu Vườn Nhật",
-    desc: "Thiên nhiên hòa quyện, không gian xanh mát mang đến cảm giác thư giãn tuyệt vời.",
-    category: "Garden",
-    featured: true,
-  },
-  {
-    src: "/img/interior3.jpg",
-    title: "Quầy Bar",
-    desc: "Thiết kế sang trọng với đa dạng đồ uống cao cấp và không gian hiện đại.",
-    category: "Bar",
-    featured: false,
-  },
-  {
-    src: "/img/interior4.jpg",
-    title: "Lối Vào",
-    desc: "Thiết kế ấm áp, đón khách thân thiện với phong cách Nhật Bản truyền thống.",
-    category: "Entrance",
-    featured: false,
-  },
-  {
-    src: "/img/interior5.jpg",
-    title: "Phòng Tiệc",
-    desc: "Không gian rộng rãi, thích hợp tổ chức các sự kiện đặc biệt và tiệc tùng.",
-    category: "Event",
-    featured: false,
-  },
-  {
-    src: "/img/interior6.jpg",
-    title: "Phòng Trà",
-    desc: "Trải nghiệm trà đạo truyền thống Nhật Bản trong không gian yên tĩnh, thiền định.",
-    category: "Tea",
-    featured: true,
-  },
-];
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function RestaurantGallery() {
+  const { t } = useTranslation("restaurant");
+
   const [filter] = useState("All");
+
+  const images = Array.from({ length: 7 }).map((_, i) =>
+    JSON.parse(t(`list_${i}`))
+  );
+
   const filteredImages =
     filter === "All" ? images : images.filter((img) => img.category === filter);
 
   return (
     <section className="py-[60px] px-[90px] bg-[#F8F1E9]">
-      {/* Header */}
       <div className="text-center mb-12 max-w-3xl mx-auto">
-        <h3 className="text-4xl font-bold bg-gradient-to-r from-[#AF763E] to-[#8B5A2B] bg-clip-text text-transparent">
-          Không Gian Nhà Hàng
+        <h3 className="pb-2 text-5xl font-bold bg-gradient-to-r from-[#AF763E] to-[#8B5A2B] bg-clip-text text-transparent">
+          {t("heading")}
         </h3>
-        <p className="mt-4 text-[#AF763E]/90 text-lg">
-          Tận hưởng không gian ấm cúng, thanh lịch và đậm chất Nhật Bản
-        </p>
+        <p className="mt-4 text-[#AF763E]/90 text-lg">{t("subheading")}</p>
       </div>
 
       {/* Featured Images */}

@@ -271,7 +271,7 @@ export function useBooking() {
     }
 
     if (!formData.customer_name || !formData.customer_phone) {
-      showNotification("Please enter contact information", "error");
+      showNotification("Vui lòng nhập đầy đủ thông tin liên hệ", "error");
       return;
     }
 
@@ -279,25 +279,27 @@ export function useBooking() {
       setIsLoading(true);
       const token = localStorage.getItem("auth");
 
-      const finalTotal = Math.max(formData.total_price - discountAmount, 0);
-      const deposit = calculateDepositAmount();
-      const remainingPayment =
-        formData.payment_method === "cash"
-          ? Math.max(finalTotal - deposit, 0)
-          : 0;
+      const isOver12Guests = formData.guest_count > 12;
+      const depositAmount = isOver12Guests ? 200000 : 0;
 
-      const payAmount =
-        formData.payment_method === "cash" ? deposit : finalTotal + deposit;
+      // Tổng tiền cuối cùng đã bao gồm giảm giá từ voucher
+      const totalFinal = formData.total_price;
 
+      // Số tiền còn lại (nếu > 12 khách thì còn lại = tổng - cọc)
+      const remainingPayment = isOver12Guests
+        ? Math.max(totalFinal - depositAmount, 0)
+        : totalFinal;
+
+      // Gửi thông tin đặt bàn lên backend
       const res = await axios.post(
         "http://127.0.0.1:8000/api/orders/bookTables",
         {
           ...formData,
-          total_price: finalTotal,
-          deposit_amount: deposit,
+          total_price: totalFinal, // đã trừ voucher
+          deposit_amount: depositAmount,
           remaining_payment: remainingPayment,
           table_id: selectedTable.table_id,
-          voucher_id: voucherId,
+          voucher_id: voucherId || null,
           foods: foods.map((f) => ({
             food_id: f.food_id,
             quantity: f.quantity,
@@ -317,35 +319,35 @@ export function useBooking() {
       const order_id = res.data.order_id;
       setOrderId(order_id);
 
-      const shouldRedirectToVNPAY =
-        formData.payment_method === "vnpay" || formData.guest_count >= 12;
-
-      if (shouldRedirectToVNPAY) {
+      // Nếu cần thanh toán VNPay (áp dụng khi > 12 khách)
+      if (isOver12Guests) {
         const payRes = await axios.post(
           "http://127.0.0.1:8000/api/orders/vnpay-url",
-          { order_id, amount: payAmount },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            order_id,
+            amount: depositAmount * 100, // VNPay yêu cầu đơn vị là VNĐ x 100 = xu
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
         const payUrl = payRes.data?.data;
         if (payUrl) {
           window.location.href = payUrl;
+          return;
         } else {
-          showNotification("Could not get payment link", "error");
+          showNotification("Không thể tạo liên kết thanh toán", "error");
+          return;
         }
-      } else {
-        showNotification(
-          "Đặt bàn thành công! Vui lòng thanh toán tại nhà hàng.",
-          "success"
-        );
-        router.push("/");
       }
+
+      // Nếu không cần thanh toán online
+      showNotification("Đặt bàn thành công! Vui lòng thanh toán tại nhà hàng.", "success");
+      router.push("/");
     } catch (err: any) {
       console.error("Booking error:", err);
-      showNotification(
-        err?.response?.data?.message || "Error making booking",
-        "error"
-      );
+      showNotification(err?.response?.data?.message || "Lỗi đặt bàn", "error");
     } finally {
       setIsLoading(false);
     }
@@ -510,7 +512,8 @@ export function useBooking() {
   };
 
   const getPaymentAmount = () => {
-    const finalTotal = Math.max(formData.total_price - discountAmount, 0);
+   const finalTotal = formData.total_price; // đã được trừ voucher rồi
+
     const deposit = calculateDepositAmount();
 
     return formData.payment_method === "vnpay" ? finalTotal : deposit;

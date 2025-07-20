@@ -1,0 +1,19 @@
+{
+  "title": "Reservation Information",
+  "date_label": "Reservation Date",
+  "guest_count_label": "Number of Guests",
+  "available_slots": "Available Time Slots",
+
+  "contact_info_title": "Contact Information",
+  "full_name_label": "Full Name",
+  "full_name_placeholder": "Enter your full name",
+  "phone_label": "Phone Number",
+  "phone_placeholder": "Enter your phone number",
+
+  "payment_note_title": "Payment & Notes",
+  "payment_method_label": "Payment Method",
+  "payment_cash": "Pay with cash on arrival",
+  "payment_vnpay": "Pay with VNPay",
+  "note_label": "Note",
+  "note_placeholder": "Special requests, food allergies..."
+}
