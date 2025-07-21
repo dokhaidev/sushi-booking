@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import {
   Award,
@@ -10,42 +11,22 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-
-const chefs = [
-  {
-    name: "Takumi Yamamoto",
-    title: "Bếp trưởng",
-    image: "img/chef1.jpg",
-    desc: "30 năm kinh nghiệm, từng làm tại các nhà hàng Michelin tại Tokyo và Osaka. Chuyên gia về nghệ thuật sushi truyền thống.",
-    specialties: ["Omakase", "Nigiri", "Sashimi"],
-    experience: "30+ năm",
-    awards: "5 giải thưởng",
-    gradient: "from-[#AF763E] to-[#8B5A2B]",
-  },
-  {
-    name: "Sora Nakamura",
-    title: "Chuyên gia Sushi",
-    image: "img/chef2.jpg",
-    desc: "Tinh thông nigiri, sashimi, truyền thống & sáng tạo. Đã tu nghiệp tại trường Sushi danh tiếng Tokyo Sushi Academy.",
-    specialties: ["Nigiri", "Maki", "Temaki"],
-    experience: "15+ năm",
-    awards: "3 giải thưởng",
-    gradient: "from-[#D97706] to-[#AF763E]",
-  },
-  {
-    name: "Hana Suzuki",
-    title: "Chuyên gia Món Tráng Miệng",
-    image: "img/chef3.jpg",
-    desc: "Mỗi món ngọt như một kiệt tác nghệ thuật. Chuyên về wagashi truyền thống và dessert fusion Nhật-Pháp hiện đại.",
-    specialties: ["Wagashi", "Mochi", "Dorayaki"],
-    experience: "12+ năm",
-    awards: "4 giải thưởng",
-    gradient: "from-[#8B5A2B] to-[#D97706]",
-  },
-];
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function ChefTeam() {
+  const { t } = useTranslation("chefs");
   const [selectedChef, setSelectedChef] = useState<number | null>(null);
+
+  const chefs = [0, 1, 2].map((i) => ({
+    name: t(`chef_${i}_name`),
+    title: t(`chef_${i}_title`),
+    image: t(`chef_${i}_image`),
+    desc: t(`chef_${i}_desc`),
+    specialties: t(`chef_${i}_specialties`).split(","),
+    experience: t(`chef_${i}_experience`),
+    awards: t(`chef_${i}_awards`),
+    gradient: t(`chef_${i}_gradient`),
+  }));
 
   const openChefPopup = (index: number) => setSelectedChef(index);
   const closeChefPopup = () => setSelectedChef(null);
@@ -62,19 +43,18 @@ export default function ChefTeam() {
     <section className="bg-white py-16 px-6 sm:px-10 md:px-20 lg:px-28 xl:px-36 relative overflow-hidden">
       <div className="max-w-6xl mx-auto text-center mb-16">
         <h2 className="text-4xl sm:text-5xl font-bold tracking-wide pb-2 mb-4 bg-gradient-to-r from-[#AF763E] via-[#D97706] to-[#8B5A2B] bg-clip-text text-transparent">
-          Đội Ngũ Đầu Bếp
+          {t("title")}
         </h2>
         <p className="text-[#AF763E]/90 text-lg max-w-5xl mx-auto leading-relaxed">
-          Từng món ăn tại Sushi Takumi đều là kết quả của niềm đam mê và sự tỉ
-          mỉ từ đội ngũ đầu bếp tài hoa.
+          {t("description")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
         {[
-          { icon: Users, number: "3", label: "Đầu bếp chuyên nghiệp" },
-          { icon: Award, number: "12+", label: "Giải thưởng" },
-          { icon: Star, number: "50+", label: "Năm kinh nghiệm" },
+          { icon: Users, number: "3", label: t("stats.chefs") },
+          { icon: Award, number: "12+", label: t("stats.awards") },
+          { icon: Star, number: "50+", label: t("stats.years") },
         ].map((item, i) => (
           <div key={i} className="text-center">
             <div className="flex justify-center mb-2">
@@ -133,15 +113,15 @@ export default function ChefTeam() {
         <div className="bg-gradient-to-r from-[#AF763E]/10 to-[#8B5A2B]/10 rounded-2xl p-8 border border-[#AF763E]/20">
           <Sparkles className="w-8 h-8 text-[#AF763E] mb-4 mx-auto opacity-30" />
           <blockquote className="text-xl italic text-[#AF763E]/80 mb-2">
-            &ldquo;Đội ngũ đầu bếp của chúng tôi không chỉ nấu ăn, mà còn truyền
-            tải tình yêu và văn hóa Nhật Bản qua từng món ăn.&rdquo;
+            &ldquo;{t("quote_text")}&rdquo;
           </blockquote>
           <cite className="text-sm font-semibold text-[#AF763E] not-italic">
-            — Sushi Takumi Team
+            — {t("quote_author")}
           </cite>
         </div>
       </div>
 
+      {/* Popup */}
       {selectedChef !== null && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-6"
@@ -172,7 +152,7 @@ export default function ChefTeam() {
               </p>
               <div className="mb-6">
                 <h4 className="text-lg font-semibold text-[#AF763E] mb-3">
-                  Chuyên môn:
+                  {t("popup.specialties")}
                 </h4>
                 <div className="flex flex-wrap gap-3">
                   {chefs[selectedChef].specialties.map((item, idx) => (

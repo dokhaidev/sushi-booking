@@ -1,13 +1,14 @@
 "use client";
+
 import { motion, type Variants } from "framer-motion";
 import { Salsa } from "next/font/google";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { useTranslation } from "../../lib/i18n/client";
 
 const salsa = Salsa({ subsets: ["latin"], weight: "400" });
 
-// Animation nhẹ khi xuất hiện (fade + slide up)
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom: number = 0) => ({
@@ -22,9 +23,16 @@ const fadeInUp: Variants = {
 };
 
 export default function AboutHero() {
+  const { t } = useTranslation("aboutHero");
+
+  const stats = [
+    { label: t("stats.experience"), value: "15+" },
+    { label: t("stats.rating"), value: "4.9★" },
+    { label: t("stats.special_dishes"), value: "100+" },
+  ];
+
   return (
     <section className="relative bg-gradient-to-br from-[#fceedb] via-[#d0c3b5] to-[#d5bfa5] py-16 px-6 lg:px-20 flex items-center justify-center">
-      {/* Background Pattern */}
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
@@ -52,9 +60,9 @@ export default function AboutHero() {
             variants={fadeInUp}
             custom={0}
           >
-            SUSHI
+            {t("title.line1")}
             <br />
-            TAKUMI
+            {t("title.line2")}
           </motion.h1>
 
           <motion.p
@@ -62,7 +70,7 @@ export default function AboutHero() {
             variants={fadeInUp}
             custom={0.2}
           >
-            Nghệ thuật sushi truyền thống Nhật Bản
+            {t("subtitle")}
           </motion.p>
 
           <motion.p
@@ -70,8 +78,7 @@ export default function AboutHero() {
             variants={fadeInUp}
             custom={0.4}
           >
-            Mỗi miếng sushi được chế tác với tâm huyết và kỹ thuật hoàn hảo,
-            mang đến trải nghiệm ẩm thực đích thực từ xứ sở hoa anh đào.
+            {t("description")}
           </motion.p>
 
           <motion.div
@@ -81,13 +88,13 @@ export default function AboutHero() {
           >
             <Link href="/menu">
               <button className="px-6 py-3 bg-gradient-to-r from-[#AF763E] to-[#8B5A2B] text-white rounded-xl font-medium flex items-center gap-2 hover:brightness-105 transition">
-                Khám phá thực đơn
+                {t("buttons.menu")}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
             <Link href="/contact">
               <button className="px-6 py-3 border border-[#AF763E]/50 text-[#AF763E] rounded-xl font-medium hover:bg-[#fceedb] transition">
-                Đặt bàn ngay
+                {t("buttons.reserve")}
               </button>
             </Link>
           </motion.div>
@@ -97,11 +104,7 @@ export default function AboutHero() {
             variants={fadeInUp}
             custom={0.8}
           >
-            {[
-              { label: "Năm kinh nghiệm", value: "15+" },
-              { label: "Đánh giá", value: "4.9★" },
-              { label: "Món đặc sắc", value: "100+" },
-            ].map((item, idx) => (
+            {stats.map((item, idx) => (
               <div
                 key={idx}
                 className="min-w-[100px] px-4 py-3 rounded-xl bg-white/70 backdrop-blur-sm border border-[#AF763E]/20 text-center shadow"

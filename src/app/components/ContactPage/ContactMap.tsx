@@ -1,8 +1,29 @@
 "use client";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Bus } from "lucide-react";
+import { useTranslation } from "../../lib/i18n/client";
 
 export default function ContactMap() {
+  const { t } = useTranslation("contactMap");
+
+  const items = [
+    {
+      icon: <MapPin className="w-6 h-6 text-[#AF763E]" />,
+      title: t("address_title"),
+      text: t("address_text"),
+    },
+    {
+      icon: <Clock className="w-6 h-6 text-[#AF763E]" />,
+      title: t("hours_title"),
+      text: t("hours_text"),
+    },
+    {
+      icon: <Bus className="w-6 h-6 text-[#AF763E]" />,
+      title: t("transport_title"),
+      text: t("transport_text"),
+    },
+  ];
+
   return (
     <section className="bg-[#F8F1E9] py-16 px-6 border-b border-[#AF763E]/20">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-start">
@@ -31,23 +52,7 @@ export default function ContactMap() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="space-y-6"
         >
-          {[
-            {
-              icon: <MapPin className="w-6 h-6 text-[#AF763E]" />,
-              title: "Địa chỉ",
-              text: "123 Đường Nhật Bản, Quận 1, TP.HCM",
-            },
-            {
-              icon: <Clock className="w-6 h-6 text-[#AF763E]" />,
-              title: "Giờ mở cửa",
-              text: "Thứ 2 – Chủ Nhật: 10:00 – 22:00",
-            },
-            {
-              icon: <Bus className="w-6 h-6 text-[#AF763E]" />,
-              title: "Phương tiện",
-              text: "Gần trạm xe buýt số 03, 36; cách ga Bến Thành 1km",
-            },
-          ].map((item, idx) => (
+          {items.map((item, idx) => (
             <div key={idx} className="flex items-start gap-4">
               <div className="p-2 bg-[#AF763E]/10 rounded-md">{item.icon}</div>
               <div>
@@ -63,8 +68,7 @@ export default function ContactMap() {
 
           {/* Quote */}
           <div className="mt-6 p-4 bg-white/50 rounded-md border border-[#AF763E]/20 text-[#444] italic text-sm shadow-sm">
-            “Sushi Takumi không chỉ là món ăn ngon mà còn là trải nghiệm văn hóa
-            Nhật.” 🍱
+            {t("quote")}
           </div>
         </motion.div>
       </div>

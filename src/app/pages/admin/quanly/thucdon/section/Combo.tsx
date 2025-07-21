@@ -1,18 +1,7 @@
 "use client"
 import type React from "react"
 import { useState, useMemo } from "react"
-import {
-  FaPlus,
-  FaPen,
-  FaEyeSlash,
-  FaEye,
-  FaTrash,
-  FaImage,
-  FaMinus,
-  FaSort,
-  FaSortUp,
-  FaSortDown,
-} from "react-icons/fa"
+import { FaPlus, FaPen, FaEyeSlash, FaEye, FaTrash, FaMinus, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card"
 import { Button } from "../../../../../components/ui/button"
 import { useFetch } from "../../../../../hooks/useFetch"
@@ -21,8 +10,8 @@ import Pagination from "../../../../../components/ui/Panigation"
 import Image from "next/image"
 import SearchInput from "../../../../../components/ui/SearchInput"
 import Popup from "../../../../../components/ui/Popup"
-import PopupNotification from "../../../../../components/ui/PopupNotification"
-import InputField from "../../../../../components/ui/InputField"
+import PopupNotification from "@/src/app/components/ui/PopupNotification"
+import InputField from "@/src/app/components/ui/InputField"
 import type { ComboAdd, ComboItemAdd, Combo } from "@/src/app/types"
 import { addCombo } from "@/src/app/hooks/useAdd"
 import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
@@ -39,6 +28,11 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   // Sort states
   const [sortField, setSortField] = useState<SortField>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+
+  // Image upload states
+  const [dragActive, setDragActive] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [editPreviewUrl, setEditPreviewUrl] = useState<string | null>(null)
 
   // Apply sorting to filtered data
   const sortedAndFilteredCombos = useMemo(() => {
@@ -132,6 +126,55 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     setNotif({ open: true, message, type })
   }
 
+  // Image handling functions
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent, isEdit = false) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0], isEdit)
+    }
+  }
+
+  const handleFileSelect = (file: File, isEdit = false) => {
+    if (file.type.startsWith("image/")) {
+      setComboImage(file)
+
+      // Create preview URL
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (isEdit) {
+          setEditPreviewUrl(e.target?.result as string)
+        } else {
+          setPreviewUrl(e.target?.result as string)
+        }
+      }
+      reader.readAsDataURL(file)
+    } else {
+      showNotification("Vui lòng chọn file ảnh (JPG, PNG, GIF)", "error")
+    }
+  }
+
+  const removeImage = (isEdit = false) => {
+    setComboImage(null)
+    if (isEdit) {
+      setEditPreviewUrl(null)
+    } else {
+      setPreviewUrl(null)
+    }
+  }
+
   // Reset form
   const resetForm = () => {
     setComboName("")
@@ -140,29 +183,39 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     setComboImage(null)
     setSelectedItems([])
     setEditingCombo(null)
+    setPreviewUrl(null)
+    setEditPreviewUrl(null)
   }
 
-  // Handle edit combo
+  // Handle edit combo - SỬA LẠI ĐỂ LOAD COMBO ITEMS
   const handleEditCombo = (combo: Combo) => {
     setEditingCombo(combo)
     setComboName(combo.name)
     setComboPrice(combo.price.toString())
     setComboDesc(combo.description || "")
+    setEditPreviewUrl(null)
+
+    // Load combo items nếu có
+    if (combo.combo_items) {
+      const items = combo.combo_items.map((item) => ({
+        food_id: item.food.id,
+        quantity: item.quantity,
+      }))
+      setSelectedItems(items)
+    }
+
     setShowEditComboPopup(true)
   }
 
   // Handle toggle status
   const handleToggleStatus = async (combo: Combo) => {
     const newStatus = !combo.status
-
     try {
       setLoading(true)
       await axios.put(`http://127.0.0.1:8000/api/combo/update-status/${combo.id}`, {
         status: newStatus,
       })
-
       setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, status: newStatus } : c)))
-
       const statusText = newStatus ? "hiển thị" : "ẩn"
       showNotification(`Đã ${statusText} combo "${combo.name}" thành công!`, "success")
     } catch (error: any) {
@@ -174,7 +227,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     }
   }
 
-  // Handle update combo
+  // Handle update combo - SỬA LẠI ĐỂ CẬP NHẬT ĐÚNG DỮ LIỆU
   const handleUpdateCombo = async () => {
     if (!editingCombo) return
 
@@ -183,11 +236,11 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     formData.append("price", comboPrice)
     formData.append("description", comboDesc)
     formData.append("status", "true")
-
     if (comboImage) {
       formData.append("image", comboImage)
     }
 
+    // Thêm items vào formData
     selectedItems.forEach((item, index) => {
       formData.append(`items[${index}][food_id]`, item.food_id.toString())
       formData.append(`items[${index}][quantity]`, item.quantity.toString())
@@ -199,7 +252,18 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
         headers: { "Content-Type": "multipart/form-data" },
       })
 
-      setCombos((prev) => prev.map((c) => (c.id === editingCombo.id ? response.data.combo : c)))
+      // Cập nhật combo trong danh sách với dữ liệu đầy đủ
+      const updatedCombo = response.data.combo
+      setCombos((prev) =>
+        prev.map((c) =>
+          c.id === editingCombo.id
+            ? {
+                ...updatedCombo,
+                image: updatedCombo.image || c.image, // Giữ ảnh cũ nếu không có ảnh mới
+              }
+            : c,
+        ),
+      )
 
       showNotification("Cập nhật combo thành công!", "success")
       setShowEditComboPopup(false)
@@ -233,13 +297,15 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
       image: comboImage || undefined,
       items: selectedItems,
     }
+
     try {
       setLoading(true)
-      await addCombo(data)
+      const response = await addCombo(data)
+      // Thêm combo mới vào danh sách thay vì reload
+      setCombos((prev) => [...prev, response.data])
       showNotification("Thêm combo thành công!", "success")
       setShowAddComboPopup(false)
       resetForm()
-      window.location.reload()
     } catch (error) {
       showNotification("Lỗi khi thêm combo", "error")
     } finally {
@@ -261,6 +327,101 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     )
   }
 
+  // Image Upload Component
+  const ImageUploadSection = ({ isEdit = false, currentImageUrl = "" }) => (
+    <div className="space-y-4">
+      <label className="block text-sm font-medium text-gray-700">Hình ảnh combo</label>
+
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={(e) => handleDrop(e, isEdit)}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], isEdit)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+
+        <div className="space-y-3">
+          <div className="mx-auto w-12 h-12 text-gray-400">
+            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-colors ${
+                isEdit ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#9c6b66] hover:bg-[#8a5a55] text-white"
+              }`}
+            >
+              <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              {isEdit ? "Chọn ảnh mới" : "Chọn ảnh"}
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-500">Hoặc kéo thả ảnh vào đây</p>
+          <p className="text-xs text-gray-400">PNG, JPG, GIF tối đa 2MB</p>
+        </div>
+      </div>
+
+      {/* Image Preview */}
+      {((isEdit && (editPreviewUrl || currentImageUrl)) || (!isEdit && previewUrl)) && (
+        <div className="relative">
+          <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+            <Image
+              src={isEdit ? editPreviewUrl || currentImageUrl || "/placeholder.svg" : previewUrl || "/placeholder.svg"}
+              alt="Preview"
+              fill
+              className="object-cover"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => removeImage(isEdit)}
+            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+            title="Xóa ảnh"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          </button>
+          <div className="mt-2 text-sm text-gray-600">
+            {isEdit
+              ? editPreviewUrl
+                ? `Ảnh mới: ${comboImage?.name}`
+                : "Ảnh hiện tại"
+              : `Ảnh mới: ${comboImage?.name}`}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="col-span-12" ref={comboRef}>
       <PopupNotification
@@ -278,11 +439,12 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
             <SearchInput value={searchText} onChange={setSearchText} />
           </div>
           <Button
-            className="bg-[#f3eae4] text-[#9c6b66] px-3 py-1 rounded flex items-center gap-2 text-base cursor-pointer hover:bg-[#e8d5c4] transition-colors"
+            className="bg-[#f3eae4] text-[#9c6b66] px-4 py-2 rounded-lg flex items-center gap-2 text-base cursor-pointer hover:bg-[#e8d5c4] transition-colors shadow-md"
             onClick={() => setShowAddComboPopup(true)}
             disabled={loading}
           >
-            <FaPlus /> Thêm combo
+            <FaPlus className="w-4 h-4" />
+            Thêm combo
           </Button>
         </CardHeader>
         <CardContent>
@@ -291,7 +453,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                 <tr>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("id")}
                     title="Nhấn để sắp xếp theo ID"
                   >
@@ -300,11 +462,11 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                       {getSortIcon("id")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Hình ảnh</th>
-                  <th className="px-4 py-2">Tên combo</th>
-                  <th className="px-4 py-2">Mô tả</th>
+                  <th className="px-4 py-3">Hình ảnh</th>
+                  <th className="px-4 py-3">Tên combo</th>
+                  <th className="px-4 py-3">Mô tả</th>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("price")}
                     title="Nhấn để sắp xếp theo giá"
                   >
@@ -314,7 +476,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                     </div>
                   </th>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("status")}
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
@@ -323,57 +485,64 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                       {getSortIcon("status")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Thao tác</th>
+                  <th className="px-4 py-3">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {currentCombos.length > 0 ? (
                   currentCombos.map((combo, index) => (
                     <tr key={combo.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-2 font-medium">{combo.id}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-3 font-medium">{combo.id}</td>
+                      <td className="px-4 py-3">
                         {combo.image && (
-                          <Image
-                            src={combo.image || "/placeholder.svg"}
-                            alt={combo.name}
-                            width={50}
-                            height={50}
-                            className="w-[50px] h-[50px] object-cover rounded"
-                          />
+                          <div className="w-16 h-16 relative rounded-lg overflow-hidden shadow-sm">
+                            <Image
+                              src={combo.image || "/placeholder.svg"}
+                              alt={combo.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
                         )}
                       </td>
-                      <td className="px-4 py-2 font-medium">{combo.name}</td>
-                      <td className="px-4 py-2 text-gray-600">{combo.description || "Không có mô tả"}</td>
-                      <td className="px-4 py-2 font-semibold text-green-600">
+                      <td className="px-4 py-3 font-medium">{combo.name}</td>
+                      <td className="px-4 py-3 text-gray-600">{combo.description || "Không có mô tả"}</td>
+                      <td className="px-4 py-3 font-semibold text-green-600">
                         {Number(combo.price).toLocaleString("vi-VN")} đ
                       </td>
-                      <td className={`px-4 py-2 font-bold ${combo.status ? "text-green-600" : "text-red-600"}`}>
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${combo.status ? "bg-green-500" : "bg-red-500"}`}></div>
-                          {combo.status ? "Đang bán" : "Ngưng bán"}
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              combo.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {combo.status ? "Đang bán" : "Ngưng bán"}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEditCombo(combo)}
-                            className="px-2 py-1 text-blue-700 border border-blue-700 rounded flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                            className="px-3 py-2 text-blue-700 border border-blue-700 rounded-lg flex items-center gap-1 hover:bg-blue-50 transition-colors"
                             disabled={loading}
                           >
-                            <FaPen />
-                            <span className="text-blue-700 font-semibold">Sửa</span>
+                            <FaPen className="w-3 h-3" />
+                            <span className="text-blue-700 font-medium">Sửa</span>
                           </button>
                           <button
                             onClick={() => handleToggleStatus(combo)}
-                            className={`px-2 py-1 border rounded flex items-center gap-1 transition-colors ${
+                            className={`px-3 py-2 border rounded-lg flex items-center gap-1 transition-colors ${
                               combo.status
-                                ? "text-red-700 border-red-700 hover:bg-red-100"
-                                : "text-green-700 border-green-700 hover:bg-green-100"
+                                ? "text-red-700 border-red-700 hover:bg-red-50"
+                                : "text-green-700 border-green-700 hover:bg-green-50"
                             }`}
                             disabled={loading}
                           >
-                            {combo.status ? <FaEyeSlash /> : <FaEye />}
-                            <span className="font-semibold">{combo.status ? "Ẩn" : "Hiện"}</span>
+                            {combo.status ? <FaEyeSlash className="w-3 h-3" /> : <FaEye className="w-3 h-3" />}
+                            <span className="font-medium">{combo.status ? "Ẩn" : "Hiện"}</span>
                           </button>
                         </div>
                       </td>
@@ -392,7 +561,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
 
           {/* Sort info */}
           {sortField && sortDirection && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
               <span>Đang sắp xếp theo:</span>
               <span className="font-medium">
                 {sortField === "id" ? "ID" : sortField === "price" ? "Giá" : "Trạng thái"} (
@@ -403,7 +572,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                   setSortField(null)
                   setSortDirection(null)
                 }}
-                className="text-blue-600 hover:text-blue-800 underline"
+                className="text-blue-600 hover:text-blue-800 underline ml-2"
               >
                 Bỏ sắp xếp
               </button>
@@ -449,11 +618,13 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               />
             </div>
             <div className="mt-4">
-              <InputField
-                label="Mô tả"
-                name="comboDesc"
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+              <textarea
                 value={comboDesc}
                 onChange={(e) => setComboDesc(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
+                rows={3}
+                placeholder="Nhập mô tả combo..."
               />
             </div>
           </div>
@@ -461,30 +632,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
           {/* Image Upload Section */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Hình ảnh combo</h3>
-            <div className="flex items-center gap-4">
-              <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                <FaImage className="text-gray-400 text-2xl" />
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  id="comboImageUpload"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      setComboImage(e.target.files[0])
-                    }
-                  }}
-                />
-                <label htmlFor="comboImageUpload">
-                  <Button className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 cursor-pointer">
-                    <FaImage /> Chọn hình ảnh
-                  </Button>
-                </label>
-                <p className="text-sm text-gray-500 mt-2">Định dạng: JPG, PNG. Kích thước tối đa: 5MB</p>
-              </div>
-            </div>
+            <ImageUploadSection isEdit={false} />
           </div>
 
           {/* Food Items Section */}
@@ -517,7 +665,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                       </div>
                       {food?.image && (
                         <Image
-                          src={food.image ? `http://127.0.0.1:8000/storage/${food.image}` : "/placeholder.svg"}
+                          src={food.image || "/placeholder.svg"}
                           alt={food.name}
                           width={50}
                           height={50}
@@ -538,7 +686,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                     </div>
                   )
                 })}
-
                 {/* Total Summary */}
                 <div className="border-t-2 border-green-200 pt-4 mt-4">
                   <div className="flex justify-between items-center bg-green-100 p-4 rounded-lg">
@@ -561,7 +708,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
-              className="bg-gray-500 text-white px-6 py-2"
+              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
               onClick={() => {
                 setShowAddComboPopup(false)
                 resetForm()
@@ -571,7 +718,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               Hủy
             </Button>
             <Button
-              className="bg-green-600 text-white px-6 py-2"
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
               onClick={handleSubmitCombo}
               disabled={!comboName || !comboPrice || selectedItems.length === 0 || loading}
             >
@@ -611,19 +758,82 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               />
             </div>
             <div className="mt-4">
-              <InputField
-                label="Mô tả"
-                name="comboDesc"
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+              <textarea
                 value={comboDesc}
                 onChange={(e) => setComboDesc(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+                placeholder="Nhập mô tả combo..."
               />
             </div>
+          </div>
+
+          {/* Image Upload Section for Edit */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Hình ảnh combo</h3>
+            <ImageUploadSection isEdit={true} currentImageUrl={editingCombo?.image || ""} />
+          </div>
+
+          {/* Food Items Section for Edit */}
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Món ăn trong combo</h3>
+              <Button
+                className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                onClick={() => setOpenFoodPopup(true)}
+              >
+                <FaPlus /> {selectedItems.length > 0 ? "Chỉnh sửa món ăn" : "Thêm món ăn"}
+              </Button>
+            </div>
+            {selectedItems.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                <p className="text-gray-500 italic text-lg">Chưa có món ăn nào được chọn</p>
+                <p className="text-sm text-gray-400 mt-2">Nhấn Thêm món ăn để bắt đầu tạo combo</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {selectedItems.map((item, index) => {
+                  const food = foods.find((f) => f.id === item.food_id)
+                  return (
+                    <div
+                      key={item.food_id}
+                      className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
+                    >
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold text-sm">
+                        {index + 1}
+                      </div>
+                      {food?.image && (
+                        <Image
+                          src={food.image || "/placeholder.svg"}
+                          alt={food.name}
+                          width={50}
+                          height={50}
+                          className="rounded-lg object-cover w-[50px] h-[50px]"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{food?.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {Number(food?.price).toLocaleString("vi-VN")} đ × {item.quantity}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-green-600">
+                          {(item.quantity * Number(food?.price || 0)).toLocaleString("vi-VN")} đ
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
-              className="bg-gray-500 text-white px-6 py-2"
+              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
               onClick={() => {
                 setShowEditComboPopup(false)
                 resetForm()
@@ -633,9 +843,9 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               Hủy
             </Button>
             <Button
-              className="bg-blue-600 text-white px-6 py-2"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               onClick={handleUpdateCombo}
-              disabled={!comboName || !comboPrice || loading}
+              disabled={!comboName || !comboPrice || selectedItems.length === 0 || loading}
             >
               {loading ? "Đang cập nhật..." : "Cập nhật"}
             </Button>
@@ -643,7 +853,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
         </div>
       </Popup>
 
-      {/* Popup Chọn món ăn - Same as before but shortened for space */}
+      {/* Popup Chọn món ăn */}
       <Popup
         isOpen={openFoodPopup}
         onClose={() => setOpenFoodPopup(false)}
@@ -665,7 +875,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                     <div className="relative flex items-center gap-4">
                       <div className="relative flex-shrink-0 overflow-hidden rounded-lg">
                         <Image
-                          src={food.image ? `http://127.0.0.1:8000/storage/${food.image}` : "/placeholder.svg"}
+                          src={food.image || "/placeholder.svg"}
                           alt={food.name}
                           width={80}
                           height={80}
@@ -711,7 +921,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                           <div className="flex items-center gap-2 mb-3">
                             {food?.image && (
                               <Image
-                                src={food.image ? `http://127.0.0.1:8000/storage/${food.image}` : "/placeholder.svg"}
+                                src={food.image || "/placeholder.svg"}
                                 alt={food.name}
                                 width={40}
                                 height={40}
@@ -729,7 +939,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                               <FaTrash className="text-xs" />
                             </button>
                           </div>
-
                           {/* Quantity Controls */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -760,12 +969,19 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
             </div>
           </div>
         </div>
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-          <Button className="bg-gray-500 text-white px-6 py-2" onClick={() => setOpenFoodPopup(false)}>
+          <Button
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            onClick={() => setOpenFoodPopup(false)}
+          >
             Hủy
           </Button>
-          <Button className="bg-blue-600 text-white px-6 py-2" onClick={() => setOpenFoodPopup(false)}>
+          <Button
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => setOpenFoodPopup(false)}
+          >
             Xác nhận ({selectedItems.length} món)
           </Button>
         </div>
