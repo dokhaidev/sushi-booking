@@ -43,7 +43,6 @@ const nextConfig: NextConfig = {
       "cdn.nhandan.vn",
       "127.0.0.1",
       "kenh14cdn.com",
-      "127.0.0.1:8000",
       "localhost"
     ],
   },
