@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-
 import { useState, useMemo } from "react"
 import axios from "axios"
 import TitleDesc from "../../../../components/ui/titleDesc"
@@ -12,7 +11,20 @@ import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
 import Popup from "@/src/app/components/ui/Popup"
 import PopupNotification from "@/src/app/components/ui/PopupNotification"
 import { Button } from "@/src/app/components/ui/button"
-import { FaShoppingCart, FaClock, FaCheckCircle, FaMoneyBillWave, FaFilter, FaTimes, FaEdit, FaInfo } from "react-icons/fa"
+import {
+  FaShoppingCart,
+  FaClock,
+  FaCheckCircle,
+  FaMoneyBillWave,
+  FaFilter,
+  FaTimes,
+  FaEdit,
+  FaInfo,
+  FaUser,
+  FaTable,
+  FaUtensils,
+  FaCalendarAlt,
+} from "react-icons/fa"
 import type { Order } from "@/src/app/types/order"
 
 export default function QuanLyDonHang() {
@@ -157,7 +169,6 @@ export default function QuanLyDonHang() {
     if (!selectedOrder || !newStatus) return
 
     setIsUpdatingStatus(true)
-
     try {
       const response = await axios.put(`http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`, {
         status: newStatus,
@@ -186,8 +197,8 @@ export default function QuanLyDonHang() {
       }, 2000)
     } catch (error: any) {
       console.error("Lỗi cập nhật trạng thái:", error)
-
       let errorMessage = "Có lỗi xảy ra khi cập nhật trạng thái đơn hàng"
+
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       }
@@ -223,6 +234,15 @@ export default function QuanLyDonHang() {
       default:
         return { label: "Không rõ", color: "bg-gray-100 text-gray-600" }
     }
+  }
+
+  // Helper function to get table numbers
+  const getTableNumbers = (tables: any) => {
+    if (!tables) return "Không có"
+    if (Array.isArray(tables)) {
+      return tables.map((table) => table.table_number).join(", ")
+    }
+    return tables.table_number || "Không có"
   }
 
   const statisticsData = [
@@ -293,7 +313,6 @@ export default function QuanLyDonHang() {
                   <option value="cancelled">Đã hủy</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-2">Thời gian</label>
                 <select
@@ -307,7 +326,6 @@ export default function QuanLyDonHang() {
                   <option value="month">Tháng này</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-2">Thanh toán</label>
                 <select
@@ -321,7 +339,6 @@ export default function QuanLyDonHang() {
                   <option value="vnpay">Ví VNPay</option>
                 </select>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={handleApplyFilters}
@@ -332,7 +349,6 @@ export default function QuanLyDonHang() {
                   <span className="sm:hidden">Lọc</span>
                 </button>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={handleClearFilters}
@@ -474,12 +490,12 @@ export default function QuanLyDonHang() {
                     paginatedOrders.map((order, idx) => (
                       <tr key={order.id} className={idx % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
                         <td className="px-2 sm:px-4 py-2 font-medium">#{order.id}</td>
-                        <td className="px-2 sm:px-4 py-2 font-medium">{order.table?.name || "Không có"}</td>
+                        <td className="px-2 sm:px-4 py-2 font-medium">{getTableNumbers(order.tables)}</td>
                         <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">
-                          <div className="max-w-[150px] truncate">{order.customer?.name}</div>
+                          <div className="max-w-[150px] truncate">{order.customer?.name || "Khách vãng lai"}</div>
                         </td>
                         <td className="px-2 sm:px-4 py-2 font-semibold text-green-600">
-                          {order.total_price.toLocaleString()} ₫
+                          {Number(order.total_price).toLocaleString()} ₫
                         </td>
                         <td className="px-2 sm:px-4 py-2 font-medium">
                           <span
@@ -500,12 +516,14 @@ export default function QuanLyDonHang() {
                         </td>
                         <td className="px-2 sm:px-4 py-2">
                           <div className="text-xs text-gray-600">
-                            {new Date(order.created_at).toLocaleDateString("vi-VN", {
+                            {new Date(order.reservation_dates).toLocaleDateString("vi-VN", {
                               year: "numeric",
                               month: "2-digit",
                               day: "2-digit",
                             })}{" "}
-                            <span className="font-medium">({new Date(order.created_at).toLocaleTimeString("vi-VN")})</span>
+                            <span className="font-medium">
+                              ({order.reservation_times})
+                            </span>
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-2">
@@ -542,7 +560,7 @@ export default function QuanLyDonHang() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                         Không tìm thấy đơn hàng nào phù hợp với bộ lọc
                       </td>
                     </tr>
@@ -591,7 +609,7 @@ export default function QuanLyDonHang() {
               <div className="text-sm text-gray-600 space-y-1">
                 <div>Mã đơn: #{selectedOrder.id}</div>
                 <div>Khách hàng: {selectedOrder.customer?.name || "Khách vãng lai"}</div>
-                <div>Tổng tiền: {selectedOrder.total_price.toLocaleString()} ₫</div>
+                <div>Tổng tiền: {Number(selectedOrder.total_price).toLocaleString()} ₫</div>
                 <div>
                   Trạng thái hiện tại:{" "}
                   <span
@@ -622,8 +640,8 @@ export default function QuanLyDonHang() {
                 {newStatus === "success" && (
                   <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                     <p className="text-sm text-green-800">
-                      <strong>Lưu ý:</strong> Khi chuyển trạng thái thành &quot;Hoàn tất&quot;, hệ thống sẽ tự động tích điểm cho
-                      khách hàng và không thể thay đổi lại.
+                      <strong>Lưu ý:</strong> Khi chuyển trạng thái thành &quot;Hoàn tất&quot;, hệ thống sẽ tự động tích
+                      điểm cho khách hàng và không thể thay đổi lại.
                     </p>
                   </div>
                 )}
@@ -665,39 +683,67 @@ export default function QuanLyDonHang() {
         ) : (
           <div className="space-y-6">
             {/* Order Information */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin đơn hàng</h3>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <FaShoppingCart className="w-5 h-5 text-blue-600" />
+                <h3 className="font-semibold text-lg text-blue-800">Thông tin đơn hàng</h3>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
+                <div className="flex items-center gap-2">
                   <span className="text-gray-600">Mã đơn hàng:</span>
-                  <span className="font-medium ml-2">#{orderDetail.id}</span>
+                  <span className="font-bold text-blue-600">#{orderDetail.id}</span>
                 </div>
-                <div>
-                  <span className="text-gray-600">Ngày tạo:</span>
-                  <span className="font-medium ml-2">{new Date(orderDetail.created_at).toLocaleString("vi-VN")}</span>
+                <div className="flex items-center gap-2">
+                  <FaCalendarAlt className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Ngày đặt:</span>
+                  <span className="font-medium">{new Date(orderDetail.created_at).toLocaleString("vi-VN")}</span>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                   <span className="text-gray-600">Trạng thái:</span>
-                  <span
-                    className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusInfo(orderDetail.status).color}`}
-                  >
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusInfo(orderDetail.status).color}`}>
                     {getStatusInfo(orderDetail.status).label}
                   </span>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
+                  <FaMoneyBillWave className="w-4 h-4 text-green-500" />
                   <span className="text-gray-600">Tổng tiền:</span>
-                  <span className="font-bold ml-2 text-green-600">
-                    {Number(orderDetail.total_price).toLocaleString()} ₫
+                  <span className="font-bold text-green-600">{Number(orderDetail.total_price).toLocaleString()} ₫</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">Thanh toán:</span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded font-medium ${
+                      orderDetail.payment_method === "cash"
+                        ? "bg-green-100 text-green-800"
+                        : orderDetail.payment_method === "momo"
+                          ? "bg-pink-100 text-pink-800"
+                          : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {orderDetail.payment_method === "cash"
+                      ? "Tiền mặt"
+                      : orderDetail.payment_method === "momo"
+                        ? "Ví Momo"
+                        : "Ví VNPay"}
                   </span>
                 </div>
+                {orderDetail.note && (
+                  <div className="sm:col-span-2">
+                    <span className="text-gray-600">Ghi chú:</span>
+                    <span className="font-medium ml-2 italic text-gray-700">{orderDetail.note}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Customer Information */}
             {orderDetail.customer && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin khách hàng</h3>
-                <div className="grid grid-cols-1 gap-2 text-sm">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <FaUser className="w-5 h-5 text-green-600" />
+                  <h3 className="font-semibold text-lg text-green-800">Thông tin khách hàng</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Tên khách hàng:</span>
                     <span className="font-medium ml-2">{orderDetail.customer.name}</span>
@@ -709,7 +755,7 @@ export default function QuanLyDonHang() {
                     </div>
                   )}
                   {orderDetail.customer.email && (
-                    <div>
+                    <div className="sm:col-span-2">
                       <span className="text-gray-600">Email:</span>
                       <span className="font-medium ml-2">{orderDetail.customer.email}</span>
                     </div>
@@ -720,19 +766,26 @@ export default function QuanLyDonHang() {
 
             {/* Table Information */}
             {orderDetail.tables && orderDetail.tables.length > 0 && (
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3 text-gray-800">Thông tin bàn</h3>
-                <div className="space-y-2 text-sm">
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border border-orange-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <FaTable className="w-5 h-5 text-orange-600" />
+                  <h3 className="font-semibold text-lg text-orange-800">Thông tin bàn</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   {orderDetail.tables.map((table, idx) => (
-                    <div key={table.id || idx}>
-                      <span className="text-gray-600">Bàn số:</span>
-                      <span className="font-medium ml-2">{table.table_number}</span>
-                      {table.max_guests && (
-                        <>
-                          <span className="text-gray-600 ml-4">Sức chứa:</span>
-                          <span className="font-medium ml-2">{table.max_guests} người</span>
-                        </>
-                      )}
+                    <div key={table.id || idx} className="bg-white p-3 rounded border border-orange-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-gray-600">Bàn số:</span>
+                          <span className="font-bold ml-2 text-orange-600">{table.table_number}</span>
+                        </div>
+                        {table.max_guests && (
+                          <div>
+                            <span className="text-gray-600">Sức chứa:</span>
+                            <span className="font-medium ml-2">{table.max_guests} người</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -741,35 +794,75 @@ export default function QuanLyDonHang() {
 
             {/* Order Items */}
             {orderDetail.items && orderDetail.items.length > 0 && (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-3 text-gray-800">Chi tiết món ăn</h3>
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <FaUtensils className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-semibold text-lg text-purple-800">Chi tiết món ăn</h3>
+                </div>
                 <div className="space-y-3">
                   {orderDetail.items.map((item, index) => (
                     <div
                       key={index}
-                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-3 rounded border gap-2 sm:gap-4"
+                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-purple-200 gap-3 sm:gap-4 shadow-sm"
                     >
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800">
+                        <div className="font-semibold text-gray-800 text-base">
                           {item.food?.name || item.combo?.name || "Món ăn"}
                         </div>
+                        <div className="text-sm text-gray-500 mt-1">{item.food ? "Món lẻ" : "Combo"}</div>
                       </div>
-                      <div className="flex flex-row sm:flex-col text-center">
-                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Số lượng:</div>
-                        <div className="font-medium">{item.quantity}</div>
+                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-blue-50 px-3 py-2 rounded">
+                        <div className="text-xs text-blue-600 font-medium mr-2 sm:mr-0 sm:mb-1">Số lượng</div>
+                        <div className="font-bold text-blue-800">{item.quantity}</div>
                       </div>
-                      <div className="flex flex-row sm:flex-col text-right">
-                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Đơn giá:</div>
-                        <div className="font-medium">{Number(item.price).toLocaleString()} ₫</div>
+                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-green-50 px-3 py-2 rounded">
+                        <div className="text-xs text-green-600 font-medium mr-2 sm:mr-0 sm:mb-1">Đơn giá</div>
+                        <div className="font-bold text-green-800">{Number(item.price).toLocaleString()} ₫</div>
                       </div>
-                      <div className="flex flex-row sm:flex-col text-right">
-                        <div className="text-sm text-gray-600 mr-2 sm:mr-0">Thành tiền:</div>
-                        <div className="font-bold text-green-600">
+                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-orange-50 px-3 py-2 rounded">
+                        <div className="text-xs text-orange-600 font-medium mr-2 sm:mr-0 sm:mb-1">Thành tiền</div>
+                        <div className="font-bold text-orange-800">
                           {(Number(item.price) * item.quantity).toLocaleString()} ₫
                         </div>
                       </div>
                     </div>
                   ))}
+
+                  {/* Total Summary */}
+                  <div className="border-t-2 border-purple-200 pt-4 mt-4">
+                    <div className="flex justify-between items-center bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-lg">
+                      <span className="text-lg font-semibold text-purple-800">Tổng cộng:</span>
+                      <span className="text-2xl font-bold text-purple-900">
+                        {Number(orderDetail.total_price).toLocaleString()} ₫
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reservation Information */}
+            {orderDetail.reservation_dates && orderDetail.reservation_dates.length > 0 && (
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <FaCalendarAlt className="w-5 h-5 text-indigo-600" />
+                  <h3 className="font-semibold text-lg text-indigo-800">Thông tin đặt bàn</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Ngày đặt:</span>
+                    <span className="font-medium ml-2">
+                      {orderDetail.reservation_dates
+                        .map((date: string) => new Date(date).toLocaleDateString("vi-VN"))
+                        .join(", ")}
+                    </span>
+                  </div>
+                  {orderDetail.reservation_times && orderDetail.reservation_times.length > 0 && (
+                    <div>
+                      <span className="text-gray-600">Giờ đặt:</span>
+                      <span className="font-medium ml-2">{orderDetail.reservation_times.join(", ")}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

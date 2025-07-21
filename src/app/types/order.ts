@@ -5,6 +5,8 @@ export interface Order {
   status: string;
   payment_method: string;
   note?: string;
+  reservation_dates?: string[];
+  reservation_times?: string[];
   created_at: string;
   updated_at: string;
   customer?: {

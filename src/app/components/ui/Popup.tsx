@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -9,12 +9,27 @@ interface PopupProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  width?: string; // eg: 'w-[600px]' or 'w-full md:w-[500px]'
-  onConfirm?: () => void | Promise<void>
-  mode?: "add" | "edit";
+  width?: string;
+  onConfirm?: () => void | Promise<void>;
+  mode?: 'add' | 'edit';
 }
 
-const Popup: React.FC<PopupProps> = ({ isOpen, onClose, title, children, width = 'w-full md:w-[600px]' }) => {
+const Popup: React.FC<PopupProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  width = 'w-full md:w-[600px]',
+}) => {
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Nếu click nằm ngoài popup, đóng popup
+    if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -23,8 +38,10 @@ const Popup: React.FC<PopupProps> = ({ isOpen, onClose, title, children, width =
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={handleOverlayClick}
         >
           <motion.div
+            ref={popupRef}
             className={`bg-white rounded-2xl shadow-xl p-6 relative ${width} max-h-[90vh] overflow-y-auto`}
             initial={{ y: -30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

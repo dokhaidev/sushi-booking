@@ -366,7 +366,7 @@ export default function NhanVienBep() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-12 gap-4 bg-[#fff8f0]">
+      <div className="grid grid-cols-12 gap-4">
         <TitleDesc
           title="Quản lý bếp"
           description="Xem và quản lý tất cả món ăn cần chuẩn bị"
