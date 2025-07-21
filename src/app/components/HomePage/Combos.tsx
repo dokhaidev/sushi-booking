@@ -288,11 +288,11 @@ export default function ComboSlider() {
                 <div className="absolute inset-0 rounded-xl border-2 border-amber-50 opacity-30 pointer-events-none"></div>
                 {combo.image ? (
                   <Image
-                    src={combo.image}
+                    src={combo.image || "/placeholder.svg"} 
                     alt={`${t("aria_labels.combo_image")}: ${combo.name}`}
-                    className="w-full h-full object-cover rounded-xl transition duration-300"
                     width={500}
                     height={500}
+                    className="w-full h-full object-cover rounded-xl transition duration-300"
                     onError={(e) =>
                       ((e.target as HTMLImageElement).src = "/placeholder.svg")
                     }
