@@ -5,6 +5,16 @@ export interface Combo {
   price: number;
   image?: string;
   status: boolean;
+  combo_items?: {
+    id: number
+    quantity: number
+    food: {
+      id: number
+      name: string
+      price: number
+      image?: string
+    }
+  }[]
 };
 
 export interface ComboItemAdd {

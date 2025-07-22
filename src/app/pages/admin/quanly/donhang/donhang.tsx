@@ -541,7 +541,7 @@ export default function QuanLyDonHang() {
                             >
                               <FaInfo />
                             </button>
-                            {order.status !== "success" && (
+                            {order.status !== "success" || order.status === "cancelled" && (
                               <button
                                 className="p-2 flex items-center gap-1 text-sm text-orange-700 border border-orange-700 rounded hover:bg-orange-100 font-semibold cursor-pointer"
                                 onClick={() => handleUpdateStatus(order)}
@@ -549,7 +549,7 @@ export default function QuanLyDonHang() {
                                 <FaEdit className="w-3 h-3" />
                               </button>
                             )}
-                            {order.status === "success" && (
+                            {order.status === "success" || order.status === "cancelled"  && (
                               <span className="p-2 flex items-center gap-1 text-sm text-gray-400 border border-gray-400 rounded bg-gray-100 font-medium">
                                 <FaEdit className="w-3 h-3" />
                               </span>

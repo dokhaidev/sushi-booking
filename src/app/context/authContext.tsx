@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/user", {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000, // Tăng timeout lên 10 giây
+        timeout: 20000, // Tăng timeout lên 10 giây
       });
       return response.data;
     } catch (error: any) {
