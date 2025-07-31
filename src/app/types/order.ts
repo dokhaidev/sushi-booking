@@ -34,17 +34,21 @@ export interface OrderItem {
   food?: {
     id: number;
     name: string;
-    image: string;
+    image?: string;
   };
   combo?: {
     id: number;
     name: string;
-    image: string;
+    image?: string;
   };
   order_info?: {
     id: number
     customer_name: string
     table_numbers: string
+    order_status: string // Status of the parent order
+    order_date: string // created_at of the parent order
+    reservation_date?: string // Specific reservation date from order_tables
+    reservation_time?: string // Specific reservation time from order_tables
   }
 }
 

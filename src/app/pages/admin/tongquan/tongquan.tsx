@@ -1065,7 +1065,7 @@ export default function TongQuan() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {recentOrders.length > 0 ? (
-                        recentOrders.map((order, idx) => {
+                        recentOrders.map((order) => {
                           const statusInfo = getStatusInfo(order.status)
                           return (
                             <tr

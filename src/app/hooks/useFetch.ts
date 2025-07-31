@@ -1,6 +1,7 @@
 "use client"
-import { useEffect, useState } from "react"
-import axios from "axios"
+
+import { useEffect, useState, useCallback } from "react"
+import axios from "axios" // Import AxiosError
 import type {
   Customer,
   Category,
@@ -10,29 +11,59 @@ import type {
   Voucher,
   Table,
   Order,
-  OrderDetail,
   OrderItem,
+  OrderDetail,
   Feedback,
-} from "../types"
+} from "../types" // Đã sửa đường dẫn import types
 
-const getAuthToken = () => {
+const getAuthToken = (): string | null => {
   if (typeof document !== "undefined") {
     const cookies = document.cookie.split(";")
-    const tokenCookie = cookies.find((cookie) => cookie.trim().startsWith("access_token="))
-    return tokenCookie ? tokenCookie.split("=")[1] : null
+    // Find the cookie, trim the individual cookie string before checking startsWith
+    const tokenCookieEntry = cookies.find((cookie) => cookie.trim().startsWith("access_token="))
+
+    // console.log("Raw token cookie entry found:", tokenCookieEntry) // Log the raw cookie string found by find()
+
+    if (tokenCookieEntry) {
+      // Trim the found entry string itself before splitting
+      const trimmedEntry = tokenCookieEntry.trim()
+      const parts = trimmedEntry.split("=")
+      if (parts.length > 1) {
+        const token = parts[1]?.trim() // Trim the extracted value as well
+        // console.log("Extracted token value (after all trims):", token)
+        const finalToken = token || null // Ensure it's null if empty string after trim
+        // console.log("Auth Token retrieved:", finalToken ? "Exists" : "None")
+        return finalToken
+      }
+    }
+    // console.log("Auth Token retrieved: None (cookie not found or value empty after split)")
+    return null
   }
   return null
 }
 
 const createAuthAxios = () => {
-  const token = getAuthToken()
-  return axios.create({
+  const token = getAuthToken() // This calls getAuthToken()
+  // console.log("Token value inside createAuthAxios (after getAuthToken call):", token) // Confirm value here
+  // console.log("Type of token inside createAuthAxios:", typeof token) // Log type of token
+
+  const authAxiosInstance = axios.create({
     baseURL: "http://127.0.0.1:8000/api",
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-      "Content-Type": "application/json",
-    },
+    // Không đặt headers ở đây, sẽ đặt sau khi tạo instance
   })
+
+  if (token) {
+    authAxiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`
+  } else {
+    // Nếu không có token, đảm bảo header Authorization không tồn tại
+    delete authAxiosInstance.defaults.headers.common["Authorization"]
+  }
+
+  // console.log(
+  //   "Axios instance created with Authorization header:",
+  //   authAxiosInstance.defaults.headers.common["Authorization"],
+  // )
+  return authAxiosInstance
 }
 
 export function useFetch() {
@@ -56,16 +87,19 @@ export function useFetch() {
       try {
         const authAxios = createAuthAxios()
         const response = await authAxios.get("/admin/customers")
-        // console.log("Danh sách người dùng:", response.data)
         setCustomers(response.data)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Lỗi khi lấy người dùng:", error)
-        if (error.response?.status === 401) {
-          console.error("Token không hợp lệ hoặc đã hết hạn")
-          setError("Token không hợp lệ hoặc đã hết hạn")
-        } else if (error.response?.status === 403) {
-          console.error("Không có quyền truy cập")
-          setError("Không có quyền truy cập")
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            setError("Lỗi 401: Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.")
+          } else if (error.response?.status === 403) {
+            setError("Lỗi 403: Bạn không có quyền truy cập vào danh sách khách hàng.")
+          } else {
+            setError(`Lỗi khi lấy người dùng: ${error.message}`)
+          }
+        } else {
+          setError("Đã xảy ra lỗi không xác định khi lấy người dùng.")
         }
       }
     }
@@ -77,7 +111,6 @@ export function useFetch() {
     axios
       .get("http://127.0.0.1:8000/api/category")
       .then((res) => {
-        // console.log("Danh sách danh mục:", res.data);
         setCategories(res.data)
       })
       .catch((err) => console.error("Lỗi khi lấy danh mục:", err))
@@ -88,7 +121,6 @@ export function useFetch() {
     axios
       .get("http://127.0.0.1:8000/api/foodgroups")
       .then((res) => {
-        // console.log("Danh sách loại danh mục:", res.data);
         setFoodGroups(res.data)
       })
       .catch((err) => console.error("Lỗi khi lấy loại danh mục:", err))
@@ -99,7 +131,6 @@ export function useFetch() {
     axios
       .get("http://127.0.0.1:8000/api/foods")
       .then((res) => {
-        console.log("Danh sách món ăn:", res.data.data);
         setFoods(res.data.data)
       })
       .catch((err) => console.error("Lỗi khi lấy món ăn:", err))
@@ -109,7 +140,6 @@ export function useFetch() {
     axios
       .get("http://127.0.0.1:8000/api/combos")
       .then((res) => {
-        // console.log("Danh sách combo:", res.data);
         setCombos(res.data)
       })
       .catch((err) => console.error("Lỗi khi lấy combo:", err))
@@ -119,7 +149,6 @@ export function useFetch() {
     axios
       .get("http://localhost:8000/api/voucher")
       .then((res) => {
-        // console.log("Danh sách voucher:", res.data);
         setVouchers(res.data)
       })
       .catch((err) => console.error("Lỗi khi lấy danh sách voucher:", err))
@@ -138,10 +167,9 @@ export function useFetch() {
       try {
         setLoading(true)
         const response = await axios.get("http://127.0.0.1:8000/api/orders")
-        // console.log("Danh sách đơn hàng:", response.data);
         setOrders(response.data)
         setError(null)
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Lỗi khi lấy danh sách đơn hàng:", error)
         setError("Lỗi khi lấy danh sách đơn hàng")
       } finally {
@@ -151,95 +179,85 @@ export function useFetch() {
     fetchOrders()
   }, [])
 
-  // Lấy chi tiết đơn hàng
-  const fetchOrderDetail = (id: number) => {
-    axios
-      .get(`http://127.0.0.1:8000/api/orders/${id}`)
-      .then((res) => {
-        // console.log("Chi tiết đơn hàng:", res.data);
-        setOrderDetail(res.data)
-      })
-      .catch((err) => console.error("Lỗi khi lấy chi tiết đơn hàng:", err))
-  }
-
-  // Lấy tất cả order items từ TẤT CẢ đơn hàng (không chỉ active)
-  const fetchAllOrderItems = async () => {
+  // Lấy chi tiết đơn hàng (publicly available for other fetches)
+  const fetchOrderDetail = useCallback(async (id: number) => {
     try {
-      // console.log("🔄 Bắt đầu fetch tất cả order items...")
-
-      // Lấy TẤT CẢ đơn hàng (không filter theo status)
-      const ordersResponse = await axios.get("http://127.0.0.1:8000/api/orders")
-      const allOrders = ordersResponse.data
-
-      // console.log(`📊 Tìm thấy ${allOrders.length} đơn hàng`)
-
-      // Lấy order items từ tất cả đơn hàng
-      const allOrderItems: OrderItem[] = []
-
-      for (const order of allOrders) {
-        try {
-          const orderDetailResponse = await axios.get(`http://127.0.0.1:8000/api/orders/${order.id}`)
-          const orderDetail = orderDetailResponse.data
-
-          if (orderDetail.items && orderDetail.items.length > 0) {
-            const itemsWithOrderInfo = orderDetail.items.map((item: any) => ({
-              ...item,
-              order_info: {
-                id: order.id,
-                customer_name: order.customer?.name || "Khách hàng",
-                table_numbers: order.tables?.map((t: any) => t.table_number).join(", ") || "N/A",
-                order_status: order.status,
-                order_date: order.created_at,
-              },
-            }))
-            allOrderItems.push(...itemsWithOrderInfo)
-          }
-        } catch (error) {
-          console.error(`❌ Lỗi khi lấy chi tiết đơn hàng ${order.id}:`, error)
-        }
-      }
-
-      // console.log(`✅ Đã lấy được ${allOrderItems.length} order items từ tất cả đơn hàng`)
-      setOrderItems(allOrderItems)
-      return allOrderItems
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy danh sách order items:", error)
-      return []
+      const response = await axios.get(`http://127.0.0.1:8000/api/orders/${id}`)
+      console.log(response.data)
+      setOrderDetail(response.data)
+      return response.data as OrderDetail
+    } catch (err) {
+      console.error("Lỗi khi lấy chi tiết đơn hàng:", err)
+      return null
     }
-  }
+  }, [])
 
-  // Lấy order items theo order ID
-  const fetchOrderItemsByOrderId = async (orderId: number) => {
+  // Lấy order items theo order ID (original function, kept for compatibility)
+  const fetchOrderItemsByOrderId = useCallback(async (orderId: number) => {
     try {
       const response = await axios.get(`http://127.0.0.1:8000/api/getItemsByOrderId/${orderId}`)
-      // console.log("Order items theo order ID:", response.data)
       return response.data.data || []
     } catch (error) {
       console.error("Lỗi khi lấy order items theo order ID:", error)
       return []
     }
-  }
+  }, [])
+
+  // NEW: Fetch order items based on role (Chef or Staff)
+  const fetchOrderItemsByRole = useCallback(
+    async (role: "chef" | "staff") => {
+      setLoading(true)
+      setError(null)
+      // console.log(`Fetching order items for role: ${role}`)
+      try {
+        const authAxios = createAuthAxios()
+        let apiEndpoint = ""
+        if (role === "chef") {
+          apiEndpoint = "/getOrderChef"
+        } else if (role === "staff") {
+          apiEndpoint = "/getOrderStaff"
+        } else {
+          throw new Error("Invalid role specified for fetching order items.")
+        }
+        const response = await authAxios.get(apiEndpoint)
+        const rawOrderItems: OrderItem[] = response.data.data || []
+
+        // Dữ liệu đã được làm giàu từ backend, không cần xử lý thêm ở đây
+        // console.log("data: ", rawOrderItems)
+        setOrderItems(rawOrderItems)
+      } catch (err: unknown) {
+        console.error(`Lỗi khi lấy danh sách order items cho ${role}:`, err)
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 401) {
+            setError(`Lỗi 401: Token không hợp lệ hoặc đã hết hạn khi lấy món ăn cho ${role}. Vui lòng đăng nhập lại.`)
+          } else if (err.response?.status === 403) {
+            setError(
+              `Lỗi 403: Bạn không có quyền truy cập món ăn cho vai trò ${role}. Vui lòng kiểm tra vai trò của bạn.`,
+            )
+          } else {
+            setError(`Lỗi khi lấy danh sách món ăn cho ${role}: ${err.message}`)
+          }
+        } else {
+          setError(`Lỗi không xác định khi lấy danh sách món ăn cho ${role}.`)
+        }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [], // Dependency array is empty because fetchOrderDetail is no longer called inside
+  )
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
         const response = await axios.get("http://127.0.0.1:8000/api/feedbacks")
         setFeedbacks(response.data)
-        // console.log("Danh sách Feedback:", response.data)
       } catch (error) {
         console.error("Lỗi khi lấy danh sách feedback:", error)
       }
     }
     fetchFeedbacks()
   }, [])
-
-  // Auto-fetch order items khi có orders
-  useEffect(() => {
-    if (orders.length > 0 && orderItems.length === 0) {
-      // console.log("🚀 Auto-fetching order items...")
-      fetchAllOrderItems()
-    }
-  }, [orders])
 
   return {
     customers,
@@ -261,9 +279,10 @@ export function useFetch() {
     feedbacks,
     setFeedbacks,
     loading,
+    setLoading,
     error,
     fetchOrderDetail,
-    fetchAllOrderItems,
     fetchOrderItemsByOrderId,
+    fetchOrderItemsByRole,
   }
 }

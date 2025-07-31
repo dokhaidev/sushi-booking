@@ -16,9 +16,8 @@ import { FaTimes, FaUtensils, FaClock, FaCheckCircle } from "react-icons/fa"
 import PopupNotification from "../../../../components/ui/PopupNotification"
 
 export default function NhanVienBep() {
-  const { orderItems, fetchAllOrderItems } = useFetch()
+  const { orderItems, fetchOrderItemsByRole, loading, setLoading } = useFetch()
   const [searchText, setSearchText] = useState("")
-  const [loading, setLoading] = useState(true)
   const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set())
 
   // Filter states
@@ -61,47 +60,58 @@ export default function NhanVienBep() {
     "order_info.table_numbers",
   ])
 
-  // Advanced filtering function
+  // Advanced filtering function for Chef
   const applyFilters = (data: OrderItem[], filters: { status: string; timeRange: string }) => {
-    return data.filter((item) => {
-      // Status filter
-      if (filters.status && filters.status !== "all") {
-        if (item.status !== filters.status) {
+    return data
+      .filter((item) => {
+        // Chef only sees PENDING and PREPARING
+        if (item.status !== OrderItemStatus.PENDING && item.status !== OrderItemStatus.PREPARING) {
           return false
         }
-      }
 
-      // Time range filter
-      if (filters.timeRange && filters.timeRange !== "all") {
-        const itemDate = new Date(item.created_at || "")
-        const today = new Date()
-        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-        switch (filters.timeRange) {
-          case "today":
-            if (itemDate < startOfDay) return false
-            break
-          case "pending_preparing":
-            if (item.status !== OrderItemStatus.PENDING && item.status !== OrderItemStatus.PREPARING) return false
-            break
+        // Status filter (if user applies additional filter)
+        if (filters.status && filters.status !== "all") {
+          if (item.status !== filters.status) {
+            return false
+          }
         }
-      }
 
-      return true
-    })
+        // Time range filter (if user applies additional filter)
+        if (filters.timeRange && filters.timeRange !== "all") {
+          const itemDate = new Date(item.order_info?.order_date || "") // Use order_info.order_date
+          const today = new Date()
+          const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          switch (filters.timeRange) {
+            case "today":
+              if (itemDate < startOfDay) return false
+              break
+            // The 'pending_preparing' filter is redundant as the API already filters this for chef
+          }
+        }
+        return true
+      })
+      .sort((a, b) => {
+        // Sort by reservation time closest to current time
+        const timeA = new Date(`${a.order_info?.reservation_date}T${a.order_info?.reservation_time}`)
+        const timeB = new Date(`${b.order_info?.reservation_date}T${b.order_info?.reservation_time}`)
+        const now = new Date()
+
+        const diffA = Math.abs(timeA.getTime() - now.getTime())
+        const diffB = Math.abs(timeB.getTime() - now.getTime())
+
+        return diffA - diffB
+      })
   }
 
   // Tìm kiếm thêm cho trạng thái tiếng Việt
   const statusFiltered = useMemo(() => {
     if (!searchText.trim()) return searchFiltered
-
     const normalizedSearch = searchText
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/đ/g, "d")
       .replace(/Đ/g, "D")
-
     return searchFiltered.filter((item: OrderItem) => {
       const statusLabel = ORDER_ITEM_STATUS_LABELS[item.status as OrderItemStatus] || ""
       const normalizedStatusLabel = statusLabel
@@ -110,7 +120,6 @@ export default function NhanVienBep() {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/Đ/g, "D")
-
       return normalizedStatusLabel.includes(normalizedSearch)
     })
   }, [searchFiltered, searchText])
@@ -127,7 +136,6 @@ export default function NhanVienBep() {
     const preparingItems = filteredItems.filter((item) => item.status === OrderItemStatus.PREPARING)
     const servedItems = filteredItems.filter((item) => item.status === OrderItemStatus.SERVED)
     const doneItems = filteredItems.filter((item) => item.status === OrderItemStatus.DONE)
-
     return {
       total: filteredItems.length,
       pending: pendingItems.length,
@@ -167,25 +175,27 @@ export default function NhanVienBep() {
   // Tạo axios instance với auth header
   const createAuthAxios = () => {
     const token = getAuthToken()
-    console.log("Token dùng để gọi API:", token)
-    return axios.create({
+    const authAxiosInstance = axios.create({
       baseURL: "http://127.0.0.1:8000/api",
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-        "Content-Type": "application/json",
-      },
     })
+    if (token) {
+      authAxiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`
+    } else {
+      delete authAxiosInstance.defaults.headers.common["Authorization"]
+    }
+    authAxiosInstance.defaults.headers.common["Content-Type"] = "application/json"
+    return authAxiosInstance
   }
 
   // Load dữ liệu khi component mount
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      await fetchAllOrderItems()
+      await fetchOrderItemsByRole("chef") // Fetch for chef role
       setLoading(false)
     }
     loadData()
-  }, [])
+  }, [fetchOrderItemsByRole, setLoading])
 
   // Cập nhật status của order item
   const updateOrderItemStatus = async (itemId: number, status: string) => {
@@ -194,27 +204,28 @@ export default function NhanVienBep() {
       const response = await authAxios.put(`/orderitems/update-status/${itemId}`, {
         status: status,
       })
-      console.log("Cập nhật status thành công:", response.data)
-      await fetchAllOrderItems()
+      await fetchOrderItemsByRole("chef") // Re-fetch data after update
       return {
         success: true,
         message: response.data.message || "Cập nhật trạng thái thành công",
         data: response.data,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi khi cập nhật status:", error)
       let errorMessage = "Có lỗi xảy ra khi cập nhật trạng thái"
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.status === 403) {
-        errorMessage = "Bạn không có quyền cập nhật trạng thái món ăn"
-      } else if (error.response?.status === 401) {
-        errorMessage = "Vui lòng đăng nhập lại"
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error.response?.status === 403) {
+          errorMessage = "Lỗi 403: Bạn không có quyền cập nhật trạng thái món ăn."
+        } else if (error.response?.status === 401) {
+          errorMessage = "Lỗi 401: Vui lòng đăng nhập lại."
+        }
       }
       return {
         success: false,
         message: errorMessage,
-        error: error.response?.data || error.message,
+        error: axios.isAxiosError(error) ? error.response?.data || error.message : "Unknown error",
       }
     }
   }
@@ -227,9 +238,6 @@ export default function NhanVienBep() {
         break
       case OrderItemStatus.PREPARING:
         nextStatus = OrderItemStatus.SERVED
-        break
-      case OrderItemStatus.SERVED:
-        nextStatus = OrderItemStatus.DONE
         break
       default:
         return
@@ -281,10 +289,13 @@ export default function NhanVienBep() {
   // Render nút action dựa trên status
   const renderActionButton = (item: OrderItem) => {
     const isUpdating = updatingItems.has(item.id)
-    if (item.status === OrderItemStatus.DONE || item.status === OrderItemStatus.CANCELLED) {
+    if (
+      item.status === OrderItemStatus.SERVED ||
+      item.status === OrderItemStatus.DONE ||
+      item.status === OrderItemStatus.CANCELLED
+    ) {
       return <span className="text-gray-500">Hoàn thành</span>
     }
-
     return (
       <div className="flex gap-2">
         <button
@@ -314,8 +325,6 @@ export default function NhanVienBep() {
         return "Bắt đầu chuẩn bị"
       case OrderItemStatus.PREPARING:
         return "Hoàn thành chuẩn bị"
-      case OrderItemStatus.SERVED:
-        return "Đánh dấu hoàn thành"
       default:
         return "Cập nhật"
     }
@@ -324,7 +333,7 @@ export default function NhanVienBep() {
   // Xử lý làm mới dữ liệu
   const handleRefresh = async () => {
     setLoading(true)
-    await fetchAllOrderItems()
+    await fetchOrderItemsByRole("chef")
     setLoading(false)
   }
 
@@ -355,8 +364,8 @@ export default function NhanVienBep() {
       textColor: "text-orange-600",
     },
     {
-      label: "Hoàn thành",
-      value: statistics.done,
+      label: "Đã phục vụ",
+      value: statistics.served,
       icon: <FaCheckCircle className="w-5 h-5" />,
       color: "from-green-500 to-green-600",
       bgColor: "bg-green-50",
@@ -391,7 +400,6 @@ export default function NhanVienBep() {
       >
         <p>{popupContent.message}</p>
       </PopupNotification>
-
       {/* Confirmation Popup */}
       {showConfirmPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -426,7 +434,6 @@ export default function NhanVienBep() {
       )}
       {/* Title */}
       <TitleDesc title="Quản lý bếp" description="Xem và quản lý tất cả món ăn cần chuẩn bị" className="col-span-12" />
-
       {/* Filters */}
       <div className="col-span-12">
         <Card className="bg-white">
@@ -442,12 +449,8 @@ export default function NhanVienBep() {
                   <option value="">Tất cả</option>
                   <option value={OrderItemStatus.PENDING}>Chờ chuẩn bị</option>
                   <option value={OrderItemStatus.PREPARING}>Đang chuẩn bị</option>
-                  <option value={OrderItemStatus.SERVED}>Đã phục vụ</option>
-                  <option value={OrderItemStatus.DONE}>Hoàn thành</option>
-                  <option value={OrderItemStatus.CANCELLED}>Đã hủy</option>
                 </select>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-2">Thời gian</label>
                 <select
@@ -457,10 +460,8 @@ export default function NhanVienBep() {
                 >
                   <option value="">Tất cả</option>
                   <option value="today">Hôm nay</option>
-                  <option value="pending_preparing">Cần xử lý</option>
                 </select>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={handleClearFilters}
@@ -471,20 +472,17 @@ export default function NhanVienBep() {
                   <span className="sm:hidden">Xóa</span>
                 </button>
               </div>
-
               <div className="flex items-end">
                 <button
                   onClick={handleRefresh}
                   disabled={loading}
                   className="w-full bg-green-500 hover:bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {/* <FaRefresh className="w-4 h-4" /> */}
                   <span className="hidden sm:inline">{loading ? "Đang tải..." : "Làm mới"}</span>
                   <span className="sm:hidden">{loading ? "Tải..." : "Mới"}</span>
                 </button>
               </div>
             </div>
-
             {/* Filter Summary */}
             {(filters.status || filters.timeRange || searchText) && (
               <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
@@ -492,7 +490,7 @@ export default function NhanVienBep() {
                   <span className="text-sm font-medium text-orange-800">Bộ lọc đang áp dụng:</span>
                   {searchText && (
                     <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded-full text-xs">
-                      Tìm kiếm: "{searchText}"
+                      Tìm kiếm: &quot;{searchText}&quot;
                     </span>
                   )}
                   {filters.status && (
@@ -512,7 +510,6 @@ export default function NhanVienBep() {
           </CardContent>
         </Card>
       </div>
-
       {/* Statistics */}
       <div className="col-span-12">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
@@ -538,7 +535,6 @@ export default function NhanVienBep() {
           ))}
         </div>
       </div>
-
       {/* Orders Table */}
       <div className="col-span-12">
         <Card>
@@ -590,9 +586,10 @@ export default function NhanVienBep() {
                       <th className="px-4 py-3">Mã đơn</th>
                       <th className="px-4 py-3">Tên món</th>
                       <th className="px-4 py-3">Số lượng</th>
-                      <th className="px-4 py-3">Giá</th>
                       <th className="px-4 py-3">Khách hàng</th>
                       <th className="px-4 py-3">Bàn</th>
+                      <th className="px-4 py-3">Ngày đặt</th> {/* Added column */}
+                      <th className="px-4 py-3">Giờ đặt</th>
                       <th className="px-4 py-3">Trạng thái</th>
                       <th className="px-4 py-3">Thao tác</th>
                     </tr>
@@ -606,14 +603,21 @@ export default function NhanVienBep() {
                           {item.combo && <div className="text-xs text-gray-500">Combo</div>}
                         </td>
                         <td className="px-4 py-3 text-center font-semibold">{item.quantity}</td>
-                        <td className="px-4 py-3">
-                          {new Intl.NumberFormat("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          }).format(item.price)}
-                        </td>
                         <td className="px-4 py-3">{item.order_info?.customer_name || "N/A"}</td>
                         <td className="px-4 py-3 font-medium">{item.order_info?.table_numbers || "N/A"}</td>
+                        <td className="px-4 py-3">
+                          {item.order_info?.reservation_date
+                            ? new Date(item.order_info.reservation_date).toLocaleDateString("vi-VN")
+                            : "N/A"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {item.order_info?.reservation_time
+                            ? new Date(`2000-01-01T${item.order_info.reservation_time}`).toLocaleTimeString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "N/A"}
+                        </td>
                         <td className="px-4 py-3">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${

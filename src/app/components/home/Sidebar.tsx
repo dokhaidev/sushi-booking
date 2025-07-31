@@ -84,6 +84,12 @@ const Sidebar = () => {
           href: "/quan-tri/nhan-vien/bep",
           icon: <FaUtensils className="w-4 h-4" />,
         },
+        {
+          key: "ban",
+          label: "Nhân viên bàn",
+          href: "/quan-tri/nhan-vien/ban",
+          icon: <FaUtensils className="w-4 h-4" />,
+        },
       ],
     },
   ]

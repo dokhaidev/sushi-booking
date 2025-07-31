@@ -249,6 +249,7 @@ export default function QuanLyNguoiDung() {
                   <option value="admin">Quản trị viên</option>
                   <option value="manager">Quản lý</option>
                   <option value="chef">Nhân viên bếp</option>
+                  <option value="staff">Nhân viên bàn</option>
                 </select>
               </div>
 
@@ -313,11 +314,11 @@ export default function QuanLyNguoiDung() {
                         ? "Người dùng"
                         : filters.role === "admin"
                           ? "Quản trị viên"
-                          : filters.role === "chef"
-                            ? "NV bếp"
-                            : filters.role === "menumanager"
-                              ? "NV bàn"
-                              : "NV thu ngân"}
+                          : filters.role === "manager"
+                            ? "Quản lý"
+                            : filters.role === "chef"
+                              ? "NV bếp"
+                              : "NV bàn"}
                     </span>
                   )}
                   {filters.status && (
@@ -355,7 +356,7 @@ export default function QuanLyNguoiDung() {
             color: "from-purple-500 to-purple-600",
           },
           {
-            label: "Nhân viên",
+            label: "Nhân viên bàn",
             value: customers.filter((user) => user.role === "staff").length,
             icon: <FaCashRegister className="w-6 h-6" />,
             color: "from-orange-500 to-orange-600",
@@ -464,7 +465,7 @@ export default function QuanLyNguoiDung() {
                                 : user.role === "chef"
                                   ? "Nhân viên bếp"
                                   : user.role === "staff"
-                                    ? "NV thực đơn"
+                                    ? "Nhân viên bàn"
                                     : "Không xác định"}
                         </td>
                         <td className={`p-2 font-medium ${user.status === 0 ? "text-red-700" : "text-green-700"}`}>
@@ -534,6 +535,7 @@ export default function QuanLyNguoiDung() {
                     <option value="admin">Quản trị viên</option>
                     <option value="manager">Quản lý</option>
                     <option value="chef">Nhân viên bếp</option>
+                    <option value="staff">Nhân viên bàn</option>
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

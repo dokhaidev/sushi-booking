@@ -52,28 +52,28 @@ export function middleware(request: NextRequest) {
   const role = user?.role;
 
   // ✅ Phân quyền theo vai trò
-  if (role === "chef" && !pathname.startsWith("/quan-tri/nhan-vien")) {
-    return NextResponse.redirect(new URL("/quan-tri/nhan-vien/bep", request.url));
+  // ✅ Phân quyền theo vai trò
+  // Admin và Manager có thể vào tất cả các trang quản trị
+  if (role === "admin" || role === "manager") {
+    return NextResponse.next()
   }
 
-  if (
-    role === "manager" &&
-    !pathname.startsWith("/quan-tri/nhan-vien") &&
-    !pathname.startsWith("/quan-tri/quan-ly")
-  ) {
-    return NextResponse.redirect(new URL("/quan-tri/quan-ly/nguoi-dung", request.url));
+  // Chef chỉ được vào trang /quan-tri/nhan-vien/bep
+  if (role === "chef") {
+    if (pathname.startsWith("/quan-tri/nhan-vien/bep")) {
+      return NextResponse.next()
+    } else {
+      return NextResponse.redirect(new URL("/quan-tri/nhan-vien/bep", request.url))
+    }
   }
 
-  if (!["admin", "manager", "chef"].includes(role)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (
-    !pathname.startsWith("/quan-tri/nhan-vien") &&
-    !pathname.startsWith("/quan-tri/quan-ly") &&
-    role !== "admin"
-  ) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Staff chỉ được vào trang /quan-tri/nhan-vien/ban
+  if (role === "staff") {
+    if (pathname.startsWith("/quan-tri/nhan-vien/ban")) {
+      return NextResponse.next()
+    } else {
+      return NextResponse.redirect(new URL("/quan-tri/nhan-vien/ban", request.url))
+    }
   }
 
   return NextResponse.next();
