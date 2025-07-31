@@ -147,17 +147,16 @@ export default function LuckyWheel() {
     <>
       {/* Nút quay */}
       <div className="fixed bottom-37 right-6 z-50">
-        <button
-          onClick={() => setOpen(true)}
-          className="relative w-16 h-16 aspect-square rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 shadow-xl hover:scale-110 transition-transform text-white font-bold text-xl flex items-center justify-center"
-        >
-          🎯
-          {spinCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-white text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full shadow">
-              {spinCount}
-            </span>
-          )}
-        </button>
+      <button
+        onClick={() => setOpen(true)}
+        className="relative w-16 aspect-square flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 shadow-xl hover:scale-110 transition-transform text-white text-2xl font-bold"
+      >
+        🎯
+        <span className="absolute -top-1.5 -right-1.5 bg-white text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full shadow">
+          {spinCount}
+        </span>
+      </button>
+
       </div>
 
       {/* Popup vòng quay */}

@@ -1,66 +1,65 @@
-// app/payment-success/page.tsx
-"use client";
-import { useRouter } from "next/navigation";
+"use client"
+
+import { useRouter } from "next/navigation"
+import { CheckCircle, Home, ArrowLeft } from "lucide-react"
+import { useTranslation } from "@/src/app/lib/i18n/client"
 
 export default function PaymentSuccess() {
-  const router = useRouter();
+  const router = useRouter()
+  const { t } = useTranslation("paymentSuccess")
+
   return (
-    <div className="h-[600px] bg-gradient-to-br from-rose-50 via-white to-emerald-50 flex items-center justify-center p-6">
-      <div className="bg-white backdrop-blur-lg bg-opacity-60 rounded-2xl shadow-2xl p-10 max-w-lg w-full text-center">
-        {/* SVG dấu tick */}
-        <svg
-          className="w-24 h-24 mx-auto text-green-500 animate-bounce"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            strokeWidth="2"
-            className="opacity-20"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M9 12l2 2 4-4"
-          />
-        </svg>
+    <div className="bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4 py-[60px]">
+      {/* Card Container */}
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl border border-gray-200">
+        <div className="p-8 text-center">
+          {/* Success Icon */}
+          <div className="relative mb-6">
+            <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <div className="absolute inset-0 w-20 h-20 mx-auto bg-green-200 rounded-full animate-ping opacity-20"></div>
+          </div>
 
-        <h1 className="mt-6 text-4xl font-extrabold text-gray-900">
-          Thanh toán thành công!
-        </h1>
-        <p className="mt-4 text-gray-600 text-lg">
-          Cảm ơn bạn! Sushi đang được chuẩn bị, sẽ sớm đến tay bạn 🍣
-        </p>
+          {/* Success Message */}
+          <div className="space-y-3 mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+            <p className="text-gray-600 leading-relaxed">{t("reservation_message")}</p>
+          </div>
 
-        <button
-          onClick={() => router.push("/")}
-          className="mt-8 inline-flex items-center space-x-2 bg-gradient-to-r from-green-600 to-teal-500 hover:from-teal-500 hover:to-green-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition-all transform hover:scale-105"
-        >
-          <span>Về trang chủ</span>
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+          {/* Reservation Info */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+              <span>🍣</span>
+              <span>{t("estimated_time", { time: "25-35 phút" })}</span>
+            </div>
+          </div>
 
-        {/* Footer gọn gàng phía dưới */}
-        <footer className="mt-8 text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} Sushi House – Tinh hoa ẩm thực Nhật
-        </footer>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push("/")}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+            >
+              <Home className="w-4 h-4" />
+              <span>{t("go_home")}</span>
+            </button>
+
+            <button
+              onClick={() => router.back()}
+              className="w-full border border-gray-200 text-gray-600 hover:bg-gray-50 bg-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{t("go_back")}</span>
+            </button>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-xs text-gray-500">{t("footer_text", { year: new Date().getFullYear() })}</p>
+          </div>
+        </div>
       </div>
     </div>
-  );
+  )
 }

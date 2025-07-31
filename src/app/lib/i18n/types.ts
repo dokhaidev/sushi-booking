@@ -4,6 +4,11 @@ export type Translations = {
   [key: string]: string | Translations;
 };
 
+export type TranslateFunction = (
+  key: string,
+  params?: Record<string, string | number>
+) => string;
+
 export type Namespace =
   | "footer"
   | "header"
@@ -28,7 +33,12 @@ export type Namespace =
   | "contactTestimonials"
   | "contactMap"
   | "loginPage"
-  | "register";
+  | "register"
+  | "reservation"
+  | "orderSummary"
+  | "paymentSuccess"
+  | "paymentFailed";
+
 
 export type NamespacedTranslations = Record<Namespace, Translations>;
 

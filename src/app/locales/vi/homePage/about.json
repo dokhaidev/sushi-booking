@@ -7,7 +7,7 @@
   "description": "Mỗi món ăn đều được chế biến từ nguyên liệu tươi ngon, mang hương vị tinh tế đúng chuẩn Nhật Bản, trong không gian mang đậm dấu ấn Edo cổ điển.",
   "schedule": {
     "weekdays": {
-      "label": "Thứ Hai - Thứ Sáu",
+      "label": "Thứ 2 - Thứ 6",
       "time": "9:00 – 22:00"
     },
     "saturday": {

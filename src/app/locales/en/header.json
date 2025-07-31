@@ -4,7 +4,8 @@
     "menu": "Menu",
     "about": "About Us",
     "contact": "Contact",
-    "reservation": "Reservation"
+    "reservation": "Reservation",
+    "food": "Foods"
   },
   "user": {
     "login": "Login",

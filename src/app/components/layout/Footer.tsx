@@ -57,7 +57,7 @@ const Footer = () => {
         </div>
 
         {/* Content grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 text-xs">
           {/* Địa chỉ */}
           <div>
             <h3 className="text-lg font-semibold mb-4 flex items-center text-[#e6d5b8] border-b border-[#e6d5b8]/30 pb-2">
@@ -78,7 +78,7 @@ const Footer = () => {
                   <Clock className="mr-2 text-[#AF763E]" size={14} />
                   <span>{t("opening_hours.title")}:</span>
                 </div>
-                <div className="pl-6 text-sm mt-1">
+                <div className="pl-6 text-xs mt-1">
                   <p>{t("opening_hours.lunch")}</p>
                   <p>{t("opening_hours.dinner")}</p>
                 </div>
@@ -191,12 +191,6 @@ const Footer = () => {
               className="hover:text-[#AF763E] transition-colors"
             >
               {t("links.terms")}
-            </Link>
-            <Link
-              href={getLocalizedPath("/sitemap")}
-              className="hover:text-[#AF763E] transition-colors"
-            >
-              {t("links.sitemap")}
             </Link>
           </div>
         </div>

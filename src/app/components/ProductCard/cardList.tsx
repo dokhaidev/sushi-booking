@@ -76,7 +76,7 @@ export default function CardList({ data, filterType }: CardListProps) {
               </div>
               <div className="p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#333333] line-clamp-2 mb-1">
+                  <h3 className="text-lg font-semibold text-[#555555] line-clamp-2 mb-1">
                     {displayName}
                   </h3>
                   {displayDescription && (
@@ -86,10 +86,10 @@ export default function CardList({ data, filterType }: CardListProps) {
                   )}
                 </div>
                 <div className="flex justify-between items-center mt-4 gap-4">
-                  <span className="text-red-600 font-bold text-xl flex-1">
-                    {Number(item.price).toLocaleString("vi-VN")} VNĐ
+                  <span className="text-red-800 font-bold text-xl flex-1">
+                    {Number(item.price).toLocaleString("vi-VN")} ₫
                   </span>
-                  <button className="bg-[#AF763E] text-white px-4 py-2 rounded-[30px] hover:bg-[#8a5c3a] transition text-sm whitespace-nowrap">
+                  <button className="bg-gradient-to-r from-[#A68345] to-[#BD944A] hover:cursor-pointer hover:opacity-90 text-white px-6 py-3 rounded-[30px] transition text-md whitespace-nowrap">
                     {t("add_to_cart")}
                   </button>
                 </div>

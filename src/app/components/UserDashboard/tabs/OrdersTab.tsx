@@ -5,9 +5,43 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../context/authContext";
 import StatusBadge from "../ui/StatusBadge";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 const ORDERS_PER_PAGE = 5;
+
+const NotificationPopup = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 right-4 z-50">
+      <div
+        className={`px-4 py-3 rounded-lg shadow-lg ${
+          type === "success" ? "bg-green-500" : "bg-red-500"
+        } text-white`}
+      >
+        <div className="flex items-center justify-between">
+          <p>{message}</p>
+          <button onClick={onClose} className="ml-4">
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function OrdersTab() {
   const { user: authUser } = useAuth();
@@ -17,6 +51,19 @@ export default function OrdersTab() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  // Feedback states
+  const [rating, setRating] = useState<number>(5);
+  const [comment, setComment] = useState<string>("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const closeNotification = () => {
+    setNotification(null);
+  };
 
   useEffect(() => {
     if (!authUser?.id) return;
@@ -25,13 +72,29 @@ export default function OrdersTab() {
       try {
         setLoading(true);
         setError(null);
-        const res = await axios.get(
+        
+        // Fetch orders
+        const ordersRes = await axios.get(
           `http://127.0.0.1:8000/api/orders/history/${authUser.id}`
         );
-        setOrders(res.data);
+        
+        // Fetch feedbacks for all orders
+        const feedbacksRes = await axios.get(
+          `http://localhost:8000/api/feedbacks?customer_id=${authUser.id}`
+        );
+        
+        // Map orders with feedback status
+        const ordersWithFeedback = ordersRes.data.map((order: any) => ({
+          ...order,
+          has_feedback: feedbacksRes.data.some(
+            (feedback: any) => feedback.order_id === order.order_id
+          ),
+        }));
+        
+        setOrders(ordersWithFeedback);
       } catch (err) {
-        console.error("Lỗi khi tải đơn hàng:", err);
-        setError("Không thể tải lịch sử đơn hàng. Vui lòng thử lại sau.");
+        console.error("Error fetching data:", err);
+        setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
       } finally {
         setLoading(false);
       }
@@ -40,7 +103,6 @@ export default function OrdersTab() {
     fetchOrders();
   }, [authUser?.id]);
 
-  // Tính toán phân trang
   const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
   const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
@@ -50,29 +112,95 @@ export default function OrdersTab() {
   const viewOrderDetail = (order: any) => {
     setSelectedOrder(order);
     setShowDetail(true);
+    setRating(5);
+    setComment("");
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#AF763E]"></div>
-      </div>
-    );
+ const handleSubmitFeedback = async () => {
+  if (!authUser || !selectedOrder) {
+    setNotification({
+      message: "Bạn chưa đăng nhập hoặc chưa chọn đơn hàng.",
+      type: "error",
+    });
+    return;
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-[#AF763E] text-white rounded-lg hover:bg-[#AF763E]/90"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
+  if (selectedOrder.status !== "success") {
+    setNotification({
+      message: "Chỉ có thể đánh giá đơn hàng đã hoàn thành.",
+      type: "error",
+    });
+    return;
   }
+
+  if (selectedOrder.has_feedback) {
+    setNotification({
+      message: "Bạn đã gửi đánh giá cho đơn hàng này rồi.",
+      type: "error",
+    });
+    return;
+  }
+
+  if (rating < 1 || rating > 5) {
+    setNotification({
+      message: "Vui lòng chọn đánh giá từ 1-5 sao.",
+      type: "error",
+    });
+    return;
+  }
+
+  try {
+    setIsSubmittingFeedback(true);
+
+    const response = await axios.post("http://localhost:8000/api/feedbacks", {
+      customer_id: parseInt(String(authUser.id)),
+      order_id: selectedOrder.order_id, // Sửa lại thành đúng ID đơn hàng
+      rating: Number(rating),
+      comment: comment.trim() || "Không có nhận xét",
+    });
+
+    setNotification({
+      message: response.data?.message || "Gửi đánh giá thành công",
+      type: "success",
+    });
+
+    // Cập nhật trạng thái đơn hàng đã đánh giá
+    setSelectedOrder((prev: any) => ({
+      ...prev,
+      has_feedback: true,
+    }));
+
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.order_id === selectedOrder.order_id
+          ? { ...order, has_feedback: true }
+          : order
+      )
+    );
+  } catch (err: any) {
+    console.error("Lỗi khi gửi feedback:", err.response?.data || err.message);
+
+    let errorMessage = "Gửi đánh giá thất bại";
+
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.response?.status === 422) {
+      const errors = err.response.data?.errors;
+      if (errors) {
+        errorMessage = Object.values(errors).flat().join(", ");
+      }
+    }
+
+    setNotification({
+      message: errorMessage,
+      type: "error",
+    });
+  } finally {
+    setIsSubmittingFeedback(false);
+  }
+};
+
+
 
   return (
     <div className="p-4 md:p-6">
@@ -80,7 +208,21 @@ export default function OrdersTab() {
         Lịch sử đơn hàng
       </h2>
 
-      {orders.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#AF763E]"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#AF763E] text-white rounded-lg hover:bg-[#AF763E]/90"
+          >
+            Thử lại
+          </button>
+        </div>
+      ) : orders.length === 0 ? (
         <div className="text-center py-12 bg-wooden-light rounded-lg">
           <p className="text-gray-600 mb-4">Bạn chưa có đơn hàng nào.</p>
           <button
@@ -91,7 +233,7 @@ export default function OrdersTab() {
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <>
           <div className="overflow-auto shadow ring-1 ring-[#AF763E]/20 rounded-xl">
             <table className="min-w-full divide-y divide-[#AF763E]/10">
               <thead className="bg-[#AF763E]">
@@ -115,7 +257,7 @@ export default function OrdersTab() {
               </thead>
               <tbody className="bg-white divide-y divide-[#AF763E]/10">
                 {paginatedOrders.map((order, index) => (
-                  <tr key={index} className="hover:bg-[#AF763E]/5 transition">
+                  <tr key={order.order_id || index} className="hover:bg-[#AF763E]/5 transition">
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order.order_id}
                     </td>
@@ -128,13 +270,24 @@ export default function OrdersTab() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <StatusBadge status={order.status} />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm space-x-2">
                       <button
                         onClick={() => viewOrderDetail(order)}
                         className="text-[#AF763E] hover:text-[#AF763E]/80 font-medium"
                       >
                         Xem chi tiết
                       </button>
+                      {order.status === "success" && !order.has_feedback && (
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowDetail(true);
+                          }}
+                          className="text-green-600 hover:text-green-800 font-medium"
+                        >
+                          Đánh giá
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -142,7 +295,6 @@ export default function OrdersTab() {
             </table>
           </div>
 
-          {/* Phân trang gọn gàng */}
           {orders.length > ORDERS_PER_PAGE && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-gray-500">
@@ -150,12 +302,9 @@ export default function OrdersTab() {
                 {Math.min(currentPage * ORDERS_PER_PAGE, orders.length)} trên{" "}
                 {orders.length} đơn hàng
               </div>
-
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className={`p-2 rounded-lg ${
                     currentPage === 1
@@ -210,7 +359,6 @@ export default function OrdersTab() {
             </div>
           )}
 
-          {/* Order Detail Modal (giữ nguyên như cũ) */}
           <AnimatePresence>
             {showDetail && selectedOrder && (
               <motion.div
@@ -266,6 +414,55 @@ export default function OrdersTab() {
                           </p>
                         </div>
                       </div>
+
+                      {selectedOrder.status === "success" && (
+                        <div className="bg-[#AF763E]/10 p-4 rounded-lg border border-[#AF763E]/20">
+                          <h4 className="font-medium text-lg mb-3 text-[#AF763E]">
+                            Đánh giá đơn hàng
+                          </h4>
+                          {selectedOrder.has_feedback ? (
+                            <p className="text-gray-700">
+                              Bạn đã đánh giá đơn hàng này.
+                            </p>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    onClick={() => setRating(star)}
+                                    className="text-2xl"
+                                  >
+                                    <Star
+                                      className={`w-6 h-6 ${
+                                        star <= rating
+                                          ? "text-yellow-400 fill-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                              <textarea
+                                className="w-full p-2 border border-gray-300 rounded"
+                                rows={3}
+                                placeholder="Nhận xét của bạn..."
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                              />
+                              <button
+                                onClick={handleSubmitFeedback}
+                                disabled={isSubmittingFeedback}
+                                className="px-4 py-2 bg-[#AF763E] text-white rounded hover:bg-[#AF763E]/90 disabled:opacity-50"
+                              >
+                                {isSubmittingFeedback
+                                  ? "Đang gửi..."
+                                  : "Gửi đánh giá"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -349,7 +546,15 @@ export default function OrdersTab() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </>
+      )}
+
+      {notification && (
+        <NotificationPopup
+          message={notification.message}
+          type={notification.type}
+          onClose={closeNotification}
+        />
       )}
     </div>
   );

@@ -54,6 +54,14 @@ import loginPage_vi from "../../locales/vi/loginPage/loginPage.json";
 import loginPage_en from "../../locales/en/loginPage/loginPage.json";
 import register_vi from "../../locales/vi/registerPage/register.json";
 import register_en from "../../locales/en/registerPage/register.json";
+import reservation_vi from "../../locales/vi/reservation/reservation.json";
+import reservation_en from "../../locales/en/reservation/reservation.json";
+import orderSummary_vi from "../../locales/vi/reservation/orderSummary.json";
+import orderSummary_en from "../../locales/en/reservation/orderSummary.json";
+import paymentSuccess_vi from "../../locales/vi/payment/paymentSuccess.json";
+import paymentSuccess_en from "../../locales/en/payment/paymentSuccess.json";
+import paymentFailed_vi from "../../locales/vi/payment/paymentFailed.json";
+import paymentFailed_en from "../../locales/en/payment/paymentFailed.json";
 
 //  Dictionary đầy đủ
 const dictionaries: LanguageDictionary = {
@@ -82,6 +90,10 @@ const dictionaries: LanguageDictionary = {
     contactMap: contactMap_en,
     loginPage: loginPage_en,
     register: register_en,
+    reservation: reservation_en as Translations,
+    orderSummary: orderSummary_en,
+    paymentSuccess: paymentSuccess_en,
+    paymentFailed: paymentFailed_en
   },
   vi: {
     footer: footer_vi,
@@ -108,6 +120,10 @@ const dictionaries: LanguageDictionary = {
     contactMap: contactMap_vi,
     loginPage: loginPage_vi,
     register: register_vi,
+    reservation: reservation_vi as Translations,
+    orderSummary: orderSummary_vi,
+    paymentSuccess: paymentSuccess_vi,
+    paymentFailed: paymentFailed_vi
   },
 };
 
@@ -119,37 +135,38 @@ export function useTranslation(ns: Namespace = "footer") {
     const dictionary =
       dictionaries[lang]?.[ns] ?? dictionaries[defaultLocale][ns];
 
-    const t = (
-      key: string,
-      params?: Record<string, string | number>
-    ): string => {
-      let value: string | Translations | undefined;
-      const keys = key.split(".");
-      let current: string | Translations = dictionary;
+  const t = (
+    key: string,
+    params?: Record<string, string | number>
+  ): string => {
+    const keys = key.split('.');
+    let current: any = dictionary;
 
-      for (const k of keys) {
-        if (typeof current === "object" && current !== null && k in current) {
-          current = current[k];
-        } else {
-          current = key; // fallback
-          break;
-        }
+    // Tìm giá trị dịch thuật theo nested key (vd: 'orderSummary.tableFor')
+    for (const k of keys) {
+      if (typeof current === 'object' && current !== null && k in current) {
+        current = current[k];
+      } else {
+        return key; // Fallback: trả về key gốc nếu không tìm thấy
       }
+    }
 
-      if (typeof current !== "string") {
-        current = key;
-      }
+    // Đảm bảo kết quả là chuỗi
+    if (typeof current !== 'string') return key;
 
-      value = current as string;
+    // Thay thế TẤT CẢ biến {variable} bằng params tương ứng
+    if (params) {
+      return Object.entries(params).reduce(
+        (result, [param, value]) => result.replace(
+          new RegExp(`\\{${param}\\}`, 'g'), // Dùng \\ để escape {}
+          String(value)
+        ),
+        current
+      );
+    }
 
-      if (params) {
-        for (const [param, paramValue] of Object.entries(params)) {
-          value = value.replace(`{{${param}}}`, String(paramValue));
-        }
-      }
-
-      return value;
-    };
+    return current;
+  };
 
     return { t, lang };
   }, [lang, ns]);

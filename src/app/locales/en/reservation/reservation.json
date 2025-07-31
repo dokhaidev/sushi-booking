@@ -1,0 +1,23 @@
+{
+  "title": "Reservation Information",
+  "date_label": "Reservation Date",
+  "guest_count_label": "Number of Guests",
+  "available_slots": "Available Time Slots",
+  "guest_limit_warning_title": "Large party size",
+  "guest_limit_warning_message": "Please contact our hotline for assistance in arranging seating for groups over 40 guests.",
+  "close": "Close",
+  "contact_for_large_group": "For large groups, please contact:",
+
+  "contact_info_title": "Contact Information",
+  "full_name_label": "Full Name",
+  "full_name_placeholder": "Enter your full name",
+  "phone_label": "Phone Number",
+  "phone_placeholder": "Enter your phone number",
+
+  "payment_note_title": "Payment & Notes",
+  "payment_method_label": "Payment Method",
+  "payment_cash": "Pay with cash on arrival",
+  "payment_vnpay": "Pay with VNPay",
+  "note_label": "Note",
+  "note_placeholder": "Special requests, food allergies..."
+}

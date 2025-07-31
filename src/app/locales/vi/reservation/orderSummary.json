@@ -1,0 +1,29 @@
+{
+  "orderSummary": {
+    "title": "Tóm tắt đơn hàng",
+    "tableInfo": "Thông tin đặt bàn",
+    "tableFor": "Bàn cho {guestCount} khách",
+    "noTableAssigned": "Chưa có bàn được chỉ định. Vui lòng chọn khung giờ để chỉ định bàn.",
+    "selectDateTime": "Vui lòng chọn ngày và giờ để tiếp tục.",
+    "foodSection": "Chọn món ăn",
+    "editFood": "Sửa món ăn",
+    "addFood": "Thêm món ăn",
+    "noFoodSelected": "Chưa có món ăn nào được chọn.",
+    "comboSection": "Chọn combo",
+    "editCombo": "Sửa combo",
+    "addCombo": "Thêm combo",
+    "noComboSelected": "Chưa có combo nào được chọn.",
+    "voucherLabel": "Mã giảm giá",
+    "voucherPlaceholder": "Nhập mã giảm giá",
+    "apply": "Áp dụng",
+    "loadingVouchers": "Đang tải mã giảm giá...",
+    "noVouchers": "Không có mã giảm giá khả dụng.",
+    "expiry": "Hết hạn: {{date}}",
+    "discount": "Giảm giá: {amount}₫",
+    "subtotal": "Tổng phụ",
+    "deposit": "Tiền cọc",
+    "cashPayment": "Thanh toán tiền mặt",
+    "vnpayPayment": "Thanh toán VNPay",
+    "processing": "Đang xử lý..."
+  }
+}

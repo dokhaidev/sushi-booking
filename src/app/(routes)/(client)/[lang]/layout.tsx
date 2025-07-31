@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import MiniChat from "../../../components/MiniChatApp/MiniChat";
 import BackToTopButton from "../../../components/BackToTopButton/BackToTopButton";
 import LuckyWheel from "../../../components/LuckyWheel/LuckyWheel";
+import { CartProvider } from "../../../context/CartContext";
 
 const AuthProviderNoSSR = dynamic(
   () => import("../../../context/AuthProviderWrapper"),
@@ -16,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProviderNoSSR>
       <Header />
-      {children}
+      <CartProvider>{children}</CartProvider>
       <BackToTopButton />
       <Footer />
       <LuckyWheel />

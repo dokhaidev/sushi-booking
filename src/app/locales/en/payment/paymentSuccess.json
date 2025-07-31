@@ -1,0 +1,8 @@
+{
+  "title": "Reservation Confirmed!",
+  "reservation_message": "Thank you for your reservation. Your booking has been successfully confirmed.",
+  "estimated_time": "Estimated reservation time: {time}",
+  "go_home": "Go to Homepage",
+  "go_back": "Go Back",
+  "footer_text": "© {year} Sushi House - Essence of Japanese Cuisine"
+}

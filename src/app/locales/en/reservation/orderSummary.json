@@ -1,0 +1,29 @@
+{
+  "orderSummary": {
+  "title": "Order Summary",
+  "tableInfo": "Reservation Information",
+  "tableFor": "Table for {guestCount} guests",
+  "noTableAssigned": "No table assigned. Please select a time slot to assign a table.",
+  "selectDateTime": "Please select a date and time to proceed with your reservation.",
+  "foodSection": "Food Selection",
+  "editFood": "Edit Food",
+  "addFood": "Add Food",
+  "noFoodSelected": "No food items selected yet.",
+  "comboSection": "Combo Selection",
+  "editCombo": "Edit Combo",
+  "addCombo": "Add Combo",
+  "noComboSelected": "No combo items selected yet.",
+  "voucherLabel": "Voucher Code",
+  "voucherPlaceholder": "Enter voucher code",
+  "apply": "Apply",
+  "loadingVouchers": "Loading vouchers...",
+  "noVouchers": "No vouchers available.",
+  "expiry": "Expires: {{date}}",
+  "discount": "Discount: -{amount} ₫",
+  "subtotal": "Subtotal",
+  "deposit": "Deposit",
+  "cashPayment": "Cash Payment",
+  "vnpayPayment": "VNPay Payment",
+  "processing": "Processing..."
+  }
+}

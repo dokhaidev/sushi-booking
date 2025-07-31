@@ -76,6 +76,11 @@ const Header = () => {
       label: t("nav.menu"),
       shortLabel: t("nav.menu"),
     },
+      {
+      href: `/${lang}/san-pham`,
+      label: t("nav.food"),
+      shortLabel: t("nav.food"),
+    },
     {
       href: `/${lang}/ve-chung-toi`,
       label: t("nav.about"),

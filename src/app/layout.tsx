@@ -16,7 +16,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Layout tổng không cần biết về ngôn ngữ
+  
   return (
     <html lang={defaultLocale}>
       <body suppressHydrationWarning>{children}</body>
