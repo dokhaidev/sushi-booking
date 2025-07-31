@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
+
 import { useState, useMemo } from "react"
 import axios from "axios"
 import TitleDesc from "../../../../components/ui/titleDesc"
@@ -26,10 +26,10 @@ import {
   FaUtensils,
   FaCalendarAlt,
 } from "react-icons/fa"
-import type { Order } from "@/src/app/types/order"
+import type { Order, OrderItem, Table as TableType } from "@/src/app/types" // Corrected import for Table
 
 export default function QuanLyDonHang() {
-  const { orders, fetchOrderDetail, orderDetail } = useFetch()
+  const { orders, fetchOrderDetail, orderDetail, refetchOrders } = useFetch()
   const [searchText, setSearchText] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [showOrderDetail, setShowOrderDetail] = useState(false)
@@ -55,14 +55,13 @@ export default function QuanLyDonHang() {
     timeRange: "",
     paymentMethod: "",
   })
-
   const itemsPerPage = 5
 
   // Search filtering
   const searchFiltered = useSearchFilter(orders, searchText, ["id", "customer.name", "customer.phone"])
 
   // Advanced filtering function
-  const applyFilters = (data: any[], filters: { status: string; timeRange: string; paymentMethod: string }) => {
+  const applyFilters = (data: Order[], filters: { status: string; timeRange: string; paymentMethod: string }) => {
     return data.filter((order) => {
       // Status filter
       if (filters.status && filters.status !== "all") {
@@ -70,14 +69,12 @@ export default function QuanLyDonHang() {
           return false
         }
       }
-
       // Time range filter
       if (filters.timeRange && filters.timeRange !== "all") {
         const orderDate = new Date(order.created_at)
         const today = new Date()
         const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()))
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-
         switch (filters.timeRange) {
           case "today":
             const todayStr = new Date().toISOString().slice(0, 10)
@@ -91,14 +88,12 @@ export default function QuanLyDonHang() {
             break
         }
       }
-
       // Payment method filter
       if (filters.paymentMethod && filters.paymentMethod !== "all") {
         if (order.payment_method !== filters.paymentMethod) {
           return false
         }
       }
-
       return true
     })
   }
@@ -115,7 +110,6 @@ export default function QuanLyDonHang() {
     const today = new Date().toISOString().slice(0, 10)
     return order.created_at?.slice(0, 10) === today
   })
-
   const totalToday = ordersToday.length
   const pendingOrders = filteredOrders.filter((order) => order.status === "pending")
   const confirmedOrders = filteredOrders.filter((order) => order.status === "success")
@@ -168,52 +162,40 @@ export default function QuanLyDonHang() {
 
   const handleConfirmStatusUpdate = async () => {
     const token = Cookies.get("access_token")
-
     if (!token) {
       throw new Error("Không tìm thấy access_token")
     }
     if (!selectedOrder || !newStatus) return
-
     setIsUpdatingStatus(true)
     try {
-      const response = await axios.put(`http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`, 
-        { status: newStatus},
+      const response = await axios.put(
+        `http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`,
+        { status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       )
+      await refetchOrders()
 
-      // Update the order in the local state
-      const updatedOrders = orders.map((order) =>
-        order.id === selectedOrder.id ? { ...order, status: newStatus } : order,
-      )
-
-      // Since we don't have setOrders from useFetch, we'll refresh the page
       setShowStatusPopup(false)
       setSelectedOrder(null)
       setNewStatus("")
-
       setPopupContent({
         title: "Thành công",
         message: response.data.message || "Cập nhật trạng thái đơn hàng thành công!",
         type: "success",
       })
       setPopupOpen(true)
-
-      // Refresh page after 2 seconds
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi cập nhật trạng thái:", error)
       let errorMessage = "Có lỗi xảy ra khi cập nhật trạng thái đơn hàng"
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
       }
-
       setPopupContent({
         title: "Lỗi",
         message: errorMessage,
@@ -248,12 +230,9 @@ export default function QuanLyDonHang() {
   }
 
   // Helper function to get table numbers
-  const getTableNumbers = (tables: any) => {
-    if (!tables) return "Không có"
-    if (Array.isArray(tables)) {
-      return tables.map((table) => table.table_number).join(", ")
-    }
-    return tables.table_number || "Không có"
+  const getTableNumbers = (tables: TableType[] | undefined) => {
+    if (!tables || tables.length === 0) return "Không có"
+    return tables.map((table) => table.table_number).join(", ")
   }
 
   const statisticsData = [
@@ -371,7 +350,6 @@ export default function QuanLyDonHang() {
                 </button>
               </div>
             </div>
-
             {/* Filter Summary */}
             {(filters.status || filters.timeRange || filters.paymentMethod || searchText) && (
               <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
@@ -430,9 +408,7 @@ export default function QuanLyDonHang() {
                     <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2 leading-tight">
                       {item.label}
                     </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-none">
-                      {typeof item.value === "number" ? item.value : item.value}
-                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-none">{item.value}</p>
                   </div>
                   <div className={`p-2 sm:p-3 rounded-lg bg-gradient-to-r ${item.color} text-white ml-2 sm:ml-4`}>
                     {item.icon}
@@ -442,7 +418,6 @@ export default function QuanLyDonHang() {
             </Card>
           ))}
         </div>
-
         {/* Mobile Layout */}
         <div className="sm:hidden space-y-3">
           {statisticsData.map((item, index) => (
@@ -454,16 +429,13 @@ export default function QuanLyDonHang() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-600 truncate">{item.label}</p>
-                    <p className="text-xl font-bold text-gray-900 mt-1">
-                      {typeof item.value === "number" ? item.value : item.value}
-                    </p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{item.value}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-
         {/* Summary Bar for Mobile */}
         <div className="sm:hidden mt-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
           <div className="flex items-center justify-between text-sm">
@@ -527,13 +499,19 @@ export default function QuanLyDonHang() {
                         </td>
                         <td className="px-2 sm:px-4 py-2">
                           <div className="text-xs text-gray-600">
-                            {new Date(order.reservation_dates).toLocaleDateString("vi-VN", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                            })}{" "}
+                            {order.reservation_dates && order.reservation_dates.length > 0
+                              ? new Date(order.reservation_dates[0]).toLocaleDateString("vi-VN", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                })
+                              : "N/A"}{" "}
                             <span className="font-medium">
-                              ({order.reservation_times})
+                              (
+                              {order.reservation_times && order.reservation_times.length > 0
+                                ? order.reservation_times[0]
+                                : "N/A"}
+                              )
                             </span>
                           </div>
                         </td>
@@ -577,7 +555,6 @@ export default function QuanLyDonHang() {
                   )}
                 </tbody>
               </table>
-
               {/* Pagination */}
               <Pagination
                 currentPage={currentPage}
@@ -608,13 +585,13 @@ export default function QuanLyDonHang() {
                       Đơn hàng đã {selectedOrder.status === "success" ? "hoàn tất" : "bị hủy"}
                     </h4>
                     <p className="text-sm text-red-700 mt-1">
-                      Đơn hàng này {selectedOrder.status === "success" ? "đã hoàn tất và" : "đã bị hủy và"} không thể thay đổi trạng thái.
+                      Đơn hàng này {selectedOrder.status === "success" ? "đã hoàn tất và" : "đã bị hủy và"} không thể
+                      thay đổi trạng thái.
                     </p>
                   </div>
                 </div>
               </div>
             )}
-
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-gray-800 mb-2">Thông tin đơn hàng</h4>
               <div className="text-sm text-gray-600 space-y-1">
@@ -631,7 +608,6 @@ export default function QuanLyDonHang() {
                 </div>
               </div>
             </div>
-
             {!["success", "cancelled"].includes(selectedOrder.status) && (
               <>
                 <div>
@@ -647,7 +623,6 @@ export default function QuanLyDonHang() {
                     <option value="cancelled">Đã hủy</option>
                   </select>
                 </div>
-
                 {newStatus === "success" && (
                   <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                     <p className="text-sm text-green-800">
@@ -658,7 +633,6 @@ export default function QuanLyDonHang() {
                 )}
               </>
             )}
-
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button
                 onClick={handleCancelStatusUpdate}
@@ -811,34 +785,38 @@ export default function QuanLyDonHang() {
                   <h3 className="font-semibold text-lg text-purple-800">Chi tiết món ăn</h3>
                 </div>
                 <div className="space-y-3">
-                  {orderDetail.items.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-purple-200 gap-3 sm:gap-4 shadow-sm"
-                    >
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-800 text-base">
-                          {item.food?.name || item.combo?.name || "Món ăn"}
+                  {orderDetail.items.map(
+                    (
+                      item: OrderItem,
+                      index: number, // Explicitly typed item and index
+                    ) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg border border-purple-200 gap-3 sm:gap-4 shadow-sm"
+                      >
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-800 text-base">
+                            {item.food?.name || item.combo?.name || "Món ăn"}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">{item.food ? "Món lẻ" : "Combo"}</div>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">{item.food ? "Món lẻ" : "Combo"}</div>
-                      </div>
-                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-blue-50 px-3 py-2 rounded">
-                        <div className="text-xs text-blue-600 font-medium mr-2 sm:mr-0 sm:mb-1">Số lượng</div>
-                        <div className="font-bold text-blue-800">{item.quantity}</div>
-                      </div>
-                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-green-50 px-3 py-2 rounded">
-                        <div className="text-xs text-green-600 font-medium mr-2 sm:mr-0 sm:mb-1">Đơn giá</div>
-                        <div className="font-bold text-green-800">{Number(item.price).toLocaleString()} ₫</div>
-                      </div>
-                      <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-orange-50 px-3 py-2 rounded">
-                        <div className="text-xs text-orange-600 font-medium mr-2 sm:mr-0 sm:mb-1">Thành tiền</div>
-                        <div className="font-bold text-orange-800">
-                          {(Number(item.price) * item.quantity).toLocaleString()} ₫
+                        <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-blue-50 px-3 py-2 rounded">
+                          <div className="text-xs text-blue-600 font-medium mr-2 sm:mr-0 sm:mb-1">Số lượng</div>
+                          <div className="font-bold text-blue-800">{item.quantity}</div>
+                        </div>
+                        <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-green-50 px-3 py-2 rounded">
+                          <div className="text-xs text-green-600 font-medium mr-2 sm:mr-0 sm:mb-1">Đơn giá</div>
+                          <div className="font-bold text-green-800">{Number(item.price).toLocaleString()} ₫</div>
+                        </div>
+                        <div className="flex flex-row sm:flex-col items-center sm:items-center text-center bg-orange-50 px-3 py-2 rounded">
+                          <div className="text-xs text-orange-600 font-medium mr-2 sm:mr-0 sm:mb-1">Thành tiền</div>
+                          <div className="font-bold text-orange-800">
+                            {(Number(item.price) * item.quantity).toLocaleString()} ₫
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-
+                    ),
+                  )}
                   {/* Total Summary */}
                   <div className="border-t-2 border-purple-200 pt-4 mt-4">
                     <div className="flex justify-between items-center bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-lg">

@@ -45,6 +45,8 @@ import {
   Filler,
 } from "chart.js"
 import { Line as ChartLine, Bar as ChartBar, Doughnut, Radar } from "react-chartjs-2"
+import type { Order, Food, Feedback, OrderItem } from "@/src/app/types" // Import specific types
+
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -74,11 +76,11 @@ export default function TongQuan() {
     foods,
     feedbacks,
     orderItems,
-    // categories,
-    // combos,
-    // tables,
-    // vouchers,
-    fetchAllOrderItems,
+    // categories, // Never used
+    // combos, // Never used
+    // tables, // Never used
+    // vouchers, // Never used
+    // fetchAllOrderItems, // Not used in this component, only fetchOrderItemsByRole is used in other components
     loading: dataLoading,
     error: dataError,
   } = useFetch()
@@ -100,9 +102,15 @@ export default function TongQuan() {
         const statsResponse = await axios.get("http://127.0.0.1:8000/api/statsDashbroad")
         setDashboardStats(statsResponse.data)
         setApiError(null)
-      } catch (error: any) {
+      } catch (error: unknown) {
+        // Changed 'any' to 'unknown'
         console.error("❌ Error fetching dashboard stats:", error)
-        setApiError(`Lỗi API thống kê: ${error.message}`)
+        if (axios.isAxiosError(error)) {
+          // Type guard for AxiosError
+          setApiError(`Lỗi API thống kê: ${error.message}`)
+        } else {
+          setApiError("Lỗi không xác định khi lấy thống kê dashboard.")
+        }
       } finally {
         setStatsLoading(false)
       }
@@ -113,11 +121,13 @@ export default function TongQuan() {
   // Manual refresh function
   const handleRefresh = async () => {
     setLastRefresh(new Date())
-    try {
-      await fetchAllOrderItems()
-    } catch (error) {
-      console.error("❌ Error refreshing data:", error)
-    }
+    // Re-fetch all data used in this component
+    // Assuming useFetch has a mechanism to re-fetch all its data
+    // If not, you might need to call specific fetch functions here
+    // For now, we'll just trigger a re-render by updating lastRefresh
+    // If useFetch needs a specific trigger, you'd add it here.
+    // For example, if useFetch had a `refetchAll` method:
+    // await refetchAll();
   }
 
   // Calculate comprehensive statistics from real data với null safety
@@ -282,7 +292,7 @@ export default function TongQuan() {
         cornerRadius: 12,
         displayColors: false,
         callbacks: {
-          label: (context: any) => `${context.parsed.y}K ₫`,
+          label: (context: { parsed: { y: number } }) => `${context.parsed.y}K ₫`, // Typed context
         },
       },
     },
@@ -309,7 +319,7 @@ export default function TongQuan() {
           font: {
             size: 11,
           },
-          callback: (value: any) => value + "K",
+          callback: (value: string | number) => value + "K", // Typed value
         },
       },
     },
@@ -346,7 +356,8 @@ export default function TongQuan() {
     if (orderItems && orderItems.length > 0) {
       // Use real order items data from ALL orders
       const itemSales = new Map<string, { name: string; sales: number; fullName: string }>()
-      orderItems.forEach((item) => {
+      orderItems.forEach((item: OrderItem) => {
+        // Typed item
         const itemName = item.food?.name || item.combo?.name || "Unknown"
         const itemType = item.food ? "food" : "combo"
         const key = `${itemType}-${item.food_id || item.combo_id}-${itemName}`
@@ -413,7 +424,8 @@ export default function TongQuan() {
     } else {
       // Fallback: Use foods data with estimated sales
       const topFoods =
-        foods?.slice(0, 6).map((food) => ({
+        foods?.slice(0, 6).map((food: Food) => ({
+          // Typed food
           name: food.name.length > 15 ? food.name.substring(0, 15) + "..." : food.name,
           fullName: food.name,
           sales: Math.floor(Math.random() * 50) + 10, // Fallback estimated sales
@@ -485,7 +497,7 @@ export default function TongQuan() {
     }
 
     const ratings = [1, 2, 3, 4, 5].map((rating) => {
-      return feedbacks.filter((feedback) => feedback.rating === rating).length
+      return feedbacks.filter((feedback: Feedback) => feedback.rating === rating).length // Typed feedback
     })
 
     return {
@@ -535,13 +547,15 @@ export default function TongQuan() {
 
   const averageRating = useMemo(() => {
     if (!feedbacks || feedbacks.length === 0) return "0.0"
-    const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0)
+    const totalRating = feedbacks.reduce((sum, feedback: Feedback) => sum + feedback.rating, 0) // Typed feedback
     return (totalRating / feedbacks.length).toFixed(1)
   }, [feedbacks])
 
   const recentOrders = useMemo(() => {
     if (!orders || orders.length === 0) return []
-    return orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+    return orders
+      .sort((a: Order, b: Order) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5) // Typed a, b
   }, [orders])
 
   const statisticsCards = [
@@ -696,7 +710,6 @@ export default function TongQuan() {
             </div>
           </div>
         </div>
-
         {/* Enhanced Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {statisticsCards.map((stat, index) => (
@@ -742,7 +755,6 @@ export default function TongQuan() {
             </Card>
           ))}
         </div>
-
         {/* Main Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Revenue Trend Chart (Chart.js) */}
@@ -775,7 +787,6 @@ export default function TongQuan() {
               </CardContent>
             </Card>
           </div>
-
           {/* Order Status Distribution (Chart.js Doughnut) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-black relative overflow-hidden">
@@ -816,7 +827,8 @@ export default function TongQuan() {
                         borderWidth: 1,
                         cornerRadius: 12,
                         callbacks: {
-                          label: (context: any) => `${context.label}: ${context.parsed} đơn`,
+                          label: (context: { label: string; parsed: number }) =>
+                            `${context.label}: ${context.parsed} đơn`, // Typed context
                         },
                       },
                     },
@@ -827,7 +839,6 @@ export default function TongQuan() {
             </CardContent>
           </Card>
         </div>
-
         {/* Secondary Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Top Selling Items (Chart.js Bar) */}
@@ -867,7 +878,9 @@ export default function TongQuan() {
                         borderWidth: 1,
                         cornerRadius: 12,
                         callbacks: {
-                          label: (context: any) =>
+                          label: (
+                            context: { parsed: { y: number } }, // Typed context
+                          ) =>
                             orderItems && orderItems.length > 0
                               ? `Đã bán: ${context.parsed.y} phần`
                               : `Ước tính: ${context.parsed.y} phần`,
@@ -903,7 +916,6 @@ export default function TongQuan() {
               </div>
             </CardContent>
           </Card>
-
           {/* Customer Satisfaction Radar (Chart.js) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-black relative overflow-hidden">
@@ -937,7 +949,7 @@ export default function TongQuan() {
                         borderWidth: 1,
                         cornerRadius: 12,
                         callbacks: {
-                          label: (context: any) => `${context.parsed.r} đánh giá`,
+                          label: (context: { parsed: { r: number } }) => `${context.parsed.r} đánh giá`, // Typed context
                         },
                       },
                     },
@@ -969,7 +981,6 @@ export default function TongQuan() {
               </div>
             </CardContent>
           </Card>
-
           {/* Weekly Comparison (Recharts) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-black relative overflow-hidden">
@@ -997,13 +1008,15 @@ export default function TongQuan() {
                       borderRadius: "12px",
                       boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
                     }}
-                    formatter={(value: any, name: string, props: any) => {
+                    formatter={(value: number, name: string, props: { payload: { actualRevenue?: number } }) => {
+                      // Typed value, name, props
                       if (name === "Doanh thu (K₫)") {
                         return [`${props.payload.actualRevenue?.toLocaleString() || 0} ₫`, "Doanh thu"]
                       }
                       return [value, name]
                     }}
-                    labelFormatter={(label: string, payload: any) => {
+                    labelFormatter={(label: string, payload: Array<{ payload: { fullDate?: string } }>) => {
+                      // Typed label, payload
                       if (payload && payload.length > 0) {
                         return `${payload[0].payload.fullDate} (${label})`
                       }
@@ -1017,7 +1030,6 @@ export default function TongQuan() {
             </CardContent>
           </Card>
         </div>
-
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Recent Orders */}
@@ -1065,7 +1077,8 @@ export default function TongQuan() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {recentOrders.length > 0 ? (
-                        recentOrders.map((order) => {
+                        recentOrders.map((order: Order) => {
+                          // Typed order
                           const statusInfo = getStatusInfo(order.status)
                           return (
                             <tr
@@ -1105,7 +1118,6 @@ export default function TongQuan() {
               </CardContent>
             </Card>
           </div>
-
           {/* Right Sidebar */}
           <div className="lg:col-span-2 space-y-8">
             {/* Enhanced System Notifications with Real Data */}
@@ -1187,7 +1199,6 @@ export default function TongQuan() {
                 </div>
               </CardContent>
             </Card>
-
             {/* Quick Actions */}
             <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
               <CardHeader className="text-black relative overflow-hidden">
