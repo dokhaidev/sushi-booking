@@ -1,7 +1,7 @@
 "use client"
 import type React from "react"
 import { useState, useMemo } from "react"
-import { FaPlus, FaPen, FaEyeSlash, FaEye, FaTrash, FaMinus, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
+import { FaPlus, FaPenFancy, FaEyeSlash, FaEye, FaTrash, FaMinus, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card"
 import { Button } from "../../../../../components/ui/button"
 import { useFetch } from "../../../../../hooks/useFetch"
@@ -11,7 +11,7 @@ import Image from "next/image"
 import SearchInput from "../../../../../components/ui/SearchInput"
 import Popup from "../../../../../components/ui/Popup"
 import PopupNotification from "@/src/app/components/ui/PopupNotification"
-import InputField from "@/src/app/components/ui/InputField"
+import InputField from "../../../../../components/ui/InputField"
 import type { ComboAdd, ComboItemAdd, Combo } from "@/src/app/types"
 import { addCombo } from "@/src/app/hooks/useAdd"
 import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
@@ -37,11 +37,9 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   // Apply sorting to filtered data
   const sortedAndFilteredCombos = useMemo(() => {
     if (!sortField || !sortDirection) return filteredCombos
-
     return [...filteredCombos].sort((a, b) => {
-      let aValue: any
-      let bValue: any
-
+      let aValue: number
+      let bValue: number
       switch (sortField) {
         case "id":
           aValue = a.id
@@ -58,7 +56,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
         default:
           return 0
       }
-
       if (sortDirection === "asc") {
         return aValue > bValue ? 1 : aValue < bValue ? -1 : 0
       } else {
@@ -82,8 +79,10 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   const [tempQuantities, setTempQuantities] = useState<Record<number, number>>({})
   const [selectedItems, setSelectedItems] = useState<ComboItemAdd[]>([])
   const [comboName, setComboName] = useState("")
+  const [comboNameEn, setComboNameEn] = useState("")
   const [comboPrice, setComboPrice] = useState("")
   const [comboDesc, setComboDesc] = useState("")
+  const [comboDescEn, setComboDescEn] = useState("")
   const [comboImage, setComboImage] = useState<File | null>(null)
   const [editingCombo, setEditingCombo] = useState<Combo | null>(null)
   const [loading, setLoading] = useState(false)
@@ -141,7 +140,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelect(e.dataTransfer.files[0], isEdit)
     }
@@ -150,7 +148,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   const handleFileSelect = (file: File, isEdit = false) => {
     if (file.type.startsWith("image/")) {
       setComboImage(file)
-
       // Create preview URL
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -178,8 +175,10 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   // Reset form
   const resetForm = () => {
     setComboName("")
+    setComboNameEn("")
     setComboPrice("")
     setComboDesc("")
+    setComboDescEn("")
     setComboImage(null)
     setSelectedItems([])
     setEditingCombo(null)
@@ -191,10 +190,11 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   const handleEditCombo = (combo: Combo) => {
     setEditingCombo(combo)
     setComboName(combo.name)
+    setComboNameEn(combo.name_en || "")
     setComboPrice(combo.price.toString())
     setComboDesc(combo.description || "")
+    setComboDescEn(combo.description_en || "")
     setEditPreviewUrl(null)
-
     // Load combo items nếu có
     if (combo.combo_items) {
       const items = combo.combo_items.map((item) => ({
@@ -203,7 +203,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
       }))
       setSelectedItems(items)
     }
-
     setShowEditComboPopup(true)
   }
 
@@ -227,18 +226,21 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
     }
   }
 
-  // Handle update combo - SỬA LẠI ĐỂ CẬP NHẬT ĐÚNG DỮ LIỆU
+  // Handle update combo
   const handleUpdateCombo = async () => {
     if (!editingCombo) return
 
     const formData = new FormData()
     formData.append("name", comboName)
+    if (comboNameEn) formData.append("name_en", comboNameEn)
     formData.append("price", comboPrice)
-    formData.append("description", comboDesc)
-    formData.append("status", "true")
+    if (comboDesc) formData.append("description", comboDesc)
+    if (comboDescEn) formData.append("description_en", comboDescEn)
+    formData.append("status", editingCombo.status ? "1" : "0")
     if (comboImage) {
       formData.append("image", comboImage)
     }
+    formData.append("_method", "PUT") // Explicitly tell Laravel to treat this as a PUT request
 
     // Thêm items vào formData
     selectedItems.forEach((item, index) => {
@@ -248,29 +250,21 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
 
     try {
       setLoading(true)
-      const response = await axios.put(`http://127.0.0.1:8000/api/combo/update-combo/${editingCombo.id}`, formData, {
+      const response = await axios.post(`http://127.0.0.1:8000/api/combo/update-combo/${editingCombo.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
-
       // Cập nhật combo trong danh sách với dữ liệu đầy đủ
       const updatedCombo = response.data.combo
-      setCombos((prev) =>
-        prev.map((c) =>
-          c.id === editingCombo.id
-            ? {
-                ...updatedCombo,
-                image: updatedCombo.image || c.image, // Giữ ảnh cũ nếu không có ảnh mới
-              }
-            : c,
-        ),
-      )
-
+      setCombos((prev) => prev.map((c) => (c.id === editingCombo.id ? updatedCombo : c)))
       showNotification("Cập nhật combo thành công!", "success")
       setShowEditComboPopup(false)
       resetForm()
     } catch (error: any) {
       console.error("Error updating combo:", error)
-      const errorMessage = error.response?.data?.message || "Đã có lỗi xảy ra khi cập nhật combo"
+      const errorMessage =
+        error.response?.data?.message ||
+        (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) ||
+        "Đã có lỗi xảy ra khi cập nhật combo"
       showNotification(errorMessage, "error")
     } finally {
       setLoading(false)
@@ -291,23 +285,29 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   const handleSubmitCombo = async () => {
     const data: ComboAdd = {
       name: comboName,
+      name_en: comboNameEn || undefined,
       price: Number(comboPrice),
-      description: comboDesc,
+      description: comboDesc || undefined,
+      description_en: comboDescEn || undefined,
       status: true,
       image: comboImage || undefined,
       items: selectedItems,
     }
-
     try {
       setLoading(true)
       const response = await addCombo(data)
       // Thêm combo mới vào danh sách thay vì reload
-      setCombos((prev) => [...prev, response.data])
+      setCombos((prev) => [...prev, response.data.combo]) // Access response.data.combo as per Laravel's store method
       showNotification("Thêm combo thành công!", "success")
       setShowAddComboPopup(false)
       resetForm()
-    } catch (error) {
-      showNotification("Lỗi khi thêm combo", "error")
+    } catch (error: any) {
+      console.error("Lỗi khi thêm combo:", error)
+      const errorMessage =
+        error.response?.data?.message ||
+        (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(", ")) ||
+        "Lỗi khi thêm combo"
+      showNotification(errorMessage, "error")
     } finally {
       setLoading(false)
     }
@@ -331,11 +331,8 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
   const ImageUploadSection = ({ isEdit = false, currentImageUrl = "" }) => (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">Hình ảnh combo</label>
-
       <div
-        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"
-        }`}
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -347,7 +344,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
           onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], isEdit)}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
-
         <div className="space-y-3">
           <div className="mx-auto w-12 h-12 text-gray-400">
             <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,13 +355,10 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               />
             </svg>
           </div>
-
           <div>
             <button
               type="button"
-              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-colors ${
-                isEdit ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-[#9c6b66] hover:bg-[#8a5a55] text-white"
-              }`}
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-colors ${isEdit ? "bg-[#9c6b66] hover:bg-[#8a5a55] text-white" : "bg-[#9c6b66] hover:bg-[#8a5a55] text-white"}`}
             >
               <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -378,12 +371,10 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               {isEdit ? "Chọn ảnh mới" : "Chọn ảnh"}
             </button>
           </div>
-
           <p className="text-sm text-gray-500">Hoặc kéo thả ảnh vào đây</p>
           <p className="text-xs text-gray-400">PNG, JPG, GIF tối đa 2MB</p>
         </div>
       </div>
-
       {/* Image Preview */}
       {((isEdit && (editPreviewUrl || currentImageUrl)) || (!isEdit && previewUrl)) && (
         <div className="relative">
@@ -453,7 +444,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                 <tr>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("id")}
                     title="Nhấn để sắp xếp theo ID"
                   >
@@ -462,11 +453,11 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                       {getSortIcon("id")}
                     </div>
                   </th>
-                  <th className="px-4 py-3">Hình ảnh</th>
-                  <th className="px-4 py-3">Tên combo</th>
-                  <th className="px-4 py-3">Mô tả</th>
+                  <th className="px-3 py-2">Hình ảnh</th>
+                  <th className="px-3 py-2">Tên combo</th>
+                  <th className="px-3 py-2">Mô tả</th>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("price")}
                     title="Nhấn để sắp xếp theo giá"
                   >
@@ -476,7 +467,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                     </div>
                   </th>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("status")}
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
@@ -485,19 +476,23 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                       {getSortIcon("status")}
                     </div>
                   </th>
-                  <th className="px-4 py-3">Thao tác</th>
+                  <th className="px-3 py-2">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {currentCombos.length > 0 ? (
                   currentCombos.map((combo, index) => (
                     <tr key={combo.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-3 font-medium">{combo.id}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 font-medium">{combo.id}</td>
+                      <td className="px-3 py-2">
                         {combo.image && (
                           <div className="w-16 h-16 relative rounded-lg overflow-hidden shadow-sm">
                             <Image
-                              src={combo.image || "/placeholder.svg"}
+                              src={
+                                combo.image.startsWith("http")
+                                  ? combo.image
+                                  : `http://127.0.0.1:8000/storage/${combo.image}`
+                              }
                               alt={combo.name}
                               fill
                               className="object-cover"
@@ -505,44 +500,38 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-medium">{combo.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{combo.description || "Không có mô tả"}</td>
-                      <td className="px-4 py-3 font-semibold text-green-600">
+                      <td className="px-3 py-2 font-medium">{combo.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{combo.description || "Không có mô tả"}</td>
+                      <td className="px-3 py-2 font-semibold text-green-600">
                         {Number(combo.price).toLocaleString("vi-VN")} đ
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${combo.status ? "bg-green-500" : "bg-red-500"}`}></div>
                           <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              combo.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                            }`}
+                            className={`px-2 py-1 rounded text-xs font-medium ${combo.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
                           >
                             {combo.status ? "Đang bán" : "Ngưng bán"}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEditCombo(combo)}
                             className="px-3 py-2 text-blue-700 border border-blue-700 rounded-lg flex items-center gap-1 hover:bg-blue-50 transition-colors"
                             disabled={loading}
                           >
-                            <FaPen className="w-3 h-3" />
-                            <span className="text-blue-700 font-medium">Sửa</span>
+                            <FaPenFancy className="w-3 h-3" />
+                            {/* <span className="text-blue-700 font-medium">Sửa</span> */}
                           </button>
                           <button
                             onClick={() => handleToggleStatus(combo)}
-                            className={`px-3 py-2 border rounded-lg flex items-center gap-1 transition-colors ${
-                              combo.status
-                                ? "text-red-700 border-red-700 hover:bg-red-50"
-                                : "text-green-700 border-green-700 hover:bg-green-50"
-                            }`}
+                            className={`px-3 py-2 border rounded-lg flex items-center gap-1 transition-colors ${combo.status ? "text-red-700 border-red-700 hover:bg-red-50" : "text-green-700 border-green-700 hover:bg-green-50"}`}
                             disabled={loading}
                           >
                             {combo.status ? <FaEyeSlash className="w-3 h-3" /> : <FaEye className="w-3 h-3" />}
-                            <span className="font-medium">{combo.status ? "Ẩn" : "Hiện"}</span>
+                            {/* <span className="font-medium">{combo.status ? "Ẩn" : "Hiện"}</span> */}
                           </button>
                         </div>
                       </td>
@@ -558,7 +547,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               </tbody>
             </table>
           </div>
-
           {/* Sort info */}
           {sortField && sortDirection && (
             <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
@@ -578,7 +566,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               </button>
             </div>
           )}
-
           <Pagination
             currentPage={currentPage}
             totalItems={totalItems}
@@ -603,15 +590,22 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin cơ bản</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
-                label="Tên combo"
+                label="Tên combo (*)"
                 name="comboName"
                 value={comboName}
                 onChange={(e) => setComboName(e.target.value)}
                 required
               />
               <InputField
-                label="Giá combo"
+                label="Tên combo (tiếng Anh)"
+                name="comboNameEn"
+                value={comboNameEn}
+                onChange={(e) => setComboNameEn(e.target.value)}
+              />
+              <InputField
+                label="Giá combo (*)"
                 name="comboPrice"
+                type="number"
                 value={comboPrice}
                 onChange={(e) => setComboPrice(e.target.value)}
                 required
@@ -623,8 +617,18 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
                 value={comboDesc}
                 onChange={(e) => setComboDesc(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
-                rows={3}
+                rows={2}
                 placeholder="Nhập mô tả combo..."
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả (tiếng Anh)</label>
+              <textarea
+                value={comboDescEn}
+                onChange={(e) => setComboDescEn(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
+                rows={2}
+                placeholder="Nhập mô tả combo tiếng Anh..."
               />
             </div>
           </div>
@@ -743,15 +747,22 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Thông tin cơ bản</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
-                label="Tên combo"
+                label="Tên combo (*)"
                 name="comboName"
                 value={comboName}
                 onChange={(e) => setComboName(e.target.value)}
                 required
               />
               <InputField
-                label="Giá combo"
+                label="Tên combo (tiếng Anh)"
+                name="comboNameEn"
+                value={comboNameEn}
+                onChange={(e) => setComboNameEn(e.target.value)}
+              />
+              <InputField
+                label="Giá combo (*)"
                 name="comboPrice"
+                type="number"
                 value={comboPrice}
                 onChange={(e) => setComboPrice(e.target.value)}
                 required
@@ -762,9 +773,19 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               <textarea
                 value={comboDesc}
                 onChange={(e) => setComboDesc(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
+                rows={2}
                 placeholder="Nhập mô tả combo..."
+              />
+            </div>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả (tiếng Anh)</label>
+              <textarea
+                value={comboDescEn}
+                onChange={(e) => setComboDescEn(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
+                rows={2}
+                placeholder="Nhập mô tả combo tiếng Anh..."
               />
             </div>
           </div>
@@ -843,7 +864,7 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
               Hủy
             </Button>
             <Button
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="bg-[#9c6b66] text-white px-6 py-2 rounded-lg hover:bg-[#7e544f] transition-colors disabled:opacity-50"
               onClick={handleUpdateCombo}
               disabled={!comboName || !comboPrice || selectedItems.length === 0 || loading}
             >
@@ -969,7 +990,6 @@ export default function ComboComponent({ comboRef }: { comboRef: React.RefObject
             </div>
           </div>
         </div>
-
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
           <Button

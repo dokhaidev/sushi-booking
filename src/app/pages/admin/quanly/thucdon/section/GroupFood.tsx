@@ -1,5 +1,5 @@
 "use client"
-import { FaPlus, FaPen, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
+import { FaPlus, FaPenFancy, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card"
 import { Button } from "../../../../../components/ui/button"
 import { useFetch } from "../../../../../hooks/useFetch"
@@ -272,7 +272,7 @@ export default function GroupFoodComponent({
               <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                 <tr>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("id")}
                     title="Nhấn để sắp xếp theo ID"
                   >
@@ -281,10 +281,10 @@ export default function GroupFoodComponent({
                       {getSortIcon("id")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Tên loại danh mục</th>
-                  <th className="px-4 py-2">Danh mục</th>
+                  <th className="px-3 py-2">Tên loại danh mục</th>
+                  <th className="px-3 py-2">Danh mục</th>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("status")}
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
@@ -293,17 +293,17 @@ export default function GroupFoodComponent({
                       {getSortIcon("status")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Thao tác</th>
+                  <th className="px-3 py-2">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {currentFoodGroups.length > 0 ? (
                   currentFoodGroups.map((group, index) => (
                     <tr key={group.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-2 font-medium">{group.id}</td>
-                      <td className="px-4 py-2 font-medium">{group.name}</td>
-                      <td className="px-4 py-2 text-gray-600">{group.category?.name || "Không có danh mục"}</td>
-                      <td className={`px-4 py-2 font-bold ${group.status === 1 ? "text-green-600" : "text-red-600"}`}>
+                      <td className="px-3 py-2 font-medium">{group.id}</td>
+                      <td className="px-3 py-2 font-medium">{group.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{group.category?.name || "Không có danh mục"}</td>
+                      <td className={`px-3 py-2 font-bold ${group.status === 1 ? "text-green-600" : "text-red-600"}`}>
                         <div className="flex items-center gap-2">
                           <div
                             className={`w-2 h-2 rounded-full ${group.status === 1 ? "bg-green-500" : "bg-red-500"}`}
@@ -311,15 +311,15 @@ export default function GroupFoodComponent({
                           {group.status === 1 ? "Đang hiển thị" : "Đang ẩn"}
                         </div>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleOpenEditPopup(group)}
                             className="px-2 py-1 text-blue-700 cursor-pointer border border-blue-700 rounded flex items-center gap-1 hover:bg-blue-100 transition-colors"
                             disabled={loading}
                           >
-                            <FaPen />
-                            <span className="text-blue-700 font-semibold">Sửa</span>
+                            <FaPenFancy />
+                            {/* <span className="text-blue-700 font-semibold">Sửa</span> */}
                           </button>
                           <button
                             onClick={() => handleToggleStatus(group)}
@@ -331,7 +331,7 @@ export default function GroupFoodComponent({
                             disabled={loading}
                           >
                             {group.status === 1 ? <FaEyeSlash /> : <FaEye />}
-                            <span className="font-semibold">{group.status === 0 ? "Hiện" : "Ẩn"}</span>
+                            {/* <span className="font-semibold">{group.status === 0 ? "Hiện" : "Ẩn"}</span> */}
                           </button>
                         </div>
                       </td>
@@ -411,7 +411,7 @@ export default function GroupFoodComponent({
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400 transition-colors"
               onClick={handleClosePopup}
               disabled={loading}
             >
@@ -419,7 +419,7 @@ export default function GroupFoodComponent({
             </Button>
             <Button
               type="button"
-              className="bg-[#9c6b66] text-white px-4 py-2 rounded hover:bg-[#8a5a55] transition-colors"
+              className="bg-[#9c6b66] text-white px-3 py-2 rounded hover:bg-[#8a5a55] transition-colors"
               onClick={handleSubmit}
               disabled={loading || !formData.name.trim() || !formData.category_id}
             >
@@ -464,7 +464,7 @@ export default function GroupFoodComponent({
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400 transition-colors"
               onClick={handleCloseEditPopup}
               disabled={loading}
             >
@@ -472,7 +472,7 @@ export default function GroupFoodComponent({
             </Button>
             <Button
               type="button"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors"
               onClick={handleUpdate}
               disabled={loading || !formData.name.trim() || !formData.category_id}
             >

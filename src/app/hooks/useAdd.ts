@@ -35,7 +35,9 @@ export const addFood = async (data: FoodAdd) => {
   formData.append('category_id', String(data.category_id));
   if (data.group_id) formData.append('group_id', String(data.group_id));
   if (data.jpName) formData.append('jpName', data.jpName);
+  if (data.name_en) formData.append('name_en', data.name_en);
   if (data.description) formData.append('description', data.description);
+  if (data.description_en) formData.append('description_en', data.description_en);
   formData.append('price', String(data.price));
   if (data.image) formData.append('image', data.image);
 
@@ -54,9 +56,11 @@ export const addFood = async (data: FoodAdd) => {
 export const addCombo = async (data: ComboAdd) => {
   const formData = new FormData();
   formData.append('name', data.name);
+  if (data.name_en) formData.append("name_en", data.name_en)
   formData.append('price', String(data.price));
   formData.append('status', data.status ? '1' : '0');
   if (data.description) formData.append('description', data.description);
+  if (data.description_en) formData.append("description_en", data.description_en)
   if (data.image) formData.append('image', data.image);
 
   data.items.forEach((item, index) => {

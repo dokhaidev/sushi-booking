@@ -45,7 +45,6 @@ import {
   Filler,
 } from "chart.js"
 import { Line as ChartLine, Bar as ChartBar, Doughnut, Radar } from "react-chartjs-2"
-
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -75,10 +74,10 @@ export default function TongQuan() {
     foods,
     feedbacks,
     orderItems,
-    categories,
-    combos,
-    tables,
-    vouchers,
+    // categories,
+    // combos,
+    // tables,
+    // vouchers,
     fetchAllOrderItems,
     loading: dataLoading,
     error: dataError,
@@ -329,10 +328,10 @@ export default function TongQuan() {
             comprehensiveStats.cancelledOrders,
           ],
           backgroundColor: [
-            "rgba(245, 158, 11, 0.8)",
-            "rgba(59, 130, 246, 0.8)",
-            "rgba(16, 185, 129, 0.8)",
-            "rgba(239, 68, 68, 0.8)",
+            "rgba(245, 158, 11, 0.8)", // Orange for pending
+            "rgba(59, 130, 246, 0.8)", // Blue for confirmed
+            "rgba(16, 185, 129, 0.8)", // Green for success
+            "rgba(239, 68, 68, 0.8)", // Red for cancelled
           ],
           borderColor: ["rgb(245, 158, 11)", "rgb(59, 130, 246)", "rgb(16, 185, 129)", "rgb(239, 68, 68)"],
           borderWidth: 2,
@@ -344,16 +343,13 @@ export default function TongQuan() {
 
   // FIXED: Top selling items data using real orderItems từ TẤT CẢ đơn hàng
   const topSellingChartJSData = useMemo(() => {
-
     if (orderItems && orderItems.length > 0) {
       // Use real order items data from ALL orders
       const itemSales = new Map<string, { name: string; sales: number; fullName: string }>()
-
       orderItems.forEach((item) => {
         const itemName = item.food?.name || item.combo?.name || "Unknown"
         const itemType = item.food ? "food" : "combo"
         const key = `${itemType}-${item.food_id || item.combo_id}-${itemName}`
-
         if (itemSales.has(key)) {
           itemSales.get(key)!.sales += item.quantity
         } else {
@@ -393,20 +389,20 @@ export default function TongQuan() {
             label: "Số lượng bán",
             data: topItems.map((item) => item.sales),
             backgroundColor: [
-              "rgba(16, 185, 129, 0.8)",
-              "rgba(59, 130, 246, 0.8)",
-              "rgba(245, 158, 11, 0.8)",
-              "rgba(139, 92, 246, 0.8)",
-              "rgba(236, 72, 153, 0.8)",
-              "rgba(249, 115, 22, 0.8)",
+              "rgba(16, 185, 129, 0.8)", // Green
+              "rgba(20, 184, 166, 0.8)", // Teal
+              "rgba(5, 150, 105, 0.8)", // Darker Green
+              "rgba(13, 148, 136, 0.8)", // Darker Teal
+              "rgba(6, 182, 212, 0.8)", // Cyan
+              "rgba(45, 212, 191, 0.8)", // Light Teal
             ],
             borderColor: [
               "rgb(16, 185, 129)",
-              "rgb(59, 130, 246)",
-              "rgb(245, 158, 11)",
-              "rgb(139, 92, 246)",
-              "rgb(236, 72, 153)",
-              "rgb(249, 115, 22)",
+              "rgb(20, 184, 166)",
+              "rgb(5, 150, 105)",
+              "rgb(13, 148, 136)",
+              "rgb(6, 182, 212)",
+              "rgb(45, 212, 191)",
             ],
             borderWidth: 2,
             borderRadius: 8,
@@ -448,19 +444,19 @@ export default function TongQuan() {
             data: topFoods.map((item) => item.sales),
             backgroundColor: [
               "rgba(16, 185, 129, 0.6)",
-              "rgba(59, 130, 246, 0.6)",
-              "rgba(245, 158, 11, 0.6)",
-              "rgba(139, 92, 246, 0.6)",
-              "rgba(236, 72, 153, 0.6)",
-              "rgba(249, 115, 22, 0.6)",
+              "rgba(20, 184, 166, 0.6)",
+              "rgba(5, 150, 105, 0.6)",
+              "rgba(13, 148, 136, 0.6)",
+              "rgba(6, 182, 212, 0.6)",
+              "rgba(45, 212, 191, 0.6)",
             ],
             borderColor: [
               "rgb(16, 185, 129)",
-              "rgb(59, 130, 246)",
-              "rgb(245, 158, 11)",
-              "rgb(139, 92, 246)",
-              "rgb(236, 72, 153)",
-              "rgb(249, 115, 22)",
+              "rgb(20, 184, 166)",
+              "rgb(5, 150, 105)",
+              "rgb(13, 148, 136)",
+              "rgb(6, 182, 212)",
+              "rgb(45, 212, 191)",
             ],
             borderWidth: 2,
             borderRadius: 8,
@@ -574,8 +570,8 @@ export default function TongQuan() {
       title: "Khách hàng mới",
       value: comprehensiveStats.todayCustomers,
       icon: <Users className="w-7 h-7" />,
-      gradient: "from-purple-500 via-purple-600 to-purple-700",
-      bgColor: "bg-purple-50",
+      gradient: "from-indigo-500 via-indigo-600 to-indigo-700",
+      bgColor: "bg-indigo-50",
       change: comprehensiveStats.customerChange,
       changeType: comprehensiveStats.customerChange >= 0 ? ("increase" as const) : ("decrease" as const),
       subtitle: "So với hôm qua",
@@ -612,21 +608,21 @@ export default function TongQuan() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="text-center">
           <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-200"></div>
-            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-purple-600 absolute top-0 left-0"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-blue-600 absolute top-0 left-0"></div>
             <div className="animate-pulse absolute inset-0 flex items-center justify-center">
-              <Database className="w-8 h-8 text-purple-600" />
+              <Database className="w-8 h-8 text-blue-600" />
             </div>
           </div>
           <p className="mt-8 text-gray-700 font-semibold text-lg">Đang tải dashboard...</p>
           <p className="text-gray-500 text-sm mt-2">Đang tải dữ liệu thực tế từ hệ thống</p>
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-            <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+            <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
           </div>
         </div>
       </div>
@@ -634,19 +630,19 @@ export default function TongQuan() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 lg:p-6">
       <div className="max-w-8xl mx-auto space-y-8">
         {/* Enhanced Header với Refresh Button */}
         <div className="text-center lg:text-left relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-3xl blur-3xl"></div>
+          <div className="absolute inset-0 rounded-3xl blur-3xl"></div>
           <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
                   <BarChart2 className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent py-2">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent py-2">
                     Thống kê dữ liệu
                   </h1>
                   <p className="text-gray-600 mt-2">
@@ -659,18 +655,16 @@ export default function TongQuan() {
                   </p>
                 </div>
               </div>
-
               {/* Refresh Button */}
               <Button
                 onClick={handleRefresh}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 text-black transition-all duration-300 transform cursor-pointer"
                 disabled={isLoading}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">Làm mới</span>
               </Button>
             </div>
-
             <div className="flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-600 mt-4">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -753,9 +747,9 @@ export default function TongQuan() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Revenue Trend Chart (Chart.js) */}
           <div className="lg:col-span-2">
-            <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20"></div>
+            <Card className="shadow-2xl border-0 overflow-hidden backdrop-blur-sm">
+              <CardHeader className="text-black relative overflow-hidden">
+                <div className="absolute inset-0 "></div>
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -763,14 +757,14 @@ export default function TongQuan() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">Xu hướng doanh thu thực tế</h3>
-                      <p className="text-blue-100 text-sm">
+                      <p className="text-gray-400 text-sm">
                         30 ngày gần đây • Từ {orders?.length || 0} đơn hàng thực tế
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold">{(comprehensiveStats.totalRevenue / 1000000).toFixed(1)}M ₫</p>
-                    <p className="text-blue-100 text-sm">Tổng doanh thu</p>
+                    <p className="text-gray-400 text-sm">Tổng doanh thu</p>
                   </div>
                 </div>
               </CardHeader>
@@ -784,15 +778,15 @@ export default function TongQuan() {
 
           {/* Order Status Distribution (Chart.js Doughnut) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-700 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20"></div>
+            <CardHeader className="text-black relative overflow-hidden">
+              <div className="absolute inset-0"></div>
               <div className="relative flex items-center gap-4">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2 rounded-xl backdrop-blur-sm">
                   <Target className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Trạng thái đơn hàng</h3>
-                  <p className="text-purple-100 text-sm">Dữ liệu thực tế từ {orders?.length || 0} đơn hàng</p>
+                  <p className="text-gray-400 text-sm">Dữ liệu thực tế từ {orders?.length || 0} đơn hàng</p>
                 </div>
               </div>
             </CardHeader>
@@ -838,15 +832,15 @@ export default function TongQuan() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Top Selling Items (Chart.js Bar) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-green-600 via-green-700 to-emerald-700 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20"></div>
+            <CardHeader className="text-black relative overflow-hidden">
+              <div className="absolute inset-0"></div>
               <div className="relative flex items-center gap-4">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Crown className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Món bán chạy</h3>
-                  <p className="text-green-100 text-sm">
+                  <p className="text-gray-400 text-sm">
                     {orderItems && orderItems.length > 0
                       ? `Từ ${orderItems.length} order items thực tế`
                       : "Dữ liệu ước tính từ menu"}
@@ -912,15 +906,15 @@ export default function TongQuan() {
 
           {/* Customer Satisfaction Radar (Chart.js) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-orange-600 via-orange-700 to-red-700 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-red-400/20"></div>
+            <CardHeader className="text-black relative overflow-hidden">
+              <div className="absolute inset-0"></div>
               <div className="relative flex items-center gap-4">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Star className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Đánh giá thực tế</h3>
-                  <p className="text-orange-100 text-sm">Từ {feedbacks?.length || 0} feedback thực tế</p>
+                  <p className="text-gray-400 text-sm">Từ {feedbacks?.length || 0} feedback thực tế</p>
                 </div>
               </div>
             </CardHeader>
@@ -978,15 +972,15 @@ export default function TongQuan() {
 
           {/* Weekly Comparison (Recharts) */}
           <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-teal-600 via-teal-700 to-cyan-700 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/20 to-cyan-400/20"></div>
+            <CardHeader className="text-black relative overflow-hidden">
+              <div className="absolute inset-0"></div>
               <div className="relative flex items-center gap-4">
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                   <BarChart2 className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">So sánh tuần thực tế</h3>
-                  <p className="text-teal-100 text-sm">14 ngày dữ liệu thật</p>
+                  <p className="text-gray-400 text-sm">14 ngày dữ liệu thật</p>
                 </div>
               </div>
             </CardHeader>
@@ -1029,8 +1023,8 @@ export default function TongQuan() {
           {/* Recent Orders */}
           <div className="lg:col-span-2">
             <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-blue-400/20"></div>
+              <CardHeader className="text-black relative overflow-hidden">
+                <div className="absolute inset-0"></div>
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -1038,7 +1032,7 @@ export default function TongQuan() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">Đơn hàng gần đây</h3>
-                      <p className="text-indigo-100 text-sm">5 đơn hàng mới nhất từ {orders?.length || 0} đơn hàng</p>
+                      <p className="text-gray-400 text-sm">5 đơn hàng mới nhất từ {orders?.length || 0} đơn hàng</p>
                     </div>
                   </div>
                   <Link
@@ -1116,15 +1110,15 @@ export default function TongQuan() {
           <div className="lg:col-span-2 space-y-8">
             {/* Enhanced System Notifications with Real Data */}
             <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-red-600 via-red-700 to-pink-700 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 to-pink-400/20"></div>
+              <CardHeader className="text-black relative overflow-hidden">
+                <div className="absolute inset-0"></div>
                 <div className="relative flex items-center gap-4">
                   <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                     <AlertCircle className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">Thông báo hệ thống</h3>
-                    <p className="text-red-100 text-sm">Dữ liệu thực từ hệ thống</p>
+                    <p className="text-gray-400 text-sm">Dữ liệu thực từ hệ thống</p>
                   </div>
                 </div>
               </CardHeader>
@@ -1196,15 +1190,15 @@ export default function TongQuan() {
 
             {/* Quick Actions */}
             <Card className="shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-pink-600 via-pink-700 to-rose-700 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-400/20 to-rose-400/20"></div>
+              <CardHeader className="text-black relative overflow-hidden">
+                <div className="absolute inset-0"></div>
                 <div className="relative flex items-center gap-4">
                   <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                     <Zap className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">Thao tác nhanh</h3>
-                    <p className="text-pink-100 text-sm">Truy cập nhanh các chức năng</p>
+                    <p className="text-gray-400 text-sm">Truy cập nhanh các chức năng</p>
                   </div>
                 </div>
               </CardHeader>
@@ -1216,23 +1210,20 @@ export default function TongQuan() {
                       <span className="text-sm font-semibold">Thêm món</span>
                     </Button>
                   </Link>
-
                   <Link href="/quan-tri/quan-ly/don-hang">
                     <Button className="w-full flex flex-col items-center justify-center gap-3 h-24 bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl rounded-2xl">
                       <BarChart2 className="w-6 h-6" />
                       <span className="text-sm font-semibold">Báo cáo</span>
                     </Button>
                   </Link>
-
                   <Link href="/quan-tri/quan-ly/don-hang">
-                    <Button className="w-full flex flex-col items-center justify-center gap-3 h-24 bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl rounded-2xl">
+                    <Button className="w-full flex flex-col items-center justify-center gap-3 h-24 bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-600 hover:to-indigo-800 text-white shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl rounded-2xl">
                       <FileText className="w-6 h-6" />
                       <span className="text-sm font-semibold">Tạo đơn</span>
                     </Button>
                   </Link>
-
                   <Link href="/quan-tri/quan-ly/nguoi-dung">
-                    <Button className="w-full flex flex-col items-center justify-center gap-3 h-24 bg-gradient-to-br from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 text-white shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl rounded-2xl">
+                    <Button className="w-full flex flex-col items-center justify-center gap-3 h-24 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl rounded-2xl">
                       <Users className="w-6 h-6" />
                       <span className="text-sm font-semibold">Khách hàng</span>
                     </Button>

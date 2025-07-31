@@ -1,7 +1,9 @@
 export interface Combo {
   id: number;
   name: string;
+  name_en?: string;
   description?: string;
+  description_en?: string;
   price: number;
   image?: string;
   status: boolean;
@@ -24,7 +26,9 @@ export interface ComboItemAdd {
 
 export interface ComboAdd {
   name: string;
+  name_en?: string;
   description?: string;
+  description_en?: string;
   price: number;
   image?: File;
   status: boolean;

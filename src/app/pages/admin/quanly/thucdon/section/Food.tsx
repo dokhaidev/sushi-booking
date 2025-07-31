@@ -1,7 +1,7 @@
 "use client"
 import type React from "react"
 import { useEffect, useState, useMemo } from "react"
-import { FaPlus, FaPen, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
+import { FaPlus, FaPenFancy, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card"
 import { Button } from "../../../../../components/ui/button"
 import { useFetch } from "../../../../../hooks/useFetch"
@@ -41,11 +41,9 @@ export default function FoodComponent({
   // Apply sorting to filtered data
   const sortedAndFilteredFoods = useMemo(() => {
     if (!sortField || !sortDirection) return filteredFoods
-
     return [...filteredFoods].sort((a, b) => {
-      let aValue: any
-      let bValue: any
-
+      let aValue: number
+      let bValue: number
       switch (sortField) {
         case "id":
           aValue = a.id
@@ -62,7 +60,6 @@ export default function FoodComponent({
         default:
           return 0
       }
-
       if (sortDirection === "asc") {
         return aValue > bValue ? 1 : aValue < bValue ? -1 : 0
       } else {
@@ -86,14 +83,15 @@ export default function FoodComponent({
   const [loading, setLoading] = useState(false)
   const [newFood, setNewFood] = useState<FoodAdd>({
     name: "",
+    name_en: "",
     category_id: 0,
     group_id: undefined,
     jpName: "",
     description: "",
+    description_en: "",
     price: 0,
     image: undefined,
   })
-
   const [filteredGroups, setFilteredGroups] = useState<typeof foodGroups>([])
 
   // Notification state
@@ -139,10 +137,12 @@ export default function FoodComponent({
     setEditingFood(food)
     setNewFood({
       name: food.name,
+      name_en: food.name_en || "", // Correctly initializes name_en
       category_id: food.category_id,
       group_id: food.group?.id,
       jpName: food.jpName || "",
       description: food.description || "",
+      description_en: food.description_en || "", // Correctly initializes description_en
       price: food.price,
       image: undefined,
     })
@@ -176,37 +176,33 @@ export default function FoodComponent({
   // Handle update food - SỬA LẠI ĐỂ CẬP NHẬT ĐÚNG DỮ LIỆU
   const handleUpdateFood = async () => {
     if (!editingFood) return
-
     const formData = new FormData()
     formData.append("name", newFood.name)
     formData.append("category_id", newFood.category_id.toString())
     if (newFood.group_id) formData.append("group_id", newFood.group_id.toString())
+    if (newFood.name_en) formData.append("name_en", newFood.name_en)
     if (newFood.jpName) formData.append("jpName", newFood.jpName)
     if (newFood.description) formData.append("description", newFood.description)
+    if (newFood.description_en) formData.append("description_en", newFood.description_en)
     formData.append("price", newFood.price.toString())
     if (newFood.image) formData.append("image", newFood.image)
 
     try {
       setLoading(true)
-      const response = await axios.put(`http://127.0.0.1:8000/api/food-update/${editingFood.id}`, formData, {
+      const response = await axios.post(`http://127.0.0.1:8000/api/food-update/${editingFood.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        // Laravel PUT/PATCH with FormData requires _method field
+        params: { _method: "PUT" },
       })
-
       // Cập nhật dữ liệu với thông tin đầy đủ từ response
       const updatedFood = response.data.data
       setFoods((prev) =>
         prev.map((f) =>
           f.id === editingFood.id
-            ? {
-                ...updatedFood,
-                image: updatedFood.image || f.image, // Giữ ảnh cũ nếu không có ảnh mới
-                category: f.category, // Giữ thông tin category
-                group: f.group, // Giữ thông tin group
-              }
+            ? updatedFood // Sử dụng trực tiếp updatedFood vì backend đã trả về đầy đủ category và group
             : f,
         ),
       )
-
       showNotification("Cập nhật món ăn thành công!", "success")
       setIsEditPopupOpen(false)
       resetForm()
@@ -234,7 +230,6 @@ export default function FoodComponent({
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelect(e.dataTransfer.files[0], isEdit)
     }
@@ -243,7 +238,6 @@ export default function FoodComponent({
   const handleFileSelect = (file: File, isEdit = false) => {
     if (file.type.startsWith("image/")) {
       setNewFood({ ...newFood, image: file })
-
       // Create preview URL
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -275,7 +269,7 @@ export default function FoodComponent({
       setLoading(true)
       const response = await addFood(newFood)
       // Thêm món ăn mới vào danh sách thay vì reload
-      setFoods((prev) => [...prev, response.data])
+      setFoods((prev) => [...prev, response.data.data]) // Access response.data.data as per Laravel's store method
       showNotification("Thêm món ăn thành công!", "success")
       setIsPopupOpen(false)
       resetForm()
@@ -293,8 +287,10 @@ export default function FoodComponent({
       name: "",
       category_id: 0,
       group_id: undefined,
+      name_en: "",
       jpName: "",
       description: "",
+      description_en: "",
       price: 0,
       image: undefined,
     })
@@ -347,7 +343,7 @@ export default function FoodComponent({
               <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                 <tr>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("id")}
                     title="Nhấn để sắp xếp theo ID"
                   >
@@ -356,13 +352,14 @@ export default function FoodComponent({
                       {getSortIcon("id")}
                     </div>
                   </th>
-                  <th className="px-4 py-3">Hình ảnh</th>
-                  <th className="px-4 py-3">Tên</th>
-                  <th className="px-4 py-3">Tên Nhật</th>
-                  <th className="px-4 py-3">Loại danh mục</th>
-                  <th className="px-4 py-3">Danh mục</th>
+                  <th className="px-3 py-2">Hình ảnh</th>
+                  <th className="px-3 py-2">Tên</th>
+                  <th className="px-3 py-2">Tên Nhật</th>
+                  <th className="px-3 py-2">Tên Anh</th>
+                  <th className="px-3 py-2">Loại danh mục</th>
+                  <th className="px-3 py-2">Danh mục</th>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("price")}
                     title="Nhấn để sắp xếp theo giá"
                   >
@@ -372,7 +369,7 @@ export default function FoodComponent({
                     </div>
                   </th>
                   <th
-                    className="px-4 py-3 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("status")}
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
@@ -381,15 +378,15 @@ export default function FoodComponent({
                       {getSortIcon("status")}
                     </div>
                   </th>
-                  <th className="px-4 py-3">Thao tác</th>
+                  <th className="px-3 py-2">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {currentFood.length > 0 ? (
                   currentFood.map((food, index) => (
                     <tr key={food.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-3 font-medium">{food.id}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 font-medium">{food.id}</td>
+                      <td className="px-3 py-2">
                         {food.image && (
                           <div className="w-16 h-16 relative rounded-lg overflow-hidden shadow-sm">
                             <Image
@@ -405,46 +402,41 @@ export default function FoodComponent({
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-medium">{food.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{food.jpName || "Không có tên nhật"}</td>
-                      <td className="px-4 py-3 text-gray-600">{food.group?.name ?? "Không có"}</td>
-                      <td className="px-4 py-3 text-gray-600">{food.category?.name ?? "Không có"}</td>
-                      <td className="px-4 py-3 font-semibold text-green-600">
+                      <td className="px-3 py-2 font-medium">{food.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{food.jpName || "Không có tên Nhật"}</td>
+                      <td className="px-3 py-2 text-gray-600">{food.name_en || "Không có tên Anh"}</td>
+                      <td className="px-3 py-2 text-gray-600">{food.group?.name ?? "Không có"}</td>
+                      <td className="px-3 py-2 text-gray-600">{food.category?.name ?? "Không có"}</td>
+                      <td className="px-3 py-2 font-semibold text-green-600">
                         {Number(food.price).toLocaleString("vi-VN")} đ
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${food.status ? "bg-green-500" : "bg-red-500"}`}></div>
                           <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              food.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                            }`}
+                            className={`px-2 py-1 rounded text-xs font-medium ${food.status ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
                           >
                             {food.status ? "Đang bán" : "Ngưng bán"}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEditFood(food)}
                             className="px-3 py-2 text-blue-700 border border-blue-700 rounded-lg flex items-center gap-1 hover:bg-blue-50 transition-colors"
                             disabled={loading}
                           >
-                            <FaPen className="w-3 h-3" />
-                            <span className="text-blue-700 font-medium">Sửa</span>
+                            <FaPenFancy className="w-3 h-3" />
+                            {/* <span className="text-blue-700 font-medium">Sửa</span> */}
                           </button>
                           <button
                             onClick={() => handleToggleStatus(food)}
-                            className={`px-3 py-2 border rounded-lg flex items-center gap-1 transition-colors ${
-                              food.status
-                                ? "text-red-700 border-red-700 hover:bg-red-50"
-                                : "text-green-700 border-green-700 hover:bg-green-50"
-                            }`}
+                            className={`px-3 py-2 border rounded-lg flex items-center gap-1 transition-colors ${food.status ? "text-red-700 border-red-700 hover:bg-red-50" : "text-green-700 border-green-700 hover:bg-green-50"}`}
                             disabled={loading}
                           >
                             {food.status ? <FaEyeSlash className="w-3 h-3" /> : <FaEye className="w-3 h-3" />}
-                            <span className="font-medium">{food.status ? "Ẩn" : "Hiện"}</span>
+                            {/* <span className="font-medium">{food.status ? "Ẩn" : "Hiện"}</span> */}
                           </button>
                         </div>
                       </td>
@@ -460,7 +452,6 @@ export default function FoodComponent({
               </tbody>
             </table>
           </div>
-
           {/* Sort info */}
           {sortField && sortDirection && (
             <div className="mt-4 flex items-center gap-2 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
@@ -480,7 +471,6 @@ export default function FoodComponent({
               </button>
             </div>
           )}
-
           <Pagination
             currentPage={currentPage}
             totalItems={totalItems}
@@ -500,13 +490,20 @@ export default function FoodComponent({
         title="Thêm món ăn mới"
       >
         <form onSubmit={handleAddFood} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <InputField
-              label="Tên món"
+              label="Tên món (*)"
               name="name"
               value={newFood.name}
               onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
               required
+            />
+            <InputField
+              label="Tên Anh"
+              name="name_en"
+              value={newFood.name_en || ""} // FIX: Changed from newFood.name to newFood.name_en
+              onChange={(e) => setNewFood({ ...newFood, name_en: e.target.value })}
+              // removed required as it's nullable in backend
             />
             <InputField
               label="Tên Nhật"
@@ -515,30 +512,37 @@ export default function FoodComponent({
               onChange={(e) => setNewFood({ ...newFood, jpName: e.target.value })}
             />
           </div>
-
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
             <textarea
               value={newFood.description || ""}
               onChange={(e) => setNewFood({ ...newFood, description: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
-              rows={3}
+              rows={2}
               placeholder="Nhập mô tả món ăn..."
             />
           </div>
-
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả tiếng Anh</label>
+            <textarea
+              value={newFood.description_en || ""}
+              onChange={(e) => setNewFood({ ...newFood, description_en: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent"
+              rows={2}
+              placeholder="Nhập mô tả món ăn..."
+            />
+          </div>
           <InputField
-            label="Giá (VNĐ)"
+            label="Giá (VNĐ) (*)"
             name="price"
             type="number"
             value={String(newFood.price)}
             onChange={(e) => setNewFood({ ...newFood, price: Number.parseFloat(e.target.value) || 0 })}
             required
           />
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục (*)</label>
               <select
                 value={newFood.category_id}
                 onChange={(e) => setNewFood({ ...newFood, category_id: Number(e.target.value) })}
@@ -553,7 +557,6 @@ export default function FoodComponent({
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Loại danh mục</label>
               <select
@@ -571,15 +574,11 @@ export default function FoodComponent({
               </select>
             </div>
           </div>
-
           {/* Image Upload Section */}
           <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700">Hình ảnh sản phẩm</label>
-
             <div
-              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -591,7 +590,6 @@ export default function FoodComponent({
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], false)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-
               <div className="space-y-3">
                 <div className="mx-auto w-12 h-12 text-gray-400">
                   <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,7 +601,6 @@ export default function FoodComponent({
                     />
                   </svg>
                 </div>
-
                 <div>
                   <button
                     type="button"
@@ -620,12 +617,10 @@ export default function FoodComponent({
                     Chọn ảnh
                   </button>
                 </div>
-
                 <p className="text-sm text-gray-500">Hoặc kéo thả ảnh vào đây</p>
                 <p className="text-xs text-gray-400">PNG, JPG, GIF tối đa 2MB</p>
               </div>
             </div>
-
             {/* Image Preview */}
             {previewUrl && (
               <div className="relative">
@@ -651,7 +646,6 @@ export default function FoodComponent({
               </div>
             )}
           </div>
-
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               onClick={() => {
@@ -685,13 +679,20 @@ export default function FoodComponent({
         title="Chỉnh sửa món ăn"
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <InputField
-              label="Tên món"
+              label="Tên món (*)"
               name="name"
               value={newFood.name}
               onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
               required
+            />
+            <InputField
+              label="Tên Anh" // FIX: Changed label from "Tên món" to "Tên Anh"
+              name="name_en"
+              value={newFood.name_en || ""}
+              onChange={(e) => setNewFood({ ...newFood, name_en: e.target.value })}
+              // removed required as it's nullable in backend
             />
             <InputField
               label="Tên Nhật"
@@ -700,34 +701,41 @@ export default function FoodComponent({
               onChange={(e) => setNewFood({ ...newFood, jpName: e.target.value })}
             />
           </div>
-
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
             <textarea
               value={newFood.description || ""}
               onChange={(e) => setNewFood({ ...newFood, description: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent" // FIX: Consistent ring color
+              rows={2}
               placeholder="Nhập mô tả món ăn..."
             />
           </div>
-
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả tiếng Anh</label>
+            <textarea
+              value={newFood.description_en || ""}
+              onChange={(e) => setNewFood({ ...newFood, description_en: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent" // FIX: Consistent ring color
+              rows={2}
+              placeholder="Nhập mô tả món ăn..."
+            />
+          </div>
           <InputField
-            label="Giá (VNĐ)"
+            label="Giá (VNĐ) (*)"
             name="price"
             type="number"
             value={String(newFood.price)}
             onChange={(e) => setNewFood({ ...newFood, price: Number.parseFloat(e.target.value) || 0 })}
             required
           />
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục (*)</label>
               <select
                 value={newFood.category_id}
                 onChange={(e) => setNewFood({ ...newFood, category_id: Number(e.target.value) })}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent" // FIX: Consistent ring color
                 required
               >
                 <option value="">-- Chọn danh mục --</option>
@@ -738,13 +746,12 @@ export default function FoodComponent({
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Loại danh mục</label>
               <select
                 value={newFood.group_id ?? ""}
                 onChange={(e) => setNewFood({ ...newFood, group_id: Number(e.target.value) || undefined })}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#9c6b66] focus:border-transparent disabled:bg-gray-100" // FIX: Consistent ring color
                 disabled={!filteredGroups.length}
               >
                 <option value="">-- Chọn loại danh mục --</option>
@@ -756,15 +763,11 @@ export default function FoodComponent({
               </select>
             </div>
           </div>
-
           {/* Image Upload Section for Edit */}
           <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700">Hình ảnh sản phẩm</label>
-
             <div
-              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+              className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400"}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -776,7 +779,6 @@ export default function FoodComponent({
                 onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], true)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-
               <div className="space-y-3">
                 <div className="mx-auto w-12 h-12 text-gray-400">
                   <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -788,11 +790,10 @@ export default function FoodComponent({
                     />
                   </svg>
                 </div>
-
                 <div>
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#9c6b66] hover:bg-[#8a5a55] transition-colors" // FIX: Consistent button color
                   >
                     <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -805,12 +806,10 @@ export default function FoodComponent({
                     Chọn ảnh mới
                   </button>
                 </div>
-
                 <p className="text-sm text-gray-500">Hoặc kéo thả ảnh vào đây</p>
                 <p className="text-xs text-gray-400">PNG, JPG, GIF tối đa 2MB</p>
               </div>
             </div>
-
             {/* Current Image or New Preview */}
             {(editPreviewUrl || editingFood?.image) && (
               <div className="relative">
@@ -849,7 +848,6 @@ export default function FoodComponent({
               </div>
             )}
           </div>
-
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               onClick={() => {
@@ -864,7 +862,7 @@ export default function FoodComponent({
             </Button>
             <Button
               onClick={handleUpdateFood}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="bg-[#9c6b66] text-white px-6 py-2 rounded-lg hover:bg-[#7e544f] transition-colors disabled:opacity-50" // FIX: Consistent button color
               disabled={loading}
             >
               {loading ? "Đang cập nhật..." : "Cập nhật"}

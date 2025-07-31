@@ -117,10 +117,22 @@ export default function QuanLyNguoiDung() {
 
   const toggleUserStatus = async (user: Customer) => {
     const newStatus = user.status === 1 ? 0 : 1
+
+    const token = Cookies.get("access_token")
+
+    if (!token) {
+      throw new Error("Không tìm thấy access_token")
+    }
+
     try {
-      const res = await axios.put(`http://localhost:8000/api/customers/${user.id}/status`, {
-        status: newStatus,
-      })
+      const res = await axios.put(`http://localhost:8000/api/customers/${user.id}/status`, 
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
       const updatedUser = res.data.customer
 
       setCustomers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
@@ -235,9 +247,8 @@ export default function QuanLyNguoiDung() {
                   <option value="">Tất cả vai trò</option>
                   <option value="user">Người dùng</option>
                   <option value="admin">Quản trị viên</option>
-                  <option value="kitchenmanager">Nhân viên bếp</option>
-                  <option value="menumanager">Nhân viên bàn</option>
-                  <option value="ordermanager">Nhân viên thu ngân</option>
+                  <option value="manager">Quản lý</option>
+                  <option value="chef">Nhân viên bếp</option>
                 </select>
               </div>
 
@@ -333,19 +344,19 @@ export default function QuanLyNguoiDung() {
           },
           {
             label: "Nhân viên bếp",
-            value: customers.filter((user) => user.role === "kitchenmanager").length,
+            value: customers.filter((user) => user.role === "chef").length,
             icon: <PiChefHat className="w-6 h-6" />,
             color: "from-green-500 to-green-600",
           },
           {
-            label: "Nhân viên bàn",
-            value: customers.filter((user) => user.role === "menumanager").length,
+            label: "Quản lý",
+            value: customers.filter((user) => user.role === "manager").length,
             icon: <FaUsers className="w-6 h-6" />,
             color: "from-purple-500 to-purple-600",
           },
           {
-            label: "Nhân viên thu ngân",
-            value: customers.filter((user) => user.role === "ordermanager").length,
+            label: "Nhân viên",
+            value: customers.filter((user) => user.role === "staff").length,
             icon: <FaCashRegister className="w-6 h-6" />,
             color: "from-orange-500 to-orange-600",
           },
@@ -435,11 +446,11 @@ export default function QuanLyNguoiDung() {
                               ? "text-red-600"
                               : user.role === "user"
                                 ? "text-blue-600"
-                                : user.role === "chef"
+                                : user.role === "manager"
                                   ? "text-orange-600"
-                                  : user.role === "ordermanager"
+                                  : user.role === "chef"
                                     ? "text-green-600"
-                                    : user.role === "menumanager"
+                                    : user.role === "staff"
                                       ? "text-purple-600"
                                       : "text-gray-500"
                           }`}
@@ -448,11 +459,11 @@ export default function QuanLyNguoiDung() {
                             ? "Quản trị viên"
                             : user.role === "user"
                               ? "Người dùng"
-                              : user.role === "chef"
-                                ? "NV bếp"
-                                : user.role === "ordermanager"
-                                  ? "NV đơn hàng"
-                                  : user.role === "menumanager"
+                              : user.role === "manager"
+                                ? "Quản lý"
+                                : user.role === "chef"
+                                  ? "Nhân viên bếp"
+                                  : user.role === "staff"
                                     ? "NV thực đơn"
                                     : "Không xác định"}
                         </td>
@@ -521,9 +532,8 @@ export default function QuanLyNguoiDung() {
                   >
                     <option value="user">Người dùng</option>
                     <option value="admin">Quản trị viên</option>
-                    <option value="kitchenmanager">Nhân viên bếp</option>
-                    <option value="menumanager">Nhân viên bàn</option>
-                    <option value="ordermanager">Nhân viên đơn hàng</option>
+                    <option value="manager">Quản lý</option>
+                    <option value="chef">Nhân viên bếp</option>
                   </select>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

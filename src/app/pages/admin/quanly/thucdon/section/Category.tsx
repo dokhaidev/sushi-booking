@@ -1,5 +1,5 @@
 "use client"
-import { FaPlus, FaPen, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
+import { FaPlus, FaPenFancy, FaEyeSlash, FaEye, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 import { Card, CardHeader, CardContent } from "../../../../../components/ui/Card"
 import { Button } from "../../../../../components/ui/button"
 import { useFetch } from "../../../../../hooks/useFetch"
@@ -251,7 +251,7 @@ export default function CategoryComponent({
               <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                 <tr>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("id")}
                     title="Nhấn để sắp xếp theo ID"
                   >
@@ -260,10 +260,10 @@ export default function CategoryComponent({
                       {getSortIcon("id")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Tên danh mục</th>
-                  <th className="px-4 py-2">Mô tả</th>
+                  <th className="px-3 py-2">Tên danh mục</th>
+                  <th className="px-3 py-2">Mô tả</th>
                   <th
-                    className="px-4 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
+                    className="px-3 py-2 cursor-pointer hover:bg-[#fff0e6] transition-colors select-none"
                     onClick={() => handleSort("status")}
                     title="Nhấn để sắp xếp theo trạng thái"
                   >
@@ -272,17 +272,17 @@ export default function CategoryComponent({
                       {getSortIcon("status")}
                     </div>
                   </th>
-                  <th className="px-4 py-2">Thao tác</th>
+                  <th className="px-3 py-2">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {currentCategories.length > 0 ? (
                   currentCategories.map((cate, index) => (
                     <tr key={cate.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                      <td className="px-4 py-2 font-medium">{cate.id}</td>
-                      <td className="px-4 py-2 font-medium">{cate.name}</td>
-                      <td className="px-4 py-2 text-gray-600">{cate.description || "Không có mô tả"}</td>
-                      <td className={`px-4 py-2 font-bold ${cate.status === 1 ? "text-green-600" : "text-red-600"}`}>
+                      <td className="px-3 py-2 font-medium">{cate.id}</td>
+                      <td className="px-3 py-2 font-medium">{cate.name}</td>
+                      <td className="px-3 py-2 text-gray-600">{cate.description || "Không có mô tả"}</td>
+                      <td className={`px-3 py-2 font-bold ${cate.status === 1 ? "text-green-600" : "text-red-600"}`}>
                         <div className="flex items-center gap-2">
                           <div
                             className={`w-2 h-2 rounded-full ${cate.status === 1 ? "bg-green-500" : "bg-red-500"}`}
@@ -290,15 +290,15 @@ export default function CategoryComponent({
                           {cate.status === 1 ? "Đang hiển thị" : "Đang ẩn"}
                         </div>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleOpenEditPopup(cate)}
                             className="px-2 py-1 text-blue-700 cursor-pointer border border-blue-700 rounded flex items-center gap-1 hover:bg-blue-100 transition-colors"
                             disabled={loading}
                           >
-                            <FaPen />
-                            <span className="text-blue-700 font-semibold">Sửa</span>
+                            <FaPenFancy />
+                            {/* <span className="text-blue-700 font-semibold">Sửa</span> */}
                           </button>
                           <button
                             onClick={() => handleToggleStatus(cate)}
@@ -310,7 +310,7 @@ export default function CategoryComponent({
                             disabled={loading}
                           >
                             {cate.status === 1 ? <FaEyeSlash /> : <FaEye />}
-                            <span className="font-semibold">{cate.status === 0 ? "Hiện" : "Ẩn"}</span>
+                            {/* <span className="font-semibold">{cate.status === 0 ? "Hiện" : "Ẩn"}</span> */}
                           </button>
                         </div>
                       </td>
@@ -375,14 +375,14 @@ export default function CategoryComponent({
           <div className="flex justify-end gap-2 pt-4">
             <Button
               onClick={handleClosePopup}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400 transition-colors"
               disabled={loading}
             >
               Hủy
             </Button>
             <Button
               onClick={handleSubmit}
-              className="bg-[#9c6b66] text-white px-4 py-2 rounded hover:bg-[#8a5a55] transition-colors"
+              className="bg-[#9c6b66] text-white px-3 py-2 rounded hover:bg-[#8a5a55] transition-colors"
               disabled={loading || !formData.name.trim()}
             >
               {loading ? "Đang thêm..." : "Thêm danh mục"}
@@ -411,14 +411,14 @@ export default function CategoryComponent({
           <div className="flex justify-end gap-2 pt-4">
             <Button
               onClick={handleCloseEditPopup}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              className="bg-gray-300 text-gray-700 px-3 py-2 rounded hover:bg-gray-400 transition-colors"
               disabled={loading}
             >
               Hủy
             </Button>
             <Button
               onClick={handleUpdate}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-colors"
               disabled={loading || !formData.name.trim()}
             >
               {loading ? "Đang cập nhật..." : "Cập nhật"}

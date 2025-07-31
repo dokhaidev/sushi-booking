@@ -11,6 +11,7 @@ import { useSearchFilter } from "@/src/app/hooks/useSearchFilter"
 import Popup from "@/src/app/components/ui/Popup"
 import PopupNotification from "@/src/app/components/ui/PopupNotification"
 import { Button } from "@/src/app/components/ui/button"
+import Cookies from "js-cookie"
 import {
   FaShoppingCart,
   FaClock,
@@ -166,13 +167,23 @@ export default function QuanLyDonHang() {
   }
 
   const handleConfirmStatusUpdate = async () => {
+    const token = Cookies.get("access_token")
+
+    if (!token) {
+      throw new Error("Không tìm thấy access_token")
+    }
     if (!selectedOrder || !newStatus) return
 
     setIsUpdatingStatus(true)
     try {
-      const response = await axios.put(`http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`, {
-        status: newStatus,
-      })
+      const response = await axios.put(`http://127.0.0.1:8000/api/order/update-status/${selectedOrder.id}`, 
+        { status: newStatus},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
       // Update the order in the local state
       const updatedOrders = orders.map((order) =>
@@ -541,15 +552,14 @@ export default function QuanLyDonHang() {
                             >
                               <FaInfo />
                             </button>
-                            {order.status !== "success" || order.status === "cancelled" && (
+                            {!["success", "cancelled"].includes(order.status) ? (
                               <button
-                                className="p-2 flex items-center gap-1 text-sm text-orange-700 border border-orange-700 rounded hover:bg-orange-100 font-semibold cursor-pointer"
                                 onClick={() => handleUpdateStatus(order)}
+                                className="p-2 flex items-center gap-1 text-sm text-orange-700 border border-orange-700 rounded hover:bg-orange-100 font-semibold cursor-pointer"
                               >
                                 <FaEdit className="w-3 h-3" />
                               </button>
-                            )}
-                            {order.status === "success" || order.status === "cancelled"  && (
+                            ) : (
                               <span className="p-2 flex items-center gap-1 text-sm text-gray-400 border border-gray-400 rounded bg-gray-100 font-medium">
                                 <FaEdit className="w-3 h-3" />
                               </span>
@@ -589,15 +599,16 @@ export default function QuanLyDonHang() {
       >
         {selectedOrder && (
           <div className="space-y-4">
-            {selectedOrder.status === "success" && (
+            {["success", "cancelled"].includes(selectedOrder.status) && (
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <div className="flex items-center gap-2">
                   <FaCheckCircle className="w-5 h-5 text-red-600" />
                   <div>
-                    <h4 className="font-medium text-red-800">Đơn hàng đã hoàn tất</h4>
+                    <h4 className="font-medium text-red-800">
+                      Đơn hàng đã {selectedOrder.status === "success" ? "hoàn tất" : "bị hủy"}
+                    </h4>
                     <p className="text-sm text-red-700 mt-1">
-                      Đơn hàng này đã được hoàn tất và không thể thay đổi trạng thái. Điểm thưởng đã được tích cho khách
-                      hàng.
+                      Đơn hàng này {selectedOrder.status === "success" ? "đã hoàn tất và" : "đã bị hủy và"} không thể thay đổi trạng thái.
                     </p>
                   </div>
                 </div>
@@ -621,7 +632,7 @@ export default function QuanLyDonHang() {
               </div>
             </div>
 
-            {selectedOrder.status !== "success" && (
+            {!["success", "cancelled"].includes(selectedOrder.status) && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Chọn trạng thái mới</label>
@@ -653,9 +664,9 @@ export default function QuanLyDonHang() {
                 onClick={handleCancelStatusUpdate}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                {selectedOrder.status === "success" ? "Đóng" : "Hủy"}
+                {["success", "cancelled"].includes(selectedOrder.status) ? "Đóng" : "Hủy"}
               </Button>
-              {selectedOrder.status !== "success" && (
+              {!["success", "cancelled"].includes(selectedOrder.status) && (
                 <Button
                   onClick={handleConfirmStatusUpdate}
                   className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"

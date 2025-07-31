@@ -4,17 +4,7 @@
 
 import type React from "react"
 import { useState, useMemo } from "react"
-import {
-  FaPlus,
-  FaEye,
-  FaEyeSlash,
-  FaGift,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaFilter,
-  FaTimes,
-  FaEdit,
-} from "react-icons/fa"
+import { FaPlus, FaEye, FaEyeSlash, FaGift, FaCheckCircle, FaTimesCircle, FaFilter, FaTimes, FaPenFancy } from "react-icons/fa"
 import TitleDesc from "@/src/app/components/ui/titleDesc"
 import { Button } from "@/src/app/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/src/app/components/ui/Card"
@@ -514,7 +504,7 @@ export default function QuanLyKhuyenMai() {
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange("status", e.target.value)}
-                  className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  className="w-full bg-white border border-gray-300 px-3 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 >
                   <option value="">Tất cả</option>
                   <option value="active">Đang hoạt động</option>
@@ -527,7 +517,7 @@ export default function QuanLyKhuyenMai() {
                 <select
                   value={filters.timeRange}
                   onChange={(e) => handleFilterChange("timeRange", e.target.value)}
-                  className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  className="w-full bg-white border border-gray-300 px-3 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 >
                   <option value="">Tất cả</option>
                   <option value="today">Hôm nay</option>
@@ -540,7 +530,7 @@ export default function QuanLyKhuyenMai() {
                 <select
                   value={filters.discountRange}
                   onChange={(e) => handleFilterChange("discountRange", e.target.value)}
-                  className="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  className="w-full bg-white border border-gray-300 px-3 py-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 >
                   <option value="">Tất cả</option>
                   <option value="under100">Dưới 100k</option>
@@ -644,7 +634,7 @@ export default function QuanLyKhuyenMai() {
             </div>
             <Button
               onClick={() => setOpenAddPopup(true)}
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <FaPlus className="w-4 h-4" />
               Thêm voucher
@@ -655,29 +645,31 @@ export default function QuanLyKhuyenMai() {
               <table className="min-w-full text-sm text-left">
                 <thead className="bg-[#fff8f1] text-[#5c4033] font-medium">
                   <tr>
-                    <th className="px-4 py-2">Id</th>
-                    <th className="px-4 py-2">Mã khuyến mãi</th>
-                    <th className="px-4 py-2">Giá trị</th>
-                    <th className="px-4 py-2">Ngày bắt đầu</th>
-                    <th className="px-4 py-2">Ngày hết hạn</th>
-                    <th className="px-4 py-2">Trạng thái</th>
-                    <th className="px-4 py-2">Số lượt còn lại</th>
-                    <th className="px-4 py-2">Số lượt đã dùng</th>
-                    <th className="px-4 py-2">Hành động</th>
+                    <th className="px-3 py-2">Id</th>
+                    <th className="px-3 py-2">Mã khuyến mãi</th>
+                    <th className="px-3 py-2">Giá trị</th>
+                    <th className="px-3 py-2">Ngày bắt đầu</th>
+                    <th className="px-3 py-2">Ngày hết hạn</th>
+                    <th className="px-3 py-2">Số lượt còn lại</th>
+                    <th className="px-3 py-2">Số lượt đã dùng</th>
+                    <th className="px-3 py-2">Trạng thái</th>
+                    <th className="px-3 py-2">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentVouchers.length > 0 ? (
                     currentVouchers.map((voucher, index) => (
                       <tr key={voucher.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fffaf5]"}>
-                        <td className="px-4 py-2">{voucher.id}</td>
-                        <td className="px-4 py-2 font-medium">{voucher.code}</td>
-                        <td className="px-4 py-2 font-semibold text-green-600">
+                        <td className="px-3 py-2">{voucher.id}</td>
+                        <td className="px-3 py-2 font-medium">{voucher.code}</td>
+                        <td className="px-3 py-2 font-semibold text-green-600">
                           {(Number(voucher.discount_value) || 0).toLocaleString()} ₫
                         </td>
-                        <td className="px-4 py-2">{new Date(voucher.start_date).toLocaleDateString("vi-VN")}</td>
-                        <td className="px-4 py-2">{new Date(voucher.end_date).toLocaleDateString("vi-VN")}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-3 py-2">{new Date(voucher.start_date).toLocaleDateString("vi-VN")}</td>
+                        <td className="px-3 py-2">{new Date(voucher.end_date).toLocaleDateString("vi-VN")}</td>
+                        <td className="px-3 py-2">{Math.max(0, (voucher.usage_limit || 0) - (voucher.used || 0))}</td>
+                        <td className="px-3 py-2">{voucher.used || 0}</td>
+                        <td className="px-3 py-2">
                           <span
                             className={`text-xs px-2 py-1 rounded font-medium ${
                               voucher.status === "active"
@@ -694,24 +686,22 @@ export default function QuanLyKhuyenMai() {
                                 : "Vô hiệu hóa"}
                           </span>
                         </td>
-                        <td className="px-4 py-2">{Math.max(0, (voucher.usage_limit || 0) - (voucher.used || 0))}</td>
-                        <td className="px-4 py-2">{voucher.used || 0}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-3 py-2">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleEditVoucher(voucher)}
                               className="px-2 py-1 flex items-center gap-1 text-blue-700 border border-blue-700 rounded hover:bg-blue-100 transition-colors"
                             >
-                              <FaEdit />
-                              <span className="text-xs font-semibold">Sửa</span>
+                              <FaPenFancy />
+                              {/* <span className="text-xs font-semibold">Sửa</span> */}
                             </button>
                             <button className="px-2 py-1 flex items-center gap-1 text-red-700 border border-red-700 rounded hover:bg-red-100 transition-colors">
                               {voucher.status === "active" ? <FaEyeSlash /> : <FaEye />}
-                              <span className="text-xs font-semibold">
+                              {/* <span className="text-xs font-semibold">
                                 {voucher.status === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
-                              </span>
+                              </span> */}
                             </button>
-                          </div>
+                          </div>  
                         </td>
                       </tr>
                     ))
