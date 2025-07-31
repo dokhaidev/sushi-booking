@@ -294,28 +294,9 @@ export default function SushiProductPageImproved() {
         <div className="absolute bottom-20 right-1/3 w-28 h-28 rounded-full bg-gradient-to-r from-[#BD944A] to-[#A68345]"></div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative z-10 text-center py-16 px-4">
-        <div className="inline-flex items-center gap-2 mb-4">
-          <Sparkles className="w-8 h-8 text-[#A68345]" />
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-[#A68345] to-[#BD944A] bg-clip-text text-transparent">
-            鮨 SUSHI MENU
-          </h1>
-          <Sparkles className="w-8 h-8 text-[#BD944A]" />
-        </div>
-        <p className="text-xl text-gray-600 mb-8 font-light">Authentic Japanese Cuisine • 本格的な日本料理</p>
-        <div className="flex items-center justify-center gap-4 mb-12">
-          <div className="w-20 h-px bg-gradient-to-r from-transparent to-[#A68345]"></div>
-          <Star className="w-6 h-6 text-[#A68345]" />
-          <div className="w-20 h-px bg-gradient-to-r from-[#A68345] to-[#BD944A]"></div>
-          <Star className="w-6 h-6 text-[#BD944A]" />
-          <div className="w-20 h-px bg-gradient-to-r from-[#BD944A] to-transparent"></div>
-        </div>
-      </div>
-
       {/* Premium Combos Slider Section */}
       {combos.length > 0 && (
-        <div id="combos-section" className="relative z-10 px-4 mb-16">
+        <div id="combos-section" className="relative z-10 px-4 my-16">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-3 mb-4">
