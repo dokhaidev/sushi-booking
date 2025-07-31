@@ -87,26 +87,38 @@ export default function Menus() {
   }, [t, lang]);
 
   const fetchAllProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get("http://127.0.0.1:8000/api/foods", {
-        params: { lang },
-      });
-      let data: Product[] = [];
-      if (Array.isArray(res.data)) data = res.data;
-      else if (res.data?.data) data = res.data.data;
-      const enriched = data.map((p) => ({
-        ...p,
-        rating: Math.random() * 2 + 3,
-        cookTime: `${Math.floor(Math.random() * 20) + 10} ${t("time.minutes")}`,
-      }));
-      setAllProducts(enriched);
-    } catch {
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
+  try {
+    setLoading(true);
+    const res = await axios.get("http://127.0.0.1:8000/api/foods", {
+      params: { lang },
+    });
+
+    let data: Product[] = [];
+    if (Array.isArray(res.data)) data = res.data;
+    else if (res.data?.data) data = res.data.data;
+
+    // 👉 Sort theo id giảm dần (mới nhất lên đầu)
+    data.sort((a, b) => {
+      const idA = typeof a.id === "string" ? parseInt(a.id) : a.id;
+      const idB = typeof b.id === "string" ? parseInt(b.id) : b.id;
+      return idB - idA;
+    });
+
+    // 👉 Gán thêm rating và cookTime
+    const enriched = data.map((p) => ({
+      ...p,
+      rating: Math.random() * 2 + 3,
+      cookTime: `${Math.floor(Math.random() * 20) + 10} ${t("time.minutes")}`,
+    }));
+
+    setAllProducts(enriched);
+  } catch {
+    setCategories([]);
+  } finally {
+    setLoading(false);
+  }
   }, [t, lang]);
+
 
   useEffect(() => {
     fetchCategories();
@@ -219,7 +231,7 @@ export default function Menus() {
           <div className="text-center mt-10">
             <Link
               href={getLocalizedPath("/thuc-don")}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all text-base font-semibold"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all text-base font-semibold"
             >
               <ChefHat size={20} />
               <span>{t("buttons.view_all")}</span>

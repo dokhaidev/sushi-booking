@@ -3,6 +3,10 @@
   "date_label": "Reservation Date",
   "guest_count_label": "Number of Guests",
   "available_slots": "Available Time Slots",
+  "guest_limit_warning_title": "Large party size",
+  "guest_limit_warning_message": "Please contact our hotline for assistance in arranging seating for groups over 40 guests.",
+  "close": "Close",
+  "contact_for_large_group": "For large groups, please contact:",
 
   "contact_info_title": "Contact Information",
   "full_name_label": "Full Name",

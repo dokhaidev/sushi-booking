@@ -3,7 +3,7 @@
   "title": "Premium Combo Offers",
   "subtitle": "Save more with our family and friends combos",
   "serving_size": "people",
-  "currency": "VND",
+  "currency": "₫",
   "order_button": "Order Now",
   "error_title": "An error occurred",
   "error_message": "Failed to load combos. Please try again later.",

@@ -58,6 +58,10 @@ import reservation_vi from "../../locales/vi/reservation/reservation.json";
 import reservation_en from "../../locales/en/reservation/reservation.json";
 import orderSummary_vi from "../../locales/vi/reservation/orderSummary.json";
 import orderSummary_en from "../../locales/en/reservation/orderSummary.json";
+import paymentSuccess_vi from "../../locales/vi/payment/paymentSuccess.json";
+import paymentSuccess_en from "../../locales/en/payment/paymentSuccess.json";
+import paymentFailed_vi from "../../locales/vi/payment/paymentFailed.json";
+import paymentFailed_en from "../../locales/en/payment/paymentFailed.json";
 
 //  Dictionary đầy đủ
 const dictionaries: LanguageDictionary = {
@@ -88,6 +92,8 @@ const dictionaries: LanguageDictionary = {
     register: register_en,
     reservation: reservation_en as Translations,
     orderSummary: orderSummary_en,
+    paymentSuccess: paymentSuccess_en,
+    paymentFailed: paymentFailed_en
   },
   vi: {
     footer: footer_vi,
@@ -116,6 +122,8 @@ const dictionaries: LanguageDictionary = {
     register: register_vi,
     reservation: reservation_vi as Translations,
     orderSummary: orderSummary_vi,
+    paymentSuccess: paymentSuccess_vi,
+    paymentFailed: paymentFailed_vi
   },
 };
 

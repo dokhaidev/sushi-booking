@@ -58,7 +58,7 @@ export default function BannerMenu() {
           </p>
 
           <Link
-            href="#reservation"
+            href="/dat-ban"
             className="mt-6 inline-block px-6 py-3 bg-[#A68345] hover:bg-[#BD944A] text-white rounded-full shadow-lg transition-all duration-300 text-sm sm:text-base w-max mx-auto md:mx-0"
           >
             ĐẶT BÀN NGAY

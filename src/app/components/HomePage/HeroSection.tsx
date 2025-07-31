@@ -139,8 +139,8 @@ export default function HomePage() {
               transition={{ delay: 0.6 }}
             >
               <a
-                href={getLocalizedPath("/menu")}
-                className="group relative bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                href={getLocalizedPath("/thuc-don")}
+                className="group relative bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white px-6 py-3 rounded-full font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
               >
                 <div className="relative flex items-center justify-center gap-2">
                   <span>{t("buttons.menu")}</span>
@@ -148,8 +148,8 @@ export default function HomePage() {
                 </div>
               </a>
               <a
-                href={getLocalizedPath("/datban")}
-                className="group border-2 border-[#A68345] text-[#A68345] hover:bg-[#A68345] hover:text-white px-6 py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg relative overflow-hidden"
+                href={getLocalizedPath("/dat-ban")}
+                className="group border-2 border-[#A68345] text-[#A68345] hover:bg-[#A68345] hover:text-white px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg relative overflow-hidden"
               >
                 <div className="relative flex items-center justify-center gap-2">
                   <span>{t("buttons.reservation")}</span>

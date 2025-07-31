@@ -35,7 +35,9 @@ export type Namespace =
   | "loginPage"
   | "register"
   | "reservation"
-  | "orderSummary";
+  | "orderSummary"
+  | "paymentSuccess"
+  | "paymentFailed";
 
 
 export type NamespacedTranslations = Record<Namespace, Translations>;

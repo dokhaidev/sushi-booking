@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChefHat, Users, Star } from "lucide-react";
 import Image from "next/image";
 import { useTranslation } from "../../lib/i18n/client";
-import { usePathname } from "next/navigation";
 
 interface Food {
   id: number;
@@ -53,7 +52,6 @@ const slideVariants = {
 
 export default function ComboSlider() {
   const { t, lang } = useTranslation("combos");
-  const pathname = usePathname();
 
   const [combos, setCombos] = useState<Combo[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -61,18 +59,12 @@ export default function ComboSlider() {
   const [error, setError] = useState<string | null>(null);
   const [direction, setDirection] = useState<"left" | "right">("right");
 
-  const getLocalizedPath = (path: string) => {
-    return `/${lang}${path}`;
-  };
-
   useEffect(() => {
     const fetchCombos = async () => {
       try {
         setLoading(true);
         const res = await axios.get("http://127.0.0.1:8000/api/combos", {
-          params: {
-            lang, // lang là 'vi' hoặc 'en', được lấy từ useTranslation
-          },
+          params: { lang },
         });
 
         if (!Array.isArray(res.data)) throw new Error("Invalid data");
@@ -136,7 +128,7 @@ export default function ComboSlider() {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 transition"
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition"
           >
             {t("reload_button")}
           </button>
@@ -149,26 +141,11 @@ export default function ComboSlider() {
 
   return (
     <section className="py-16 px-6 sm:px-16 bg-white relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Subtle diagonal lines pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cGF0aCBkPSJNMzAgMEw2MCAzMEwzMCA2MEwwIDMwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTZhMzQ1IiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvc3ZnPg==')]"></div>
-        </div>
-
-        {/* Floating circles */}
-        <div className="absolute -left-20 -top-20 w-64 h-64 rounded-full bg-amber-50 opacity-20"></div>
-        <div className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full bg-amber-50 opacity-20"></div>
-
-        {/* Subtle border effect */}
-        <div className="absolute inset-0 border-[16px] border-transparent pointer-events-none">
-          <div className="absolute inset-0 border border-amber-100 rounded-lg opacity-30"></div>
-        </div>
-      </div>
+      <div className="absolute -left-20 -top-20 w-64 h-64 rounded-full bg-amber-50 opacity-20"></div>
+      <div className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full bg-amber-50 opacity-20"></div>
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-12" aria-labelledby="combo-title">
+        <div className="text-center mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -178,9 +155,7 @@ export default function ComboSlider() {
             <ChefHat className="text-amber-600" size={18} />
             <span className="text-amber-600 font-medium">{t("badge")}</span>
           </motion.div>
-
           <motion.h2
-            id="combo-title"
             className="text-3xl md:text-4xl font-bold text-gray-800 mb-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -188,7 +163,6 @@ export default function ComboSlider() {
           >
             {t("title")}
           </motion.h2>
-
           <motion.p
             className="text-gray-600 max-w-2xl mx-auto text-lg"
             initial={{ opacity: 0, y: 20 }}
@@ -199,7 +173,6 @@ export default function ComboSlider() {
           </motion.p>
         </div>
 
-        {/* Slider */}
         <motion.div
           className="relative max-w-5xl mx-auto h-[500px] rounded-3xl overflow-visible bg-white shadow-lg border border-amber-50"
           initial={{ opacity: 0, y: 30 }}
@@ -207,23 +180,18 @@ export default function ComboSlider() {
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
         >
-          {/* Highlight effect */}
-          <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-amber-50 to-transparent opacity-30 pointer-events-none"></div>
-
-          {/* Navigation buttons */}
           <button
             onClick={prevSlide}
-            className="absolute z-10 -left-5 top-1/2 -translate-y-1/2 bg-white p-3 rounded-full shadow-md hover:bg-amber-100 transition-all border border-amber-100 group"
+            className="absolute z-10 -left-5 top-1/2 -translate-y-1/2 bg-white p-3 rounded-full shadow-md hover:bg-amber-100 transition border border-amber-100 group"
             aria-label={t("aria_labels.prev_combo")}
           >
             <motion.div whileHover={{ x: -2 }}>
               <ArrowLeft className="text-amber-600 group-hover:text-amber-800" />
             </motion.div>
           </button>
-
           <button
             onClick={nextSlide}
-            className="absolute z-10 -right-5 top-1/2 -translate-y-1/2 bg-white p-3 rounded-full shadow-md hover:bg-amber-100 transition-all border border-amber-100 group"
+            className="absolute z-10 -right-5 top-1/2 -translate-y-1/2 bg-white p-3 rounded-full shadow-md hover:bg-amber-100 transition border border-amber-100 group"
             aria-label={t("aria_labels.next_combo")}
           >
             <motion.div whileHover={{ x: 2 }}>
@@ -240,18 +208,17 @@ export default function ComboSlider() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.35 }}
-              className="w-full h-full md:flex px-6 py-4"
+              className="w-full h-full md:flex px-6 py-6"
             >
-              {/* Left: Info */}
-              <div className="md:w-1/2 flex flex-col justify-between pr-6 py-5 px-5 relative">
-                <div className="absolute -left-4 top-0 h-full w-1 bg-gradient-to-b from-amber-200 to-amber-400 rounded-full opacity-30"></div>
-                <div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+              {/* Left content */}
+              <div className="md:w-1/2 h-full flex flex-col justify-center gap-4 pr-6">
+                <div className="space-y-4">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-800">
                     {combo.name}
                   </h3>
-                  <div className="flex gap-4 my-2 text-sm text-gray-600">
+                  <div className="flex gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
-                      <Star className="text-amber-500" size={16} />
+                      <Star className="text-amber-500 fill-amber-500" size={16} />
                       {combo.rating}
                     </div>
                     <div className="flex items-center gap-1">
@@ -259,36 +226,56 @@ export default function ComboSlider() {
                       {combo.serving_size} {t("serving_size")}
                     </div>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 line-clamp-3">
                     {combo.description}
                   </p>
-                  <ul className="text-sm space-y-1 mb-4 text-gray-700">
-                    {combo.combo_items.map((item, idx) => (
-                      <li key={idx}>
-                        • {item.food.name}{" "}
-                        <span className="text-amber-600">
-                          (x{item.quantity})
+
+                  {/* Combo items with image */}
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                  {combo.combo_items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-lg px-2 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-md overflow-hidden border border-amber-100 bg-white">
+                          <Image
+                            src={item.food.image || "/placeholder.svg"}
+                            alt={item.food.name}
+                            width={36}
+                            height={36}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <span className="text-sm text-gray-800 truncate max-w-[100px]">
+                          {item.food.name}
                         </span>
-                      </li>
-                    ))}
-                  </ul>
+                      </div>
+                      <span className="text-sm font-semibold text-amber-600">
+                        x{item.quantity}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div className="text-lg md:text-xl font-bold text-amber-700 mb-4">
+
+                </div>
+
+                <div className="mt-4">
+                  <div className="text-lg md:text-xl font-bold text-amber-700 mb-3">
                     {parseFloat(combo.price).toLocaleString()} {t("currency")}
                   </div>
-                  <button className="w-full bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white py-2 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 transition">
+                  <button className="w-full bg-gradient-to-r from-[#A68345] to-[#BD944A] text-white py-2 rounded-full font-semibold text-sm sm:text-base hover:opacity-90 transition">
                     {t("order_button")}
                   </button>
                 </div>
               </div>
 
-              {/* Right: Image */}
+              {/* Right image */}
               <div className="md:w-1/2 flex items-center justify-center relative overflow-hidden rounded-xl">
                 <div className="absolute inset-0 rounded-xl border-2 border-amber-50 opacity-30 pointer-events-none"></div>
                 {combo.image ? (
                   <Image
-                    src={combo.image || "/placeholder.svg"} 
+                    src={combo.image}
                     alt={`${t("aria_labels.combo_image")}: ${combo.name}`}
                     width={500}
                     height={500}
@@ -305,7 +292,7 @@ export default function ComboSlider() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Dots indicator */}
+        {/* Dots */}
         <motion.div
           className="flex justify-center gap-2 mt-6"
           initial={{ opacity: 0 }}
